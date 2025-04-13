@@ -15,7 +15,8 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Upload, Database, Radio, Users, RefreshCw, Shield, AlertTriangle } from "lucide-react";
+import { FileText, Upload, Database, Radio, Users, RefreshCw, Shield, AlertTriangle, MessageCircle, UserCheck, BadgeCheck } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Create a schema for incident reporting
@@ -840,7 +841,7 @@ export default function DataCollectionPage() {
                       <div className="flex items-center">
                         <Radio className="h-5 w-5 text-primary mr-2" />
                         <span className="text-sm font-medium">SMS Number:</span>
-                        <span className="text-sm ml-2">+1234567890</span>
+                        <span className="text-sm ml-2">+2348123456789</span>
                         <Button variant="ghost" size="sm" className="ml-auto">Edit</Button>
                       </div>
                       
@@ -851,7 +852,36 @@ export default function DataCollectionPage() {
                         </div>
                       </div>
                       
-                      <Button variant="outline">Configure SMS Gateway</Button>
+                      <div className="mb-4 border rounded-md p-3">
+                        <h4 className="font-medium mb-2">SMS Gateway Configuration</h4>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="text-sm font-medium">Gateway Type:</p>
+                              <p className="text-sm text-muted-foreground">Twilio SMS</p>
+                            </div>
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              Active
+                            </Badge>
+                          </div>
+                          
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <p className="text-sm font-medium">Fallback Gateway:</p>
+                              <p className="text-sm text-muted-foreground">Clickatell</p>
+                            </div>
+                            <Badge variant="outline" className="bg-neutral-50 text-neutral-700 border-neutral-200">
+                              Standby
+                            </Badge>
+                          </div>
+                          
+                          <div className="pt-2">
+                            <Button variant="outline" size="sm" className="w-full">
+                              Configure SMS Gateway
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
                   
@@ -861,7 +891,7 @@ export default function DataCollectionPage() {
                       Manage your network of trusted community informants.
                     </p>
                     
-                    <div className="border border-neutral-200 rounded-md divide-y">
+                    <div className="border border-neutral-200 rounded-md divide-y mb-4">
                       <div className="flex items-center p-3">
                         <Users className="h-5 w-5 text-primary mr-2" />
                         <span className="text-sm font-medium">Total Informants:</span>
@@ -881,7 +911,45 @@ export default function DataCollectionPage() {
                       </div>
                     </div>
                     
-                    <Button className="mt-4">Manage Informant Network</Button>
+                    <div className="border rounded-md p-3 mb-4">
+                      <h4 className="font-medium mb-2">Recent Informant Activities</h4>
+                      <div className="space-y-2">
+                        <div className="flex items-center p-2 bg-neutral-50 rounded">
+                          <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center text-primary mr-3">
+                            <MessageCircle className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">New Report Submitted</p>
+                            <p className="text-xs text-neutral-500">Abuja North - 2 hours ago</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center p-2 bg-neutral-50 rounded">
+                          <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center text-primary mr-3">
+                            <UserCheck className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">New Informant Registration</p>
+                            <p className="text-xs text-neutral-500">Lagos Area - 5 hours ago</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex items-center p-2 bg-neutral-50 rounded">
+                          <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center text-primary mr-3">
+                            <BadgeCheck className="h-4 w-4" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium">Informant Verification Complete</p>
+                            <p className="text-xs text-neutral-500">Port Harcourt - 1 day ago</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="flex space-x-3">
+                      <Button className="flex-1">Manage Informant Network</Button>
+                      <Button variant="outline" className="flex-1">Add New Informant</Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
