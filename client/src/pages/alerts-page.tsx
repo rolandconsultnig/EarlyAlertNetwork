@@ -70,7 +70,13 @@ import {
   Eye,
   Edit,
   Trash2,
-  XCircle
+  XCircle,
+  Twitter,
+  Facebook,
+  Instagram,
+  MessageCircle,
+  MessageSquare,
+  PhoneCall
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -459,48 +465,114 @@ export default function AlertsPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Mail className="h-5 w-5 text-primary mr-3" />
-                  <div>
-                    <p className="font-medium">Email Notifications</p>
-                    <p className="text-sm text-neutral-500">Send alerts via email</p>
+              {/* Direct Messaging */}
+              <div>
+                <h3 className="text-sm font-medium mb-3">Direct Communications</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Mail className="h-5 w-5 text-primary mr-3" />
+                      <div>
+                        <p className="font-medium">Email Notifications</p>
+                        <p className="text-sm text-neutral-500">Send alerts via email</p>
+                      </div>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Bell className="h-5 w-5 text-primary mr-3" />
+                      <div>
+                        <p className="font-medium">Dashboard Alerts</p>
+                        <p className="text-sm text-neutral-500">Show in-app notifications</p>
+                      </div>
+                    </div>
+                    <Switch defaultChecked />
                   </div>
                 </div>
-                <Switch defaultChecked />
               </div>
               
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Bell className="h-5 w-5 text-primary mr-3" />
-                  <div>
-                    <p className="font-medium">Dashboard Alerts</p>
-                    <p className="text-sm text-neutral-500">Show in-app notifications</p>
+              <Separator />
+              
+              {/* Social Media */}
+              <div>
+                <h3 className="text-sm font-medium mb-3">Social Media</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Twitter className="h-5 w-5 text-primary mr-3" />
+                      <div>
+                        <p className="font-medium">X (Twitter)</p>
+                        <p className="text-sm text-neutral-500">Post alerts on X platform</p>
+                      </div>
+                    </div>
+                    <Switch />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Facebook className="h-5 w-5 text-primary mr-3" />
+                      <div>
+                        <p className="font-medium">Facebook</p>
+                        <p className="text-sm text-neutral-500">Post alerts on Facebook</p>
+                      </div>
+                    </div>
+                    <Switch />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Instagram className="h-5 w-5 text-primary mr-3" />
+                      <div>
+                        <p className="font-medium">Instagram</p>
+                        <p className="text-sm text-neutral-500">Share alerts on Instagram</p>
+                      </div>
+                    </div>
+                    <Switch />
                   </div>
                 </div>
-                <Switch defaultChecked />
               </div>
               
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Smartphone className="h-5 w-5 text-primary mr-3" />
-                  <div>
-                    <p className="font-medium">SMS Notifications</p>
-                    <p className="text-sm text-neutral-500">Send alerts via SMS</p>
-                  </div>
-                </div>
-                <Switch />
-              </div>
+              <Separator />
               
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <Radio className="h-5 w-5 text-primary mr-3" />
-                  <div>
-                    <p className="font-medium">Radio Broadcasts</p>
-                    <p className="text-sm text-neutral-500">Emergency radio alerts</p>
+              {/* Telecoms */}
+              <div>
+                <h3 className="text-sm font-medium mb-3">Telecommunication</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Smartphone className="h-5 w-5 text-primary mr-3" />
+                      <div>
+                        <p className="font-medium">SMS (Twilio)</p>
+                        <p className="text-sm text-neutral-500">Send alerts via SMS</p>
+                      </div>
+                    </div>
+                    <Switch />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <MessageCircle className="h-5 w-5 text-primary mr-3" />
+                      <div>
+                        <p className="font-medium">WhatsApp</p>
+                        <p className="text-sm text-neutral-500">Send alerts via WhatsApp</p>
+                      </div>
+                    </div>
+                    <Switch />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <PhoneCall className="h-5 w-5 text-primary mr-3" />
+                      <div>
+                        <p className="font-medium">Call Center</p>
+                        <p className="text-sm text-neutral-500">Automated voice alerts</p>
+                      </div>
+                    </div>
+                    <Switch />
                   </div>
                 </div>
-                <Switch />
               </div>
             </div>
           </CardContent>
@@ -737,7 +809,7 @@ export default function AlertsPage() {
               
               <div>
                 <h3 className="text-sm font-medium mb-3">Notification Channels</h3>
-                <div className="space-y-3">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center">
                     <Switch
                       checked={form.watch("notificationChannels")?.includes("email")}
@@ -774,21 +846,131 @@ export default function AlertsPage() {
                     </label>
                   </div>
                   
+                  {/* Social Media Channels */}
                   <div className="flex items-center">
                     <Switch
-                      checked={form.watch("notificationChannels")?.includes("sms")}
+                      checked={form.watch("notificationChannels")?.includes("twitter")}
                       onCheckedChange={(checked) => {
                         const current = form.watch("notificationChannels") || [];
                         if (checked) {
-                          form.setValue("notificationChannels", [...current, "sms"]);
+                          form.setValue("notificationChannels", [...current, "twitter"]);
                         } else {
-                          form.setValue("notificationChannels", current.filter(c => c !== "sms"));
+                          form.setValue("notificationChannels", current.filter(c => c !== "twitter"));
+                        }
+                      }}
+                    />
+                    <label className="ml-2 text-sm font-medium">
+                      <Twitter className="h-4 w-4 inline mr-2" />
+                      X (Twitter)
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <Switch
+                      checked={form.watch("notificationChannels")?.includes("facebook")}
+                      onCheckedChange={(checked) => {
+                        const current = form.watch("notificationChannels") || [];
+                        if (checked) {
+                          form.setValue("notificationChannels", [...current, "facebook"]);
+                        } else {
+                          form.setValue("notificationChannels", current.filter(c => c !== "facebook"));
+                        }
+                      }}
+                    />
+                    <label className="ml-2 text-sm font-medium">
+                      <Facebook className="h-4 w-4 inline mr-2" />
+                      Facebook
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <Switch
+                      checked={form.watch("notificationChannels")?.includes("instagram")}
+                      onCheckedChange={(checked) => {
+                        const current = form.watch("notificationChannels") || [];
+                        if (checked) {
+                          form.setValue("notificationChannels", [...current, "instagram"]);
+                        } else {
+                          form.setValue("notificationChannels", current.filter(c => c !== "instagram"));
+                        }
+                      }}
+                    />
+                    <label className="ml-2 text-sm font-medium">
+                      <Instagram className="h-4 w-4 inline mr-2" />
+                      Instagram
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <Switch
+                      checked={form.watch("notificationChannels")?.includes("whatsapp")}
+                      onCheckedChange={(checked) => {
+                        const current = form.watch("notificationChannels") || [];
+                        if (checked) {
+                          form.setValue("notificationChannels", [...current, "whatsapp"]);
+                        } else {
+                          form.setValue("notificationChannels", current.filter(c => c !== "whatsapp"));
+                        }
+                      }}
+                    />
+                    <label className="ml-2 text-sm font-medium">
+                      <MessageCircle className="h-4 w-4 inline mr-2" />
+                      WhatsApp
+                    </label>
+                  </div>
+                  
+                  {/* SMS Channels */}
+                  <div className="flex items-center">
+                    <Switch
+                      checked={form.watch("notificationChannels")?.includes("sms_twilio")}
+                      onCheckedChange={(checked) => {
+                        const current = form.watch("notificationChannels") || [];
+                        if (checked) {
+                          form.setValue("notificationChannels", [...current, "sms_twilio"]);
+                        } else {
+                          form.setValue("notificationChannels", current.filter(c => c !== "sms_twilio"));
                         }
                       }}
                     />
                     <label className="ml-2 text-sm font-medium">
                       <Smartphone className="h-4 w-4 inline mr-2" />
-                      SMS
+                      SMS (Twilio)
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <Switch
+                      checked={form.watch("notificationChannels")?.includes("sms_clickatell")}
+                      onCheckedChange={(checked) => {
+                        const current = form.watch("notificationChannels") || [];
+                        if (checked) {
+                          form.setValue("notificationChannels", [...current, "sms_clickatell"]);
+                        } else {
+                          form.setValue("notificationChannels", current.filter(c => c !== "sms_clickatell"));
+                        }
+                      }}
+                    />
+                    <label className="ml-2 text-sm font-medium">
+                      <MessageSquare className="h-4 w-4 inline mr-2" />
+                      SMS (Clickatell)
+                    </label>
+                  </div>
+                  
+                  <div className="flex items-center">
+                    <Switch
+                      checked={form.watch("notificationChannels")?.includes("call_center")}
+                      onCheckedChange={(checked) => {
+                        const current = form.watch("notificationChannels") || [];
+                        if (checked) {
+                          form.setValue("notificationChannels", [...current, "call_center"]);
+                        } else {
+                          form.setValue("notificationChannels", current.filter(c => c !== "call_center"));
+                        }
+                      }}
+                    />
+                    <label className="ml-2 text-sm font-medium">
+                      <PhoneCall className="h-4 w-4 inline mr-2" />
+                      Call Center
                     </label>
                   </div>
                 </div>
