@@ -88,6 +88,8 @@ const alertFormSchema = insertAlertSchema
     description: true,
     severity: true,
     channels: true,
+    location: true,
+    region: true,
   })
   .extend({
     severity: z.enum(["low", "medium", "high"], {
@@ -100,6 +102,8 @@ const alertFormSchema = insertAlertSchema
       userIds: z.array(z.number()).optional(),
       roles: z.array(z.string()).optional(),
     }).optional(),
+    location: z.string().default("Nigeria"),
+    region: z.string().default("Nigeria"),
   });
 
 type AlertFormValues = z.infer<typeof alertFormSchema>;
@@ -138,6 +142,9 @@ export default function AlertsPage() {
       description: "",
       severity: undefined,
       notificationChannels: ["email", "dashboard"],
+      location: "Nigeria", // Required by the API
+      region: "Nigeria",   // Required by the API
+      channels: [],        // Will be populated from notificationChannels
     },
   });
   
