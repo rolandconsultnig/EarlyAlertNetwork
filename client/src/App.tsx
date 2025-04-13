@@ -18,6 +18,8 @@ import UserManagementPage from "@/pages/user-management-page";
 import IntegrationsPage from "@/pages/integrations-page";
 import ReportingPage from "@/pages/reporting-page";
 import SettingsPage from "@/pages/settings-page";
+import SmsPage from "@/pages/sms-page";
+import SocialMediaPage from "@/pages/social-media-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {

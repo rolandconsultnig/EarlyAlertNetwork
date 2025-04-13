@@ -18,7 +18,16 @@ import {
   Link as LinkIcon,
   FileText,
   MessageCircle,
-  Brain
+  Brain,
+  MessageSquare,
+  Phone,
+  Send,
+  Share2,
+  Twitter,
+  Facebook,
+  Instagram,
+  Video,
+  MessageSquareDashed
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -68,6 +77,25 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
       ]
     },
     {
+      title: "Communications",
+      items: [
+        { path: "/sms", label: "SMS Management", icon: <MessageSquare className="mr-3 h-5 w-5" /> },
+        { path: "/sms/compose", label: "Compose SMS", icon: <MessageSquareDashed className="mr-3 h-5 w-5" /> },
+        { path: "/sms/templates", label: "SMS Templates", icon: <MessageCircle className="mr-3 h-5 w-5" /> },
+        { path: "/sms/logs", label: "Messaging Logs", icon: <FileText className="mr-3 h-5 w-5" /> },
+      ]
+    },
+    {
+      title: "Social Media",
+      items: [
+        { path: "/social-media", label: "Social Dashboard", icon: <Share2 className="mr-3 h-5 w-5" /> },
+        { path: "/social-media/twitter", label: "X (Twitter)", icon: <Twitter className="mr-3 h-5 w-5" /> },
+        { path: "/social-media/facebook", label: "Facebook", icon: <Facebook className="mr-3 h-5 w-5" /> },
+        { path: "/social-media/instagram", label: "Instagram", icon: <Instagram className="mr-3 h-5 w-5" /> },
+        { path: "/social-media/tiktok", label: "TikTok", icon: <Video className="mr-3 h-5 w-5" /> },
+      ]
+    },
+    {
       title: "Administration",
       items: [
         { path: "/user-management", label: "User Management", icon: <Users className="mr-3 h-5 w-5" /> },
@@ -83,6 +111,8 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
     "Data Collection & Processing": true,
     "Risk Assessment": true,
     "Response Management": true,
+    "Communications": true,
+    "Social Media": true,
     "Administration": true
   });
 
