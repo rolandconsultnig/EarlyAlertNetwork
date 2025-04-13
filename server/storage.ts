@@ -9,9 +9,11 @@ import type {
   RiskIndicator, InsertRiskIndicator 
 } from "@shared/schema";
 import session from "express-session";
-import createMemoryStore from "memorystore";
+import { db, pool } from "./db";
+import { eq, and, desc, gte, lte } from "drizzle-orm";
+import connectPg from "connect-pg-simple";
 
-const MemoryStore = createMemoryStore(session);
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // User methods
@@ -59,289 +61,246 @@ export interface IStorage {
   getRiskIndicatorsByTimeRange(startDate: Date, endDate: Date): Promise<RiskIndicator[]>;
   
   // Session store
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private dataSources: Map<number, DataSource>;
-  private incidents: Map<number, Incident>;
-  private alerts: Map<number, Alert>;
-  private responseActivities: Map<number, ResponseActivity>;
-  private responseTeams: Map<number, ResponseTeam>;
-  private riskIndicators: Map<number, RiskIndicator>;
-  
-  sessionStore: session.SessionStore;
-  
-  // ID counters
-  private userIdCounter: number;
-  private dataSourceIdCounter: number;
-  private incidentIdCounter: number;
-  private alertIdCounter: number;
-  private responseActivityIdCounter: number;
-  private responseTeamIdCounter: number;
-  private riskIndicatorIdCounter: number;
+export class DatabaseStorage implements IStorage {
+  sessionStore: any;
 
   constructor() {
-    this.users = new Map();
-    this.dataSources = new Map();
-    this.incidents = new Map();
-    this.alerts = new Map();
-    this.responseActivities = new Map();
-    this.responseTeams = new Map();
-    this.riskIndicators = new Map();
-    
-    this.userIdCounter = 1;
-    this.dataSourceIdCounter = 1;
-    this.incidentIdCounter = 1;
-    this.alertIdCounter = 1;
-    this.responseActivityIdCounter = 1;
-    this.responseTeamIdCounter = 1;
-    this.riskIndicatorIdCounter = 1;
-    
-    this.sessionStore = new MemoryStore({
-      checkPeriod: 86400000 // 24 hours
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
     });
-    
-    // Initialize with default data
-    this.initializeDefaultData();
-  }
 
-  // Default data initialization
-  private initializeDefaultData() {
-    // Initialize data sources
-    const dataSourceTypes = ['Field Reports', 'News Aggregation', 'Social Media Monitor', 'Satellite Imagery', 'SMS Reports'];
-    const dataSourceStatuses = ['active', 'active', 'degraded', 'active', 'offline'];
-    
-    dataSourceTypes.forEach((name, index) => {
-      this.createDataSource({
-        name,
-        type: name.toLowerCase().replace(/\s/g, '_'),
-        status: dataSourceStatuses[index]
-      });
-    });
-    
-    // Initialize response teams
-    const teamNames = ['Health Response Team', 'Mediation Unit', 'Security Team', 'Logistics Team'];
-    const teamTypes = ['medical', 'mediation', 'security', 'logistics'];
-    const locations = ['Northern Province', 'Eastern District', 'Capital Region', 'Southern Region'];
-    
-    teamNames.forEach((name, index) => {
-      this.createResponseTeam({
-        name,
-        type: teamTypes[index],
-        status: 'active',
-        location: locations[index],
-        capacity: 10 + index * 5
-      });
-    });
+    // Initialize default data if needed - would be done through migrations
+    // this.initializeDefaultData();
   }
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.userIdCounter++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
   async updateUser(id: number, userData: Partial<User>): Promise<User> {
-    const user = await this.getUser(id);
-    if (!user) {
+    const [updatedUser] = await db
+      .update(users)
+      .set(userData)
+      .where(eq(users.id, id))
+      .returning();
+    
+    if (!updatedUser) {
       throw new Error(`User with id ${id} not found`);
     }
     
-    const updatedUser = { ...user, ...userData };
-    this.users.set(id, updatedUser);
     return updatedUser;
   }
 
   // Data source methods
   async getDataSources(): Promise<DataSource[]> {
-    return Array.from(this.dataSources.values());
+    return db.select().from(dataSources);
   }
 
   async getDataSource(id: number): Promise<DataSource | undefined> {
-    return this.dataSources.get(id);
+    const [dataSource] = await db.select().from(dataSources).where(eq(dataSources.id, id));
+    return dataSource;
   }
 
   async createDataSource(source: InsertDataSource): Promise<DataSource> {
-    const id = this.dataSourceIdCounter++;
-    const now = new Date();
-    const dataSource: DataSource = { ...source, id, lastUpdated: now };
-    this.dataSources.set(id, dataSource);
+    const [dataSource] = await db.insert(dataSources).values(source).returning();
     return dataSource;
   }
 
   async updateDataSource(id: number, sourceData: Partial<DataSource>): Promise<DataSource> {
-    const source = await this.getDataSource(id);
-    if (!source) {
+    const [updatedSource] = await db
+      .update(dataSources)
+      .set(sourceData)
+      .where(eq(dataSources.id, id))
+      .returning();
+    
+    if (!updatedSource) {
       throw new Error(`Data source with id ${id} not found`);
     }
     
-    const updatedSource = { ...source, ...sourceData };
-    this.dataSources.set(id, updatedSource);
     return updatedSource;
   }
 
   // Incident methods
   async getIncidents(): Promise<Incident[]> {
-    return Array.from(this.incidents.values());
+    return db.select().from(incidents).orderBy(desc(incidents.reportedAt));
   }
 
   async getIncident(id: number): Promise<Incident | undefined> {
-    return this.incidents.get(id);
+    const [incident] = await db.select().from(incidents).where(eq(incidents.id, id));
+    return incident;
   }
 
   async createIncident(incident: InsertIncident): Promise<Incident> {
-    const id = this.incidentIdCounter++;
-    const now = new Date();
-    const newIncident: Incident = { ...incident, id, reportedAt: now };
-    this.incidents.set(id, newIncident);
+    const [newIncident] = await db.insert(incidents).values(incident).returning();
     return newIncident;
   }
 
   async updateIncident(id: number, incidentData: Partial<Incident>): Promise<Incident> {
-    const incident = await this.getIncident(id);
-    if (!incident) {
+    const [updatedIncident] = await db
+      .update(incidents)
+      .set(incidentData)
+      .where(eq(incidents.id, id))
+      .returning();
+    
+    if (!updatedIncident) {
       throw new Error(`Incident with id ${id} not found`);
     }
     
-    const updatedIncident = { ...incident, ...incidentData };
-    this.incidents.set(id, updatedIncident);
     return updatedIncident;
   }
 
   // Alert methods
   async getAlerts(): Promise<Alert[]> {
-    return Array.from(this.alerts.values());
+    return db.select().from(alerts).orderBy(desc(alerts.generatedAt));
   }
 
   async getActiveAlerts(): Promise<Alert[]> {
-    return Array.from(this.alerts.values()).filter(alert => alert.status === 'active');
+    return db
+      .select()
+      .from(alerts)
+      .where(eq(alerts.status, 'active'))
+      .orderBy(desc(alerts.generatedAt));
   }
 
   async getAlert(id: number): Promise<Alert | undefined> {
-    return this.alerts.get(id);
+    const [alert] = await db.select().from(alerts).where(eq(alerts.id, id));
+    return alert;
   }
 
   async createAlert(alert: InsertAlert): Promise<Alert> {
-    const id = this.alertIdCounter++;
-    const now = new Date();
-    const newAlert: Alert = { ...alert, id, generatedAt: now };
-    this.alerts.set(id, newAlert);
+    const [newAlert] = await db.insert(alerts).values(alert).returning();
     return newAlert;
   }
 
   async updateAlert(id: number, alertData: Partial<Alert>): Promise<Alert> {
-    const alert = await this.getAlert(id);
-    if (!alert) {
+    const [updatedAlert] = await db
+      .update(alerts)
+      .set(alertData)
+      .where(eq(alerts.id, id))
+      .returning();
+    
+    if (!updatedAlert) {
       throw new Error(`Alert with id ${id} not found`);
     }
     
-    const updatedAlert = { ...alert, ...alertData };
-    this.alerts.set(id, updatedAlert);
     return updatedAlert;
   }
 
   // Response activity methods
   async getResponseActivities(): Promise<ResponseActivity[]> {
-    return Array.from(this.responseActivities.values());
+    return db.select().from(responseActivities).orderBy(desc(responseActivities.createdAt));
   }
 
   async getResponseActivity(id: number): Promise<ResponseActivity | undefined> {
-    return this.responseActivities.get(id);
+    const [activity] = await db.select().from(responseActivities).where(eq(responseActivities.id, id));
+    return activity;
   }
 
   async createResponseActivity(activity: InsertResponseActivity): Promise<ResponseActivity> {
-    const id = this.responseActivityIdCounter++;
-    const now = new Date();
-    const newActivity: ResponseActivity = { ...activity, id, createdAt: now, completedAt: null };
-    this.responseActivities.set(id, newActivity);
+    const [newActivity] = await db.insert(responseActivities).values(activity).returning();
     return newActivity;
   }
 
   async updateResponseActivity(id: number, activityData: Partial<ResponseActivity>): Promise<ResponseActivity> {
-    const activity = await this.getResponseActivity(id);
-    if (!activity) {
+    const [updatedActivity] = await db
+      .update(responseActivities)
+      .set(activityData)
+      .where(eq(responseActivities.id, id))
+      .returning();
+    
+    if (!updatedActivity) {
       throw new Error(`Response activity with id ${id} not found`);
     }
     
-    const updatedActivity = { ...activity, ...activityData };
-    this.responseActivities.set(id, updatedActivity);
     return updatedActivity;
   }
 
   // Response team methods
   async getResponseTeams(): Promise<ResponseTeam[]> {
-    return Array.from(this.responseTeams.values());
+    return db.select().from(responseTeams);
   }
 
   async getResponseTeam(id: number): Promise<ResponseTeam | undefined> {
-    return this.responseTeams.get(id);
+    const [team] = await db.select().from(responseTeams).where(eq(responseTeams.id, id));
+    return team;
   }
 
   async createResponseTeam(team: InsertResponseTeam): Promise<ResponseTeam> {
-    const id = this.responseTeamIdCounter++;
-    const newTeam: ResponseTeam = { ...team, id };
-    this.responseTeams.set(id, newTeam);
+    const [newTeam] = await db.insert(responseTeams).values(team).returning();
     return newTeam;
   }
 
   async updateResponseTeam(id: number, teamData: Partial<ResponseTeam>): Promise<ResponseTeam> {
-    const team = await this.getResponseTeam(id);
-    if (!team) {
+    const [updatedTeam] = await db
+      .update(responseTeams)
+      .set(teamData)
+      .where(eq(responseTeams.id, id))
+      .returning();
+    
+    if (!updatedTeam) {
       throw new Error(`Response team with id ${id} not found`);
     }
     
-    const updatedTeam = { ...team, ...teamData };
-    this.responseTeams.set(id, updatedTeam);
     return updatedTeam;
   }
 
   // Risk indicator methods
   async getRiskIndicators(): Promise<RiskIndicator[]> {
-    return Array.from(this.riskIndicators.values());
+    return db.select().from(riskIndicators).orderBy(desc(riskIndicators.timestamp));
   }
 
   async getRiskIndicator(id: number): Promise<RiskIndicator | undefined> {
-    return this.riskIndicators.get(id);
+    const [indicator] = await db.select().from(riskIndicators).where(eq(riskIndicators.id, id));
+    return indicator;
   }
 
   async createRiskIndicator(indicator: InsertRiskIndicator): Promise<RiskIndicator> {
-    const id = this.riskIndicatorIdCounter++;
-    const now = new Date();
-    const newIndicator: RiskIndicator = { ...indicator, id, timestamp: now };
-    this.riskIndicators.set(id, newIndicator);
+    const [newIndicator] = await db.insert(riskIndicators).values(indicator).returning();
     return newIndicator;
   }
 
   async updateRiskIndicator(id: number, indicatorData: Partial<RiskIndicator>): Promise<RiskIndicator> {
-    const indicator = await this.getRiskIndicator(id);
-    if (!indicator) {
+    const [updatedIndicator] = await db
+      .update(riskIndicators)
+      .set(indicatorData)
+      .where(eq(riskIndicators.id, id))
+      .returning();
+    
+    if (!updatedIndicator) {
       throw new Error(`Risk indicator with id ${id} not found`);
     }
     
-    const updatedIndicator = { ...indicator, ...indicatorData };
-    this.riskIndicators.set(id, updatedIndicator);
     return updatedIndicator;
   }
 
   async getRiskIndicatorsByTimeRange(startDate: Date, endDate: Date): Promise<RiskIndicator[]> {
-    return Array.from(this.riskIndicators.values()).filter(
-      indicator => indicator.timestamp >= startDate && indicator.timestamp <= endDate
-    );
+    return db
+      .select()
+      .from(riskIndicators)
+      .where(
+        and(
+          gte(riskIndicators.timestamp, startDate),
+          lte(riskIndicators.timestamp, endDate)
+        )
+      )
+      .orderBy(desc(riskIndicators.timestamp));
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();
