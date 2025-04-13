@@ -115,6 +115,29 @@ export default function SocialMediaPage() {
   const [postLink, setPostLink] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [activeTab, setActiveTab] = useState("compose");
+  
+  // Get the current path to determine which platform to focus on
+  const location = window.location.pathname;
+  
+  // Set the proper platform based on URL path
+  useState(() => {
+    // Initialize platforms array with the one from the URL if applicable
+    if (location.includes("/twitter")) {
+      setSelectedPlatforms(["Twitter"]);
+    } else if (location.includes("/facebook")) {
+      setSelectedPlatforms(["Facebook"]);
+    } else if (location.includes("/instagram")) {
+      setSelectedPlatforms(["Instagram"]);
+    } else if (location.includes("/tiktok")) {
+      setSelectedPlatforms(["TikTok"]);
+    }
+    
+    // Set the active tab to analytics if we're on a specific platform page
+    if (location !== "/social-media") {
+      setActiveTab("analytics");
+    }
+  });
   
   const handlePlatformToggle = (platform: string) => {
     if (selectedPlatforms.includes(platform)) {
@@ -193,7 +216,7 @@ export default function SocialMediaPage() {
     <div className="container mx-auto py-6">
       <h1 className="text-3xl font-bold text-blue-800 mb-6">Social Media Dashboard</h1>
       
-      <Tabs defaultValue="compose" className="mb-8">
+      <Tabs defaultValue="compose" value={activeTab} onValueChange={setActiveTab} className="mb-8">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="compose">Compose Post</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>

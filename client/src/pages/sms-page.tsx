@@ -43,6 +43,20 @@ export default function SmsPage() {
   const [selectedTab, setSelectedTab] = useState("compose");
   const [selectedTemplate, setSelectedTemplate] = useState<typeof mockTemplates[0] | null>(null);
   
+  // Get the current path to determine which tab to show
+  const location = window.location.pathname;
+  
+  // Set the active tab based on the URL
+  useState(() => {
+    if (location.includes("/compose")) {
+      setSelectedTab("compose");
+    } else if (location.includes("/templates")) {
+      setSelectedTab("templates");
+    } else if (location.includes("/logs")) {
+      setSelectedTab("logs");
+    }
+  });
+  
   const handleSelectTemplate = (template: typeof mockTemplates[0]) => {
     setSelectedTemplate(template);
     setSmsText(template.content);

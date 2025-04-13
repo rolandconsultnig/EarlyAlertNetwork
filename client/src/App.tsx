@@ -42,6 +42,19 @@ function Router() {
       <ProtectedRoute path="/response-plans" component={ResponsePlansPage} />
       <ProtectedRoute path="/case-management" component={CaseManagementPage} />
       
+      {/* Communications - SMS Management */}
+      <ProtectedRoute path="/sms" component={SmsPage} />
+      <ProtectedRoute path="/sms/compose" component={SmsPage} />
+      <ProtectedRoute path="/sms/templates" component={SmsPage} />
+      <ProtectedRoute path="/sms/logs" component={SmsPage} />
+      
+      {/* Social Media */}
+      <ProtectedRoute path="/social-media" component={SocialMediaPage} />
+      <ProtectedRoute path="/social-media/twitter" component={SocialMediaPage} />
+      <ProtectedRoute path="/social-media/facebook" component={SocialMediaPage} />
+      <ProtectedRoute path="/social-media/instagram" component={SocialMediaPage} />
+      <ProtectedRoute path="/social-media/tiktok" component={SocialMediaPage} />
+      
       {/* Administration */}
       <ProtectedRoute path="/user-management" component={UserManagementPage} />
       <ProtectedRoute path="/integrations" component={IntegrationsPage} />
