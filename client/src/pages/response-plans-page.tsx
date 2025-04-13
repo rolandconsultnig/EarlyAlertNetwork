@@ -77,7 +77,8 @@ import {
   PhoneCall,
   Eye,
   FileBarChart2,
-  ShieldCheck
+  ShieldCheck,
+  X as XCircle
 } from "lucide-react";
 
 // Create a schema for response plan form
@@ -88,7 +89,7 @@ const responsePlanFormSchema = insertResponsePlanSchema
     region: true,
     location: true,
     status: true,
-    responseType: true,
+    category: true,
   })
   .extend({
     status: z.enum(["draft", "active", "completed"], {
@@ -97,7 +98,9 @@ const responsePlanFormSchema = insertResponsePlanSchema
     category: z.enum(["emergency", "preventive", "recovery"], {
       required_error: "Please select a response type",
     }),
-    selectedTeams: z.array(z.string()).optional(),
+    steps: z.record(z.string(), z.string()).default({}),
+    resources: z.record(z.string(), z.union([z.string(), z.number()])).default({}),
+    selectedTeams: z.array(z.number()).optional(),
   });
 
 type ResponsePlanFormValues = z.infer<typeof responsePlanFormSchema>;
@@ -150,7 +153,9 @@ export default function ResponsePlansPage() {
       region: "",
       location: "",
       status: "draft",
-      responseType: "preventive",
+      category: "preventive",
+      steps: {},
+      resources: {},
       selectedTeams: [],
     },
   });
@@ -162,7 +167,8 @@ export default function ResponsePlansPage() {
         ...data,
         createdAt: new Date(),
         updatedAt: new Date(),
-        assignedTeams: data.selectedTeams?.join(',') || '',
+        assignedTeams: data.selectedTeams || [],
+        createdBy: 1, // Default to admin user
       };
       
       // Remove the selectedTeams field since it's not part of the schema
@@ -444,7 +450,7 @@ export default function ResponsePlansPage() {
                       <TableRow key={plan.id}>
                         <TableCell className="font-medium">{plan.title}</TableCell>
                         <TableCell>{plan.region}{plan.location ? ` / ${plan.location}` : ''}</TableCell>
-                        <TableCell>{getResponseTypeBadge(plan.responseType)}</TableCell>
+                        <TableCell>{getResponseTypeBadge(plan.category)}</TableCell>
                         <TableCell>{getStatusBadge(plan.status)}</TableCell>
                         <TableCell>{formatDate(plan.createdAt)}</TableCell>
                         <TableCell className="text-right">
@@ -488,7 +494,7 @@ export default function ResponsePlansPage() {
                       <span className="text-sm">Emergency</span>
                     </div>
                     <span className="text-sm font-medium">
-                      {plans?.filter(p => p.responseType === "emergency").length || 0}
+                      {plans?.filter(p => p.category === "emergency").length || 0}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -497,7 +503,7 @@ export default function ResponsePlansPage() {
                       <span className="text-sm">Preventive</span>
                     </div>
                     <span className="text-sm font-medium">
-                      {plans?.filter(p => p.responseType === "preventive").length || 0}
+                      {plans?.filter(p => p.category === "preventive").length || 0}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -506,7 +512,7 @@ export default function ResponsePlansPage() {
                       <span className="text-sm">Recovery</span>
                     </div>
                     <span className="text-sm font-medium">
-                      {plans?.filter(p => p.responseType === "recovery").length || 0}
+                      {plans?.filter(p => p.category === "recovery").length || 0}
                     </span>
                   </div>
                 </div>
@@ -653,7 +659,7 @@ export default function ResponsePlansPage() {
                 
                 <FormField
                   control={form.control}
-                  name="responseType"
+                  name="category"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Response Type</FormLabel>
@@ -687,9 +693,10 @@ export default function ResponsePlansPage() {
                     <FormControl>
                       <Select 
                         onValueChange={(value) => {
+                          const teamId = parseInt(value, 10);
                           const currentValues = field.value || [];
-                          if (!currentValues.includes(value)) {
-                            field.onChange([...currentValues, value]);
+                          if (!currentValues.includes(teamId)) {
+                            field.onChange([...currentValues, teamId]);
                           }
                         }}
                       >
@@ -698,7 +705,7 @@ export default function ResponsePlansPage() {
                         </SelectTrigger>
                         <SelectContent>
                           {teams?.map(team => (
-                            <SelectItem key={team.id} value={team.name}>
+                            <SelectItem key={team.id} value={team.id.toString()}>
                               {team.name}
                             </SelectItem>
                           ))}
@@ -706,18 +713,21 @@ export default function ResponsePlansPage() {
                       </Select>
                     </FormControl>
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {field.value?.map(team => (
-                        <Badge 
-                          key={team}
-                          variant="outline"
-                          className="cursor-pointer"
-                          onClick={() => {
-                            field.onChange(field.value?.filter(t => t !== team));
-                          }}
-                        >
-                          {team} <XCircle className="h-3 w-3 ml-1" />
-                        </Badge>
-                      ))}
+                      {field.value?.map((teamId: number) => {
+                        const team = teams?.find(t => t.id === teamId);
+                        return (
+                          <Badge 
+                            key={teamId}
+                            variant="outline"
+                            className="cursor-pointer"
+                            onClick={() => {
+                              field.onChange(field.value?.filter((t: number) => t !== teamId));
+                            }}
+                          >
+                            {team?.name || `Team ${teamId}`} <XCircle className="h-3 w-3 ml-1" />
+                          </Badge>
+                        );
+                      })}
                     </div>
                     <FormMessage />
                   </FormItem>
@@ -763,7 +773,7 @@ export default function ResponsePlansPage() {
             <div className="space-y-4">
               <div className="flex flex-wrap gap-2">
                 {getStatusBadge(selectedPlan.status)}
-                {getResponseTypeBadge(selectedPlan.responseType)}
+                {getResponseTypeBadge(selectedPlan.category)}
                 <Badge variant="outline">{selectedPlan.region}</Badge>
                 {selectedPlan.location && <Badge variant="outline">{selectedPlan.location}</Badge>}
               </div>
@@ -787,11 +797,14 @@ export default function ResponsePlansPage() {
               <div>
                 <h4 className="text-sm font-medium mb-1">Assigned Teams</h4>
                 <div className="flex flex-wrap gap-2">
-                  {selectedPlan.assignedTeams ? 
-                    selectedPlan.assignedTeams.split(',').map(team => (
-                      <Badge key={team} variant="secondary">{team}</Badge>
-                    )) : 
-                    <span className="text-sm text-neutral-500">No teams assigned</span>
+                  {selectedPlan.assignedTeams && selectedPlan.assignedTeams.length > 0 ? 
+                    Array.isArray(selectedPlan.assignedTeams) ? 
+                      selectedPlan.assignedTeams.map((teamId: number) => {
+                        const team = teams?.find(t => t.id === teamId);
+                        return <Badge key={teamId} variant="secondary">{team?.name || `Team ${teamId}`}</Badge>;
+                      })
+                    : <Badge variant="secondary">Team IDs: {JSON.stringify(selectedPlan.assignedTeams)}</Badge>
+                    : <span className="text-sm text-neutral-500">No teams assigned</span>
                   }
                 </div>
               </div>
