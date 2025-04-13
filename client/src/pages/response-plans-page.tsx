@@ -2,10 +2,11 @@ import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
-  ResponseActivity, 
-  Alert, 
+  ResponsePlan, 
+  Incident, 
+  RiskAnalysis, 
   ResponseTeam, 
-  insertResponseActivitySchema 
+  insertResponsePlanSchema 
 } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -74,49 +75,63 @@ import {
   Truck,
   MessageSquare,
   PhoneCall,
-  Eye
+  Eye,
+  FileBarChart2,
+  ShieldCheck
 } from "lucide-react";
 
-// Create a schema for response activity form
-const responseActivityFormSchema = insertResponseActivitySchema
+// Create a schema for response plan form
+const responsePlanFormSchema = insertResponsePlanSchema
   .pick({
     title: true,
     description: true,
-    assignedTeam: true,
+    region: true,
+    location: true,
     status: true,
+    responseType: true,
   })
   .extend({
-    status: z.enum(["pending", "in_progress", "completed"], {
+    status: z.enum(["draft", "active", "completed"], {
       required_error: "Please select a status",
     }),
+    category: z.enum(["emergency", "preventive", "recovery"], {
+      required_error: "Please select a response type",
+    }),
+    selectedTeams: z.array(z.string()).optional(),
   });
 
-type ResponseActivityFormValues = z.infer<typeof responseActivityFormSchema>;
+type ResponsePlanFormValues = z.infer<typeof responsePlanFormSchema>;
 
 export default function ResponsePlansPage() {
   const { toast } = useToast();
   const [selectedTab, setSelectedTab] = useState("active");
   const [searchQuery, setSearchQuery] = useState("");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [selectedAlertId, setSelectedAlertId] = useState<number | null>(null);
-  const [selectedActivity, setSelectedActivity] = useState<ResponseActivity | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<ResponsePlan | null>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   
-  // Fetch response activities
+  // Fetch response plans
   const { 
-    data: activities, 
-    isLoading: isLoadingActivities, 
-    error: activitiesError,
-    refetch: refetchActivities 
-  } = useQuery<ResponseActivity[]>({
-    queryKey: ["/api/response-activities"],
+    data: plans, 
+    isLoading: isLoadingPlans, 
+    error: plansError,
+    refetch: refetchPlans 
+  } = useQuery<ResponsePlan[]>({
+    queryKey: ["/api/response-plans"],
   });
   
-  // Fetch active alerts for the select dropdown
+  // Fetch incidents for the select dropdown
   const { 
-    data: alerts 
-  } = useQuery<Alert[]>({
-    queryKey: ["/api/alerts/active"],
+    data: incidents 
+  } = useQuery<Incident[]>({
+    queryKey: ["/api/incidents"],
+  });
+  
+  // Fetch risk analyses for the select dropdown
+  const { 
+    data: analyses 
+  } = useQuery<RiskAnalysis[]>({
+    queryKey: ["/api/risk-analyses"],
   });
   
   // Fetch response teams for the select dropdown
@@ -127,56 +142,64 @@ export default function ResponsePlansPage() {
   });
   
   // Create form using react-hook-form
-  const form = useForm<ResponseActivityFormValues>({
-    resolver: zodResolver(responseActivityFormSchema),
+  const form = useForm<ResponsePlanFormValues>({
+    resolver: zodResolver(responsePlanFormSchema),
     defaultValues: {
       title: "",
       description: "",
-      status: "pending",
-      assignedTeam: "",
+      region: "",
+      location: "",
+      status: "draft",
+      responseType: "preventive",
+      selectedTeams: [],
     },
   });
   
-  // Create response activity mutation
-  const createActivityMutation = useMutation({
-    mutationFn: async (data: ResponseActivityFormValues) => {
-      const activityData = {
+  // Create response plan mutation
+  const createPlanMutation = useMutation({
+    mutationFn: async (data: ResponsePlanFormValues) => {
+      const planData = {
         ...data,
-        alertId: selectedAlertId,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        assignedTeams: data.selectedTeams?.join(',') || '',
       };
       
-      const res = await apiRequest("POST", "/api/response-activities", activityData);
+      // Remove the selectedTeams field since it's not part of the schema
+      delete planData.selectedTeams;
+      
+      const res = await apiRequest("POST", "/api/response-plans", planData);
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/response-activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/response-plans"] });
       toast({
-        title: "Response Activity Created",
-        description: "The activity has been created successfully.",
+        title: "Response Plan Created",
+        description: "The plan has been created successfully.",
       });
       form.reset();
       setCreateDialogOpen(false);
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to create activity",
+        title: "Failed to create plan",
         description: error.message,
         variant: "destructive",
       });
     },
   });
   
-  // Update activity status mutation
-  const updateActivityStatusMutation = useMutation({
+  // Update plan status mutation
+  const updatePlanStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
-      const res = await apiRequest("PUT", `/api/response-activities/${id}`, { status });
+      const res = await apiRequest("PUT", `/api/response-plans/${id}`, { status });
       return await res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/response-activities"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/response-plans"] });
       toast({
-        title: "Activity Updated",
-        description: "The activity status has been updated successfully.",
+        title: "Plan Updated",
+        description: "The plan status has been updated successfully.",
       });
       setDetailsDialogOpen(false);
     },
@@ -190,8 +213,8 @@ export default function ResponsePlansPage() {
   });
   
   // Handle form submission
-  function onSubmit(data: ResponseActivityFormValues) {
-    createActivityMutation.mutate(data);
+  function onSubmit(data: ResponsePlanFormValues) {
+    createPlanMutation.mutate(data);
   }
   
   // Format date for display
@@ -199,43 +222,45 @@ export default function ResponsePlansPage() {
     return dateString ? new Date(dateString).toLocaleString() : "Not set";
   };
   
-  // Filter activities based on selected tab and search query
-  const filteredActivities = activities?.filter(activity => {
+  // Filter plans based on selected tab and search query
+  const filteredPlans = plans?.filter(plan => {
     // Apply status filter
     const statusMatch = 
-      (selectedTab === "active" && (activity.status === "pending" || activity.status === "in_progress")) ||
-      (selectedTab === "completed" && activity.status === "completed") ||
+      (selectedTab === "active" && plan.status === "active") ||
+      (selectedTab === "draft" && plan.status === "draft") ||
+      (selectedTab === "completed" && plan.status === "completed") ||
       selectedTab === "all";
     
     // Apply search filter if search query exists
     const searchMatch = !searchQuery || 
-      activity.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      activity.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (activity.assignedTeam && activity.assignedTeam.toLowerCase().includes(searchQuery.toLowerCase()));
+      plan.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      plan.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (plan.region && plan.region.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (plan.location && plan.location.toLowerCase().includes(searchQuery.toLowerCase()));
     
     return statusMatch && searchMatch;
   });
   
-  // View activity details
-  const handleViewActivity = (activity: ResponseActivity) => {
-    setSelectedActivity(activity);
+  // View plan details
+  const handleViewPlan = (plan: ResponsePlan) => {
+    setSelectedPlan(plan);
     setDetailsDialogOpen(true);
   };
   
-  // Update activity status
+  // Update plan status
   const handleUpdateStatus = (status: string) => {
-    if (selectedActivity) {
-      updateActivityStatusMutation.mutate({ id: selectedActivity.id, status });
+    if (selectedPlan) {
+      updatePlanStatusMutation.mutate({ id: selectedPlan.id, status });
     }
   };
   
-  // Get the status badge for an activity
+  // Get the status badge for a plan
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "pending":
-        return <Badge className="bg-amber-100 text-amber-800">Pending</Badge>;
-      case "in_progress":
-        return <Badge className="bg-blue-100 text-blue-800">In Progress</Badge>;
+      case "draft":
+        return <Badge className="bg-neutral-100 text-neutral-800">Draft</Badge>;
+      case "active":
+        return <Badge className="bg-blue-100 text-blue-800">Active</Badge>;
       case "completed":
         return <Badge className="bg-green-100 text-green-800">Completed</Badge>;
       default:
@@ -243,12 +268,18 @@ export default function ResponsePlansPage() {
     }
   };
   
-  // Calculate progress percentage for activities
-  const calculateProgress = () => {
-    if (!activities || activities.length === 0) return 0;
-    
-    const completed = activities.filter(a => a.status === "completed").length;
-    return Math.round((completed / activities.length) * 100);
+  // Get the response type badge
+  const getResponseTypeBadge = (type: string) => {
+    switch (type) {
+      case "emergency":
+        return <Badge className="bg-red-100 text-red-800">Emergency</Badge>;
+      case "preventive":
+        return <Badge className="bg-amber-100 text-amber-800">Preventive</Badge>;
+      case "recovery":
+        return <Badge className="bg-indigo-100 text-indigo-800">Recovery</Badge>;
+      default:
+        return <Badge>Unknown</Badge>;
+    }
   };
 
   return (
@@ -264,6 +295,13 @@ export default function ResponsePlansPage() {
               Active
             </TabsTrigger>
             <TabsTrigger 
+              value="draft" 
+              onClick={() => setSelectedTab("draft")}
+              className={selectedTab === "draft" ? "bg-primary text-primary-foreground" : ""}
+            >
+              Draft
+            </TabsTrigger>
+            <TabsTrigger 
               value="completed" 
               onClick={() => setSelectedTab("completed")}
               className={selectedTab === "completed" ? "bg-primary text-primary-foreground" : ""}
@@ -275,14 +313,14 @@ export default function ResponsePlansPage() {
               onClick={() => setSelectedTab("all")}
               className={selectedTab === "all" ? "bg-primary text-primary-foreground" : ""}
             >
-              All Activities
+              All Plans
             </TabsTrigger>
           </TabsList>
           
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
             <Input
-              placeholder="Search activities..."
+              placeholder="Search plans..."
               className="pl-9 w-[250px]"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
@@ -291,13 +329,13 @@ export default function ResponsePlansPage() {
         </div>
         
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => refetchActivities()}>
+          <Button variant="outline" size="sm" onClick={() => refetchPlans()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
           <Button onClick={() => setCreateDialogOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
-            Create Activity
+            Create Plan
           </Button>
         </div>
       </div>
@@ -308,13 +346,13 @@ export default function ResponsePlansPage() {
           <CardContent className="pt-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm text-neutral-500">Total Activities</p>
+                <p className="text-sm text-neutral-500">Total Plans</p>
                 <p className="text-2xl font-semibold mt-1">
-                  {activities?.length || 0}
+                  {plans?.length || 0}
                 </p>
               </div>
               <div className="p-2 rounded-full bg-primary/10">
-                <ClipboardCheck className="h-5 w-5 text-primary" />
+                <FileBarChart2 className="h-5 w-5 text-primary" />
               </div>
             </div>
           </CardContent>
@@ -324,13 +362,13 @@ export default function ResponsePlansPage() {
           <CardContent className="pt-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm text-neutral-500">Pending</p>
+                <p className="text-sm text-neutral-500">Draft</p>
                 <p className="text-2xl font-semibold mt-1">
-                  {activities?.filter(a => a.status === "pending").length || 0}
+                  {plans?.filter(p => p.status === "draft").length || 0}
                 </p>
               </div>
-              <div className="p-2 rounded-full bg-amber-100">
-                <Clock className="h-5 w-5 text-amber-600" />
+              <div className="p-2 rounded-full bg-neutral-100">
+                <FileText className="h-5 w-5 text-neutral-600" />
               </div>
             </div>
           </CardContent>
@@ -340,13 +378,13 @@ export default function ResponsePlansPage() {
           <CardContent className="pt-6">
             <div className="flex justify-between items-start">
               <div>
-                <p className="text-sm text-neutral-500">In Progress</p>
+                <p className="text-sm text-neutral-500">Active</p>
                 <p className="text-2xl font-semibold mt-1">
-                  {activities?.filter(a => a.status === "in_progress").length || 0}
+                  {plans?.filter(p => p.status === "active").length || 0}
                 </p>
               </div>
               <div className="p-2 rounded-full bg-blue-100">
-                <Clock className="h-5 w-5 text-blue-600" />
+                <ShieldCheck className="h-5 w-5 text-blue-600" />
               </div>
             </div>
           </CardContent>
@@ -358,7 +396,7 @@ export default function ResponsePlansPage() {
               <div>
                 <p className="text-sm text-neutral-500">Completed</p>
                 <p className="text-2xl font-semibold mt-1">
-                  {activities?.filter(a => a.status === "completed").length || 0}
+                  {plans?.filter(p => p.status === "completed").length || 0}
                 </p>
               </div>
               <div className="p-2 rounded-full bg-green-100">
@@ -373,45 +411,47 @@ export default function ResponsePlansPage() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader className="p-6 pb-2">
-              <CardTitle>Response Activities</CardTitle>
+              <CardTitle>Response Plans</CardTitle>
               <CardDescription>
-                Manage and track intervention activities
+                Manage and coordinate response strategies
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
-              {isLoadingActivities ? (
+              {isLoadingPlans ? (
                 <div className="text-center py-8">
                   <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
-                  <p className="text-neutral-500">Loading activities...</p>
+                  <p className="text-neutral-500">Loading response plans...</p>
                 </div>
-              ) : activitiesError ? (
+              ) : plansError ? (
                 <div className="text-center py-8 text-red-500">
                   <AlertCircle className="h-8 w-8 mx-auto mb-4" />
-                  <p>Failed to load activities. Please try again.</p>
+                  <p>Failed to load response plans. Please try again.</p>
                 </div>
-              ) : filteredActivities && filteredActivities.length > 0 ? (
+              ) : filteredPlans && filteredPlans.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Activity</TableHead>
-                      <TableHead>Team</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Region/Location</TableHead>
+                      <TableHead>Type</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Created</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredActivities.map((activity) => (
-                      <TableRow key={activity.id}>
-                        <TableCell className="font-medium">{activity.title}</TableCell>
-                        <TableCell>{activity.assignedTeam || "Unassigned"}</TableCell>
-                        <TableCell>{getStatusBadge(activity.status)}</TableCell>
-                        <TableCell>{formatDate(activity.createdAt)}</TableCell>
+                    {filteredPlans.map((plan) => (
+                      <TableRow key={plan.id}>
+                        <TableCell className="font-medium">{plan.title}</TableCell>
+                        <TableCell>{plan.region}{plan.location ? ` / ${plan.location}` : ''}</TableCell>
+                        <TableCell>{getResponseTypeBadge(plan.responseType)}</TableCell>
+                        <TableCell>{getStatusBadge(plan.status)}</TableCell>
+                        <TableCell>{formatDate(plan.createdAt)}</TableCell>
                         <TableCell className="text-right">
                           <Button 
                             variant="ghost" 
                             size="sm" 
-                            onClick={() => handleViewActivity(activity)}
+                            onClick={() => handleViewPlan(plan)}
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
@@ -422,10 +462,10 @@ export default function ResponsePlansPage() {
                 </Table>
               ) : (
                 <div className="text-center py-8">
-                  <ClipboardCheck className="h-8 w-8 mx-auto mb-4 text-neutral-400" />
-                  <p className="text-neutral-500">No activities found</p>
+                  <FileBarChart2 className="h-8 w-8 mx-auto mb-4 text-neutral-400" />
+                  <p className="text-neutral-500">No response plans found</p>
                   <p className="text-neutral-400 text-sm mt-1">
-                    {searchQuery ? "Try adjusting your search or filters" : "Create response activities to start tracking interventions"}
+                    {searchQuery ? "Try adjusting your search or filters" : "Create response plans to coordinate interventions"}
                   </p>
                 </div>
               )}
@@ -436,115 +476,72 @@ export default function ResponsePlansPage() {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Response Progress</CardTitle>
-              <CardDescription>Overall activity completion status</CardDescription>
+              <CardTitle>Response Types</CardTitle>
+              <CardDescription>Distribution by response category</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-6">
-                <div>
-                  <div className="flex justify-between mb-2 text-sm">
-                    <span>Overall Progress</span>
-                    <span className="font-medium">{calculateProgress()}%</span>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
+                      <span className="text-sm">Emergency</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {plans?.filter(p => p.responseType === "emergency").length || 0}
+                    </span>
                   </div>
-                  <Progress value={calculateProgress()} className="h-2" />
-                </div>
-                
-                <div className="space-y-4">
-                  {teams?.slice(0, 3).map((team) => (
-                    <div key={team.id}>
-                      <div className="flex justify-between mb-1 text-sm">
-                        <span>{team.name}</span>
-                        <span className="font-medium">
-                          {team.status === "active" ? "Active" : "Inactive"}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-3 h-3 rounded-full ${team.status === "active" ? "bg-green-500" : "bg-neutral-300"}`}></div>
-                        <span className="text-xs text-neutral-500">{team.location || "No location"}</span>
-                      </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
+                      <span className="text-sm">Preventive</span>
                     </div>
-                  ))}
+                    <span className="text-sm font-medium">
+                      {plans?.filter(p => p.responseType === "preventive").length || 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <div className="w-3 h-3 rounded-full bg-indigo-500 mr-2"></div>
+                      <span className="text-sm">Recovery</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {plans?.filter(p => p.responseType === "recovery").length || 0}
+                    </span>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-            <CardFooter>
-              <Button variant="outline" className="w-full">
-                <Users className="h-4 w-4 mr-2" />
-                Manage Response Teams
-              </Button>
-            </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common response protocols</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
-                  <Truck className="h-4 w-4 mr-2" />
-                  Deploy Emergency Supplies
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <MessageSquare className="h-4 w-4 mr-2" />
-                  Initiate Community Dialogue
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <PhoneCall className="h-4 w-4 mr-2" />
-                  Alert Security Forces
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <CalendarClock className="h-4 w-4 mr-2" />
-                  Schedule Security Assessment
-                </Button>
               </div>
             </CardContent>
           </Card>
           
           <Card>
             <CardHeader>
-              <CardTitle>Upcoming Activities</CardTitle>
-              <CardDescription>Scheduled for the next 7 days</CardDescription>
+              <CardTitle>Regional Coverage</CardTitle>
+              <CardDescription>Plans by Nigerian region</CardDescription>
             </CardHeader>
             <CardContent>
-              {activities?.filter(a => a.status === "pending").length === 0 ? (
-                <div className="text-center py-4">
-                  <Calendar className="h-6 w-6 mx-auto mb-2 text-neutral-400" />
-                  <p className="text-sm text-neutral-500">No upcoming activities</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {activities?.filter(a => a.status === "pending").slice(0, 3).map((activity) => (
-                    <div key={activity.id} className="border border-neutral-200 rounded-md p-3">
-                      <h3 className="font-medium text-sm">{activity.title}</h3>
-                      <p className="text-xs text-neutral-500 mt-1">
-                        {activity.assignedTeam || "Unassigned"}
-                      </p>
-                      <div className="flex justify-between items-center mt-2">
-                        <Badge variant="outline" className="text-xs">
-                          Pending
-                        </Badge>
-                        <Button variant="ghost" size="sm" className="h-6 text-xs" onClick={() => handleViewActivity(activity)}>
-                          Details
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="space-y-4">
+                {['North Central', 'North East', 'North West', 'South East', 'South South', 'South West'].map((region) => (
+                  <div key={region} className="flex items-center justify-between">
+                    <span className="text-sm">{region}</span>
+                    <span className="text-sm font-medium">
+                      {plans?.filter(p => p.region === region).length || 0}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
         </div>
       </div>
       
-      {/* Create Activity Dialog */}
+      {/* Create Plan Dialog */}
       <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Create Response Activity</DialogTitle>
+            <DialogTitle>Create Response Plan</DialogTitle>
             <DialogDescription>
-              Define a new intervention or response action
+              Create a new response plan to coordinate crisis intervention activities.
             </DialogDescription>
           </DialogHeader>
           
@@ -555,9 +552,9 @@ export default function ResponsePlansPage() {
                 name="title"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Activity Title</FormLabel>
+                    <FormLabel>Title</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter activity title" {...field} />
+                      <Input placeholder="Enter response plan title" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -572,8 +569,8 @@ export default function ResponsePlansPage() {
                     <FormLabel>Description</FormLabel>
                     <FormControl>
                       <Textarea 
-                        placeholder="Provide a detailed description of the activity" 
-                        className="min-h-20"
+                        placeholder="Describe the response plan objectives and scope" 
+                        className="min-h-[100px]"
                         {...field} 
                       />
                     </FormControl>
@@ -582,30 +579,31 @@ export default function ResponsePlansPage() {
                 )}
               />
               
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="assignedTeam"
+                  name="region"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Assigned Team</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
+                      <FormLabel>Region</FormLabel>
+                      <FormControl>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
                           <SelectTrigger>
-                            <SelectValue placeholder="Select a team" />
+                            <SelectValue placeholder="Select region" />
                           </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {teams?.map((team) => (
-                            <SelectItem key={team.id} value={team.name}>
-                              {team.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                          <SelectContent>
+                            <SelectItem value="North Central">North Central</SelectItem>
+                            <SelectItem value="North East">North East</SelectItem>
+                            <SelectItem value="North West">North West</SelectItem>
+                            <SelectItem value="South East">South East</SelectItem>
+                            <SelectItem value="South South">South South</SelectItem>
+                            <SelectItem value="South West">South West</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -613,75 +611,137 @@ export default function ResponsePlansPage() {
                 
                 <FormField
                   control={form.control}
-                  name="status"
+                  name="location"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Status</FormLabel>
-                      <Select 
-                        onValueChange={field.onChange} 
-                        defaultValue={field.value}
-                      >
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_progress">In Progress</SelectItem>
-                          <SelectItem value="completed">Completed</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      <FormLabel>Specific Location</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter city, town, or area" {...field} />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
               
-              <FormItem>
-                <FormLabel>Related Alert (Optional)</FormLabel>
-                <Select 
-                  onValueChange={(value) => setSelectedAlertId(Number(value))}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Link to an alert" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="">None</SelectItem>
-                    {alerts?.map((alert) => (
-                      <SelectItem key={alert.id} value={String(alert.id)}>
-                        {alert.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </FormItem>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField
+                  control={form.control}
+                  name="status"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Status</FormLabel>
+                      <FormControl>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select status" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="draft">Draft</SelectItem>
+                            <SelectItem value="active">Active</SelectItem>
+                            <SelectItem value="completed">Completed</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="responseType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Response Type</FormLabel>
+                      <FormControl>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="emergency">Emergency</SelectItem>
+                            <SelectItem value="preventive">Preventive</SelectItem>
+                            <SelectItem value="recovery">Recovery</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <FormField
+                control={form.control}
+                name="selectedTeams"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Assigned Teams</FormLabel>
+                    <FormControl>
+                      <Select 
+                        onValueChange={(value) => {
+                          const currentValues = field.value || [];
+                          if (!currentValues.includes(value)) {
+                            field.onChange([...currentValues, value]);
+                          }
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select teams" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {teams?.map(team => (
+                            <SelectItem key={team.id} value={team.name}>
+                              {team.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {field.value?.map(team => (
+                        <Badge 
+                          key={team}
+                          variant="outline"
+                          className="cursor-pointer"
+                          onClick={() => {
+                            field.onChange(field.value?.filter(t => t !== team));
+                          }}
+                        >
+                          {team} <XCircle className="h-3 w-3 ml-1" />
+                        </Badge>
+                      ))}
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               
               <DialogFooter>
-                <Button
-                  type="button"
-                  variant="outline"
+                <Button 
+                  type="button" 
+                  variant="outline" 
                   onClick={() => setCreateDialogOpen(false)}
                 >
                   Cancel
                 </Button>
                 <Button 
-                  type="submit"
-                  disabled={createActivityMutation.isPending}
+                  type="submit" 
+                  disabled={createPlanMutation.isPending}
                 >
-                  {createActivityMutation.isPending ? (
+                  {createPlanMutation.isPending ? (
                     <>
-                      <div className="animate-spin h-4 w-4 mr-2 border-2 border-white border-t-transparent rounded-full"></div>
+                      <span className="animate-spin mr-2">⊝</span>
                       Creating...
                     </>
-                  ) : (
-                    <>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Activity
-                    </>
-                  )}
+                  ) : "Create Plan"}
                 </Button>
               </DialogFooter>
             </form>
@@ -689,102 +749,94 @@ export default function ResponsePlansPage() {
         </DialogContent>
       </Dialog>
       
-      {/* Activity Details Dialog */}
-      <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-        <DialogContent className="sm:max-w-[600px]">
-          <DialogHeader>
-            <DialogTitle>Activity Details</DialogTitle>
-            <DialogDescription>
-              View and manage response activity
-            </DialogDescription>
-          </DialogHeader>
-          
-          {selectedActivity && (
-            <div className="space-y-6 py-4">
-              <div className="flex justify-between items-start">
-                <h2 className="text-xl font-semibold">{selectedActivity.title}</h2>
-                {getStatusBadge(selectedActivity.status)}
+      {/* View Plan Details Dialog */}
+      {selectedPlan && (
+        <Dialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
+          <DialogContent className="sm:max-w-[600px]">
+            <DialogHeader>
+              <DialogTitle>{selectedPlan.title}</DialogTitle>
+              <DialogDescription>
+                Response Plan Details
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {getStatusBadge(selectedPlan.status)}
+                {getResponseTypeBadge(selectedPlan.responseType)}
+                <Badge variant="outline">{selectedPlan.region}</Badge>
+                {selectedPlan.location && <Badge variant="outline">{selectedPlan.location}</Badge>}
               </div>
               
-              <p className="text-neutral-700">{selectedActivity.description}</p>
+              <div>
+                <h4 className="text-sm font-medium mb-1">Description</h4>
+                <p className="text-sm text-neutral-600">{selectedPlan.description}</p>
+              </div>
               
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <p className="font-medium text-neutral-500">Assigned Team</p>
-                  <p>{selectedActivity.assignedTeam || "Unassigned"}</p>
+                  <h4 className="text-sm font-medium mb-1">Created</h4>
+                  <p className="text-sm text-neutral-600">{formatDate(selectedPlan.createdAt)}</p>
                 </div>
                 <div>
-                  <p className="font-medium text-neutral-500">Created</p>
-                  <p>{formatDate(selectedActivity.createdAt)}</p>
-                </div>
-                <div>
-                  <p className="font-medium text-neutral-500">Completed</p>
-                  <p>{selectedActivity.completedAt ? formatDate(selectedActivity.completedAt) : "Not completed"}</p>
-                </div>
-                <div>
-                  <p className="font-medium text-neutral-500">Related Alert</p>
-                  <p>{selectedActivity.alertId ? `#${selectedActivity.alertId}` : "None"}</p>
+                  <h4 className="text-sm font-medium mb-1">Last Updated</h4>
+                  <p className="text-sm text-neutral-600">{formatDate(selectedPlan.updatedAt)}</p>
                 </div>
               </div>
               
-              <div className="p-3 bg-neutral-50 rounded-md border border-neutral-200">
-                <h3 className="font-medium mb-2">Status Update</h3>
-                <div className="flex gap-2 flex-wrap">
+              <div>
+                <h4 className="text-sm font-medium mb-1">Assigned Teams</h4>
+                <div className="flex flex-wrap gap-2">
+                  {selectedPlan.assignedTeams ? 
+                    selectedPlan.assignedTeams.split(',').map(team => (
+                      <Badge key={team} variant="secondary">{team}</Badge>
+                    )) : 
+                    <span className="text-sm text-neutral-500">No teams assigned</span>
+                  }
+                </div>
+              </div>
+              
+              <div>
+                <h4 className="text-sm font-medium mb-1">Change Status</h4>
+                <div className="flex gap-2">
                   <Button 
-                    variant={selectedActivity.status === "pending" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleUpdateStatus("pending")}
-                    disabled={updateActivityStatusMutation.isPending}
+                    size="sm" 
+                    variant={selectedPlan.status === "draft" ? "default" : "outline"}
+                    onClick={() => handleUpdateStatus("draft")}
+                    disabled={updatePlanStatusMutation.isPending}
                   >
-                    <Clock className="h-4 w-4 mr-2" />
-                    Pending
+                    Draft
                   </Button>
                   <Button 
-                    variant={selectedActivity.status === "in_progress" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleUpdateStatus("in_progress")}
-                    disabled={updateActivityStatusMutation.isPending}
+                    size="sm" 
+                    variant={selectedPlan.status === "active" ? "default" : "outline"}
+                    onClick={() => handleUpdateStatus("active")}
+                    disabled={updatePlanStatusMutation.isPending}
                   >
-                    <Clock className="h-4 w-4 mr-2" />
-                    In Progress
+                    Activate
                   </Button>
                   <Button 
-                    variant={selectedActivity.status === "completed" ? "default" : "outline"}
-                    size="sm"
+                    size="sm" 
+                    variant={selectedPlan.status === "completed" ? "default" : "outline"}
                     onClick={() => handleUpdateStatus("completed")}
-                    disabled={updateActivityStatusMutation.isPending}
+                    disabled={updatePlanStatusMutation.isPending}
                   >
-                    <CheckCircle className="h-4 w-4 mr-2" />
-                    Completed
+                    Complete
                   </Button>
                 </div>
               </div>
             </div>
-          )}
-          
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setDetailsDialogOpen(false)}
-            >
-              Close
-            </Button>
-            <Button
-              variant="default"
-              onClick={() => {
-                // Here you would navigate to the edit page or open edit dialog
-                toast({
-                  title: "Edit functionality",
-                  description: "Edit functionality would be implemented here.",
-                });
-              }}
-            >
-              <FileText className="h-4 w-4 mr-2" />
-              Edit Details
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            
+            <DialogFooter>
+              <Button
+                onClick={() => setDetailsDialogOpen(false)}
+              >
+                Close
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </MainLayout>
   );
 }
