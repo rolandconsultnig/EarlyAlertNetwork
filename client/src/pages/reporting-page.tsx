@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import PageTemplate from "@/components/modules/PageTemplate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, BarChart3, Award, Calendar, FilePdf, FileSpreadsheet } from "lucide-react";
+import { FileText, BarChart3, Award, Calendar, FileIcon, Table2 } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -97,9 +97,9 @@ export default function ReportingPage() {
   const getFormatIcon = (format: string) => {
     switch(format) {
       case "PDF":
-        return <FilePdf className="h-4 w-4 text-red-600" />;
+        return <FileIcon className="h-4 w-4 text-red-600" />;
       case "Excel":
-        return <FileSpreadsheet className="h-4 w-4 text-green-600" />;
+        return <Table2 className="h-4 w-4 text-green-600" />;
       case "Dashboard":
         return <BarChart3 className="h-4 w-4 text-blue-600" />;
       default:
@@ -193,7 +193,7 @@ export default function ReportingPage() {
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <FilePdf className="h-5 w-5 text-red-600 mr-3" />
+                      <FileIcon className="h-5 w-5 text-red-600 mr-3" />
                       <div>
                         <h4 className="text-sm font-medium">Monthly Security Overview</h4>
                         <p className="text-xs text-muted-foreground">Comprehensive monthly security analysis</p>
@@ -204,7 +204,7 @@ export default function ReportingPage() {
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <FileSpreadsheet className="h-5 w-5 text-green-600 mr-3" />
+                      <Table2 className="h-5 w-5 text-green-600 mr-3" />
                       <div>
                         <h4 className="text-sm font-medium">Incident Statistics</h4>
                         <p className="text-xs text-muted-foreground">Detailed incident data export</p>
@@ -215,7 +215,7 @@ export default function ReportingPage() {
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center">
-                      <FilePdf className="h-5 w-5 text-red-600 mr-3" />
+                      <FileIcon className="h-5 w-5 text-red-600 mr-3" />
                       <div>
                         <h4 className="text-sm font-medium">Regional Risk Assessment</h4>
                         <p className="text-xs text-muted-foreground">Risk analysis by Nigerian region</p>
