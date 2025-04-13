@@ -68,13 +68,13 @@ export class AnalysisService {
       
       // Determine impact
       let impact = 'moderate';
-      if (activeIncidents.some(i => i.impactedPopulation > 1000) || 
+      if (activeIncidents.some(i => (i.impactedPopulation != null && i.impactedPopulation > 1000)) || 
           activeIncidents.filter(i => i.severity === 'high').length >= 2) {
         impact = 'severe';
-      } else if (activeIncidents.some(i => i.impactedPopulation > 500) || 
+      } else if (activeIncidents.some(i => (i.impactedPopulation != null && i.impactedPopulation > 500)) || 
                 activeIncidents.some(i => i.severity === 'medium')) {
         impact = 'significant';
-      } else if (activeIncidents.every(i => i.impactedPopulation < 100) && 
+      } else if (activeIncidents.every(i => (i.impactedPopulation == null || i.impactedPopulation < 100)) && 
                 activeIncidents.every(i => i.severity === 'low')) {
         impact = 'minor';
       }
@@ -327,8 +327,8 @@ export class AnalysisService {
         status: 'active',
         region: riskAnalysis.region,
         location: riskAnalysis.location,
-        incident_id: relatedIncidents.length > 0 ? relatedIncidents[0].id : null,
-        escalation_level: escalationLevel,
+        incidentId: relatedIncidents.length > 0 ? relatedIncidents[0].id : null,
+        escalationLevel: escalationLevel,
         channels: ['email', 'app'],
       };
       

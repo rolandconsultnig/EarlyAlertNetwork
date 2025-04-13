@@ -382,7 +382,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Save the generated analysis to database
-      const savedAnalysis = await storage.createRiskAnalysis(result.data);
+      // Ensure data exists and convert field names if needed to match schema
+      if (!result.data) {
+        return res.status(500).json({ error: "Analysis data generation failed" });
+      }
+      
+      const analysisData = {
+        title: result.data.title,
+        description: result.data.description,
+        location: result.data.location,
+        severity: result.data.severity,
+        likelihood: result.data.likelihood,
+        impact: result.data.impact,
+        analysis: result.data.analysis,
+        createdBy: result.data.createdBy,
+        recommendations: result.data.recommendations,
+        timeframe: result.data.timeframe,
+        region: result.data.region,
+      };
+      
+      const savedAnalysis = await storage.createRiskAnalysis(analysisData);
       
       res.status(201).json(savedAnalysis);
     } catch (error) {
@@ -404,7 +423,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // Save the generated alert to database
-      const savedAlert = await storage.createAlert(result.data);
+      // Ensure data exists and convert field names if needed to match schema
+      if (!result.data) {
+        return res.status(500).json({ error: "Alert data generation failed" });
+      }
+      
+      const alertData = {
+        title: result.data.title,
+        description: result.data.description,
+        location: result.data.location,
+        severity: result.data.severity,
+        status: result.data.status,
+        region: result.data.region,
+        incidentId: result.data.incidentId,
+        escalationLevel: result.data.escalationLevel,
+        channels: result.data.channels
+      };
+      
+      const savedAlert = await storage.createAlert(alertData);
       
       // Notify all connected WebSocket clients about the new alert
       wss.clients.forEach((client) => {
