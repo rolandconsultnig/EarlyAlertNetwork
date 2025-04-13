@@ -1,4 +1,4 @@
-import { users, dataSources, incidents, alerts, responseActivities, responseTeams, riskIndicators } from "@shared/schema";
+import { users, dataSources, incidents, alerts, responseActivities, responseTeams, riskIndicators, riskAnalyses } from "@shared/schema";
 import type { 
   User, InsertUser, 
   DataSource, InsertDataSource, 
@@ -6,7 +6,8 @@ import type {
   Alert, InsertAlert, 
   ResponseActivity, InsertResponseActivity, 
   ResponseTeam, InsertResponseTeam, 
-  RiskIndicator, InsertRiskIndicator 
+  RiskIndicator, InsertRiskIndicator,
+  RiskAnalysis, InsertRiskAnalysis
 } from "@shared/schema";
 import session from "express-session";
 import { db, pool } from "./db";
@@ -59,6 +60,12 @@ export interface IStorage {
   createRiskIndicator(indicator: InsertRiskIndicator): Promise<RiskIndicator>;
   updateRiskIndicator(id: number, indicator: Partial<RiskIndicator>): Promise<RiskIndicator>;
   getRiskIndicatorsByTimeRange(startDate: Date, endDate: Date): Promise<RiskIndicator[]>;
+  
+  // Risk analysis methods
+  getRiskAnalyses(): Promise<RiskAnalysis[]>;
+  getRiskAnalysis(id: number): Promise<RiskAnalysis | undefined>;
+  createRiskAnalysis(analysis: InsertRiskAnalysis): Promise<RiskAnalysis>;
+  updateRiskAnalysis(id: number, analysis: Partial<RiskAnalysis>): Promise<RiskAnalysis>;
   
   // Session store
   sessionStore: any;
@@ -300,6 +307,35 @@ export class DatabaseStorage implements IStorage {
         )
       )
       .orderBy(desc(riskIndicators.timestamp));
+  }
+
+  // Risk analysis methods
+  async getRiskAnalyses(): Promise<RiskAnalysis[]> {
+    return db.select().from(riskAnalyses).orderBy(desc(riskAnalyses.createdAt));
+  }
+
+  async getRiskAnalysis(id: number): Promise<RiskAnalysis | undefined> {
+    const [analysis] = await db.select().from(riskAnalyses).where(eq(riskAnalyses.id, id));
+    return analysis;
+  }
+
+  async createRiskAnalysis(analysis: InsertRiskAnalysis): Promise<RiskAnalysis> {
+    const [newAnalysis] = await db.insert(riskAnalyses).values(analysis).returning();
+    return newAnalysis;
+  }
+
+  async updateRiskAnalysis(id: number, analysisData: Partial<RiskAnalysis>): Promise<RiskAnalysis> {
+    const [updatedAnalysis] = await db
+      .update(riskAnalyses)
+      .set(analysisData)
+      .where(eq(riskAnalyses.id, id))
+      .returning();
+    
+    if (!updatedAnalysis) {
+      throw new Error(`Risk analysis with id ${id} not found`);
+    }
+    
+    return updatedAnalysis;
   }
 }
 

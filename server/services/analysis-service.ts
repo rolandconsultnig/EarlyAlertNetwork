@@ -6,7 +6,7 @@ import {
   alerts,
   insertRiskAnalysisSchema
 } from "@shared/schema";
-import { and, eq, gte, lte, desc } from "drizzle-orm";
+import { and, eq, gte, lte, desc, ne } from "drizzle-orm";
 
 /**
  * Analysis Service
@@ -109,7 +109,7 @@ export class AnalysisService {
         impact,
         region,
         location: location || region,
-        created_by: 1, // Assuming admin user
+        createdBy: 1, // Assuming admin user
         recommendations,
         timeframe,
       };
@@ -197,7 +197,7 @@ export class AnalysisService {
         analysis += `Violent incidents in ${violentIncidents.map(i => i.location).join(', ')} represent significant concern. `;
       }
       
-      const totalAffected = incidents.reduce((sum, incident) => sum + (incident.impacted_population || 0), 0);
+      const totalAffected = incidents.reduce((sum, incident) => sum + (incident.impactedPopulation || 0), 0);
       if (totalAffected > 0) {
         analysis += `Approximately ${totalAffected} individuals have been affected by current incidents. `;
       }
@@ -357,7 +357,7 @@ export class AnalysisService {
         .where(and(
           eq(incidents.region, incident.region),
           incident.state ? eq(incidents.state, incident.state) : undefined,
-          incident.id !== incidentId
+          ne(incidents.id, incidentId)
         ))
         .limit(5);
       
@@ -396,8 +396,8 @@ export class AnalysisService {
     
     summary += `This ${incident.severity} severity incident is currently ${incident.status}. `;
     
-    if (incident.impacted_population) {
-      summary += `Approximately ${incident.impacted_population} individuals have been affected. `;
+    if (incident.impactedPopulation) {
+      summary += `Approximately ${incident.impactedPopulation} individuals have been affected. `;
     }
     
     if (incident.category) {
