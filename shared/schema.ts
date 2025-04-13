@@ -8,7 +8,14 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
-  role: text("role").notNull().default("user"),
+  role: text("role").notNull().default("user"), // 'admin', 'analyst', 'responder', 'manager', 'user'
+  permissions: jsonb("permissions").$type<string[]>().default(['view']),
+  department: text("department"),
+  position: text("position"),
+  phoneNumber: text("phone_number"),
+  email: text("email"),
+  active: boolean("active").default(true),
+  lastLogin: timestamp("last_login"),
   avatar: text("avatar"),
 });
 
@@ -17,6 +24,12 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   fullName: true,
   role: true,
+  permissions: true,
+  department: true,
+  position: true,
+  phoneNumber: true,
+  email: true,
+  active: true,
   avatar: true,
 });
 

@@ -80,12 +80,19 @@ const alertFormSchema = insertAlertSchema
     title: true,
     description: true,
     severity: true,
+    channels: true,
   })
   .extend({
     severity: z.enum(["low", "medium", "high"], {
       required_error: "Please select a severity level",
     }),
-    notificationChannels: z.array(z.string()).optional(),
+    notificationChannels: z.array(z.string()),
+    recipients: z.object({
+      emails: z.array(z.string().email()).optional(),
+      phoneNumbers: z.array(z.string()).optional(),
+      userIds: z.array(z.number()).optional(),
+      roles: z.array(z.string()).optional(),
+    }).optional(),
   });
 
 type AlertFormValues = z.infer<typeof alertFormSchema>;
