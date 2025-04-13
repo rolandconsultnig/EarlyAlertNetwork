@@ -2,7 +2,6 @@ import { useState } from "react";
 import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { 
-  Radar, 
   LayoutDashboard, 
   TextCursorInput, 
   TrendingUp, 
@@ -10,10 +9,15 @@ import {
   ClipboardCheck, 
   Users, 
   Settings, 
-  LogOut 
+  LogOut,
+  X,
+  ExternalLink
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+
+// Import the IPCR logo
+import ipcr_logo from "@assets/Institute-For-Peace-And-Conflict-Resolution.jpg";
 
 interface SidebarProps {
   isMobileMenuOpen: boolean;
@@ -27,13 +31,13 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
   const isActive = (path: string) => location === path;
 
   const navItems = [
-    { path: "/", label: "Dashboard", icon: <LayoutDashboard className="mr-3 text-xl" /> },
-    { path: "/data-collection", label: "Data Collection", icon: <TextCursorInput className="mr-3 text-xl" /> },
-    { path: "/analysis", label: "Analysis", icon: <TrendingUp className="mr-3 text-xl" /> },
-    { path: "/alerts", label: "Alerts", icon: <Bell className="mr-3 text-xl" /> },
-    { path: "/response-plans", label: "Response Plans", icon: <ClipboardCheck className="mr-3 text-xl" /> },
-    { path: "/user-management", label: "User Management", icon: <Users className="mr-3 text-xl" /> },
-    { path: "/settings", label: "Settings", icon: <Settings className="mr-3 text-xl" /> },
+    { path: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="mr-3 h-5 w-5" /> },
+    { path: "/data-collection", label: "Data Collection", icon: <TextCursorInput className="mr-3 h-5 w-5" /> },
+    { path: "/analysis", label: "Analysis", icon: <TrendingUp className="mr-3 h-5 w-5" /> },
+    { path: "/alerts", label: "Alerts", icon: <Bell className="mr-3 h-5 w-5" /> },
+    { path: "/response-plans", label: "Response Plans", icon: <ClipboardCheck className="mr-3 h-5 w-5" /> },
+    { path: "/user-management", label: "User Management", icon: <Users className="mr-3 h-5 w-5" /> },
+    { path: "/settings", label: "Settings", icon: <Settings className="mr-3 h-5 w-5" /> },
   ];
 
   const handleLogout = () => {
@@ -46,28 +50,42 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
 
   return (
     <aside className={sidebarClasses}>
-      <div className="flex flex-col w-64 border-r border-neutral-200 bg-white h-full">
-        <div className="flex items-center h-16 px-4 border-b border-neutral-200">
-          <div className="flex items-center">
-            <Radar className="text-primary text-2xl mr-2" />
-            <span className="font-semibold text-lg">EWERS</span>
+      <div className="flex flex-col w-64 border-r border-blue-100 bg-white h-full">
+        {/* Logo and Header */}
+        <div className="flex flex-col items-center py-6 px-4 border-b border-blue-100 bg-gradient-to-r from-blue-50 to-white">
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center">
+              <img src={ipcr_logo} alt="IPCR Logo" className="h-10 w-10" />
+              <span className="font-bold text-blue-600 text-lg ml-2">IPCR</span>
+            </div>
+            <button 
+              className="md:hidden text-blue-500 hover:text-blue-700" 
+              onClick={closeMobileMenu}
+            >
+              <X className="h-5 w-5" />
+            </button>
           </div>
-          <button 
-            className="md:hidden ml-auto text-neutral-500 hover:text-neutral-700" 
-            onClick={closeMobileMenu}
-          >
-            &times;
-          </button>
+          <div className="mt-2 text-center">
+            <h2 className="font-semibold text-blue-800">EWERS</h2>
+            <p className="text-xs text-blue-600">Early Warning & Early Response</p>
+          </div>
         </div>
+
+        {/* Navigation */}
         <div className="overflow-y-auto flex-grow">
+          <div className="px-3 pt-4">
+            <p className="px-4 text-xs font-semibold text-blue-900 uppercase tracking-wider">
+              Main Navigation
+            </p>
+          </div>
           <nav className="mt-2 px-2 space-y-1">
             {navItems.map((item) => (
               <Link key={item.path} href={item.path} onClick={closeMobileMenu}>
                 <a 
                   className={`flex items-center pl-4 py-3 pr-4 font-medium rounded-md ${
                     isActive(item.path)
-                      ? "border-l-4 border-primary bg-primary/5 text-primary"
-                      : "text-neutral-700 hover:bg-neutral-100"
+                      ? "bg-blue-50 text-blue-600 border-l-4 border-blue-500"
+                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                   }`}
                 >
                   {item.icon}
@@ -76,18 +94,37 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
               </Link>
             ))}
           </nav>
+
+          <div className="px-3 pt-6">
+            <p className="px-4 text-xs font-semibold text-blue-900 uppercase tracking-wider">
+              External Links
+            </p>
+            <div className="mt-2 px-2 space-y-1">
+              <a 
+                href="https://ipcr.gov.ng" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center pl-4 py-3 pr-4 font-medium rounded-md text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+              >
+                <ExternalLink className="mr-3 h-5 w-5" />
+                IPCR Website
+              </a>
+            </div>
+          </div>
         </div>
-        <div className="flex-shrink-0 border-t border-neutral-200 p-4">
+
+        {/* User profile */}
+        <div className="flex-shrink-0 border-t border-blue-100 p-4 bg-gradient-to-r from-blue-50 to-white">
           <div className="flex items-center">
             <Avatar>
               <AvatarImage src="" />
-              <AvatarFallback className="bg-primary text-white">
+              <AvatarFallback className="bg-blue-600 text-white">
                 {user?.fullName?.charAt(0) || user?.username?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
             <div className="ml-3">
-              <p className="text-sm font-medium text-neutral-800">{user?.fullName || user?.username}</p>
-              <p className="text-xs font-medium text-neutral-500">{user?.role || "User"}</p>
+              <p className="text-sm font-medium text-gray-800">{user?.fullName || user?.username}</p>
+              <p className="text-xs font-medium text-blue-600">{user?.role || "Official"}</p>
             </div>
             <div className="ml-auto">
               <Button 
@@ -95,8 +132,9 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
                 size="icon" 
                 onClick={handleLogout}
                 disabled={logoutMutation.isPending}
+                className="text-blue-600 hover:text-blue-800 hover:bg-blue-50"
               >
-                <LogOut className="h-5 w-5 text-neutral-500 hover:text-neutral-700" />
+                <LogOut className="h-5 w-5" />
               </Button>
             </div>
           </div>
