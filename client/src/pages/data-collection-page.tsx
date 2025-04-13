@@ -206,8 +206,268 @@ export default function DataCollectionPage() {
     reportIncidentMutation.mutate(data);
   }
 
+  // Handle refreshing data sources
+  const handleRefresh = async () => {
+    setRefetchLoading(true);
+    await refetchSources();
+    setRefetchLoading(false);
+    
+    toast({
+      title: "Data Sources Refreshed",
+      description: "The data source list has been updated.",
+    });
+  };
+  
   return (
     <MainLayout title="Data Collection">
+      {/* Data Source Configuration Dialog */}
+      <Dialog open={configureDialogOpen} onOpenChange={setConfigureDialogOpen}>
+        <DialogContent className="sm:max-w-[600px]">
+          <DialogHeader>
+            <DialogTitle>
+              {currentSource.id && currentSource.id > 0 
+                ? "Edit Data Source" 
+                : "Add New Data Source"}
+            </DialogTitle>
+            <DialogDescription>
+              Configure external data source connection details
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...sourceForm}>
+            <form onSubmit={sourceForm.handleSubmit(onSubmitDataSource)} className="space-y-6">
+              <FormField
+                control={sourceForm.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Source Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="e.g. Nigerian News API" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormField
+                  control={sourceForm.control}
+                  name="type"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Source Type</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select source type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="news_media">News Media</SelectItem>
+                          <SelectItem value="social_media">Social Media</SelectItem>
+                          <SelectItem value="satellite">Satellite Imagery</SelectItem>
+                          <SelectItem value="government_report">Government Reports</SelectItem>
+                          <SelectItem value="ngo_report">NGO Reports</SelectItem>
+                          <SelectItem value="sensor_network">Sensor Network</SelectItem>
+                          <SelectItem value="field_report">Field Reports</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Status field without using form controller since it's not in our schema */}
+                <div className="form-item">
+                  <label className="text-sm font-medium">Status</label>
+                  <Select 
+                    onValueChange={(value) => {
+                      // We handle this manually since it's not in our form schema
+                      setCurrentSource(prev => ({
+                        ...prev,
+                        status: value
+                      }));
+                    }} 
+                    defaultValue={currentSource.status || "active"}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="degraded">Degraded</SelectItem>
+                      <SelectItem value="offline">Offline</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <FormField
+                control={sourceForm.control}
+                name="description"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Description</FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Describe the data source and what kind of data it provides" 
+                        className="min-h-20"
+                        {...field} 
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={sourceForm.control}
+                name="apiEndpoint"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>API Endpoint URL</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="https://api.example.com/v1/data" 
+                        value={field.value || ''} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      The base URL for API requests
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={sourceForm.control}
+                name="apiKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>API Key</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="password" 
+                        placeholder="Enter your API key" 
+                        value={field.value || ''} 
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        name={field.name}
+                        ref={field.ref}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Securely stored and used for authentication
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <FormField
+                  control={sourceForm.control}
+                  name="frequency"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Update Frequency</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select frequency" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="real-time">Real-time</SelectItem>
+                          <SelectItem value="hourly">Hourly</SelectItem>
+                          <SelectItem value="daily">Daily</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={sourceForm.control}
+                  name="dataFormat"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Data Format</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select format" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="json">JSON</SelectItem>
+                          <SelectItem value="xml">XML</SelectItem>
+                          <SelectItem value="csv">CSV</SelectItem>
+                          <SelectItem value="geojson">GeoJSON</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={sourceForm.control}
+                  name="region"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Region</FormLabel>
+                      <FormControl>
+                        <Input defaultValue="Nigeria" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setConfigureDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={saveDataSourceMutation.isPending}
+                >
+                  {saveDataSourceMutation.isPending ? (
+                    <>
+                      <span className="animate-spin mr-2">⊝</span>
+                      Saving...
+                    </>
+                  ) : currentSource.id && currentSource.id > 0 ? "Update" : "Create"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+      
       <div className="max-w-6xl mx-auto">
         <Tabs defaultValue="manual" className="w-full">
           <TabsList className="grid grid-cols-4 mb-8">
@@ -545,7 +805,7 @@ export default function DataCollectionPage() {
                   
                   <Button 
                     className="mt-6 w-full"
-                    onClick={() => refetchSources()}
+                    onClick={handleRefresh}
                     disabled={refetchLoading}
                   >
                     {refetchLoading ? (

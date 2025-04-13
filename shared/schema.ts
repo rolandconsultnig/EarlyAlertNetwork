@@ -52,6 +52,7 @@ export const dataSources = pgTable("data_sources", {
 export const insertDataSourceSchema = createInsertSchema(dataSources).pick({
   name: true,
   type: true,
+  description: true,
   status: true,
   apiEndpoint: true,
   apiKey: true,
