@@ -125,7 +125,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDataSource(source: InsertDataSource): Promise<DataSource> {
-    const [dataSource] = await db.insert(dataSources).values([source]).returning();
+    const [dataSource] = await db.insert(dataSources).values(source).returning();
     return dataSource;
   }
 
@@ -154,7 +154,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createIncident(incident: InsertIncident): Promise<Incident> {
-    const [newIncident] = await db.insert(incidents).values([incident]).returning();
+    const [newIncident] = await db.insert(incidents).values(incident).returning();
     return newIncident;
   }
 
@@ -191,7 +191,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createAlert(alert: InsertAlert): Promise<Alert> {
-    const [newAlert] = await db.insert(alerts).values([alert]).returning();
+    const [newAlert] = await db.insert(alerts).values(alert).returning();
     return newAlert;
   }
 
@@ -220,7 +220,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createResponseActivity(activity: InsertResponseActivity): Promise<ResponseActivity> {
-    const [newActivity] = await db.insert(responseActivities).values([activity]).returning();
+    const [newActivity] = await db.insert(responseActivities).values(activity).returning();
     return newActivity;
   }
 
@@ -249,7 +249,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createResponseTeam(team: InsertResponseTeam): Promise<ResponseTeam> {
-    const [newTeam] = await db.insert(responseTeams).values([team]).returning();
+    const [newTeam] = await db.insert(responseTeams).values(team).returning();
     return newTeam;
   }
 
@@ -278,7 +278,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRiskIndicator(indicator: InsertRiskIndicator): Promise<RiskIndicator> {
-    const [newIndicator] = await db.insert(riskIndicators).values([indicator]).returning();
+    const [newIndicator] = await db.insert(riskIndicators).values(indicator).returning();
     return newIndicator;
   }
 
@@ -320,7 +320,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRiskAnalysis(analysis: InsertRiskAnalysis): Promise<RiskAnalysis> {
-    const [newAnalysis] = await db.insert(riskAnalyses).values([analysis]).returning();
+    const [newAnalysis] = await db.insert(riskAnalyses).values(analysis).returning();
     return newAnalysis;
   }
 
