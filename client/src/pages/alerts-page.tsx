@@ -151,14 +151,22 @@ export default function AlertsPage() {
   // Create alert mutation
   const createAlertMutation = useMutation({
     mutationFn: async (data: AlertFormValues) => {
+      // Prepare the data for API submission
       const alertData = {
-        ...data,
+        title: data.title,
+        description: data.description,
+        severity: data.severity,
         status: "active",
+        region: data.region || "Nigeria",
+        location: data.location || "Nigeria",
         incidentId: selectedIncidentId,
-        // Map notification channels to the channels property expected by the API
+        // Map notification channels to channels property
         channels: data.notificationChannels,
+        // Include recipients if available
+        recipients: data.recipients,
       };
       
+      console.log("Submitting alert data:", alertData);
       const res = await apiRequest("POST", "/api/alerts", alertData);
       return await res.json();
     },
@@ -172,6 +180,7 @@ export default function AlertsPage() {
       setCreateDialogOpen(false);
     },
     onError: (error: Error) => {
+      console.error("Alert creation error:", error);
       toast({
         title: "Failed to create alert",
         description: error.message,
@@ -780,6 +789,32 @@ export default function AlertsPage() {
           
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              {/* Incident Selection */}
+              <div className="mb-4">
+                <Label htmlFor="incident-select">Associated Incident</Label>
+                <Select
+                  value={selectedIncidentId?.toString() || ""}
+                  onValueChange={(value) => {
+                    setSelectedIncidentId(value ? parseInt(value) : null);
+                  }}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Select an incident" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None (General Alert)</SelectItem>
+                    {incidents?.map((incident) => (
+                      <SelectItem key={incident.id} value={incident.id.toString()}>
+                        {incident.title}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Optionally link this alert to a specific incident
+                </p>
+              </div>
+              
               <FormField
                 control={form.control}
                 name="title"
@@ -838,27 +873,6 @@ export default function AlertsPage() {
                     </FormItem>
                   )}
                 />
-                
-                <FormItem>
-                  <FormLabel>Related Incident (Optional)</FormLabel>
-                  <Select 
-                    onValueChange={(value) => setSelectedIncidentId(Number(value))}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Link to an incident" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="">None</SelectItem>
-                      {incidents?.map((incident) => (
-                        <SelectItem key={incident.id} value={String(incident.id)}>
-                          {incident.title}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormItem>
               </div>
               
               <div>
