@@ -12,6 +12,7 @@ import {
   insertResponseTeamSchema,
   insertRiskIndicatorSchema,
   insertRiskAnalysisSchema,
+  insertResponsePlanSchema,
   riskAnalyses
 } from "@shared/schema";
 import { analysisService } from "./services/analysis-service";
@@ -299,6 +300,63 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedTeam);
     } catch (error) {
       res.status(500).json({ error: "Failed to update response team" });
+    }
+  });
+  
+  // Response Plans API
+  app.get("/api/response-plans", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    const plans = await storage.getResponsePlans();
+    res.json(plans);
+  });
+
+  app.get("/api/response-plans/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const plan = await storage.getResponsePlan(id);
+      
+      if (!plan) {
+        return res.status(404).json({ error: "Response plan not found" });
+      }
+      
+      res.json(plan);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch response plan" });
+    }
+  });
+
+  app.post("/api/response-plans", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const validatedData = insertResponsePlanSchema.parse(req.body);
+      const newPlan = await storage.createResponsePlan(validatedData);
+      res.status(201).json(newPlan);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create response plan" });
+    }
+  });
+
+  app.put("/api/response-plans/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const plan = await storage.getResponsePlan(id);
+      
+      if (!plan) {
+        return res.status(404).json({ error: "Response plan not found" });
+      }
+      
+      const updatedPlan = await storage.updateResponsePlan(id, req.body);
+      res.json(updatedPlan);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to update response plan" });
     }
   });
 

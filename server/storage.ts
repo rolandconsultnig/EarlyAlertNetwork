@@ -1,4 +1,4 @@
-import { users, dataSources, incidents, alerts, responseActivities, responseTeams, riskIndicators, riskAnalyses } from "@shared/schema";
+import { users, dataSources, incidents, alerts, responseActivities, responseTeams, riskIndicators, riskAnalyses, responsePlans } from "@shared/schema";
 import type { 
   User, InsertUser, 
   DataSource, InsertDataSource, 
@@ -7,7 +7,8 @@ import type {
   ResponseActivity, InsertResponseActivity, 
   ResponseTeam, InsertResponseTeam, 
   RiskIndicator, InsertRiskIndicator,
-  RiskAnalysis, InsertRiskAnalysis
+  RiskAnalysis, InsertRiskAnalysis,
+  ResponsePlan, InsertResponsePlan
 } from "@shared/schema";
 import session from "express-session";
 import { db, pool } from "./db";
@@ -66,6 +67,12 @@ export interface IStorage {
   getRiskAnalysis(id: number): Promise<RiskAnalysis | undefined>;
   createRiskAnalysis(analysis: InsertRiskAnalysis): Promise<RiskAnalysis>;
   updateRiskAnalysis(id: number, analysis: Partial<RiskAnalysis>): Promise<RiskAnalysis>;
+  
+  // Response plan methods
+  getResponsePlans(): Promise<ResponsePlan[]>;
+  getResponsePlan(id: number): Promise<ResponsePlan | undefined>;
+  createResponsePlan(plan: InsertResponsePlan): Promise<ResponsePlan>;
+  updateResponsePlan(id: number, plan: Partial<ResponsePlan>): Promise<ResponsePlan>;
   
   // Session store
   sessionStore: any;
@@ -336,6 +343,35 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedAnalysis;
+  }
+  
+  // Response Plan methods
+  async getResponsePlans(): Promise<ResponsePlan[]> {
+    return db.select().from(responsePlans).orderBy(desc(responsePlans.createdAt));
+  }
+
+  async getResponsePlan(id: number): Promise<ResponsePlan | undefined> {
+    const [plan] = await db.select().from(responsePlans).where(eq(responsePlans.id, id));
+    return plan;
+  }
+
+  async createResponsePlan(plan: InsertResponsePlan): Promise<ResponsePlan> {
+    const [newPlan] = await db.insert(responsePlans).values(plan).returning();
+    return newPlan;
+  }
+
+  async updateResponsePlan(id: number, planData: Partial<ResponsePlan>): Promise<ResponsePlan> {
+    const [updatedPlan] = await db
+      .update(responsePlans)
+      .set(planData)
+      .where(eq(responsePlans.id, id))
+      .returning();
+    
+    if (!updatedPlan) {
+      throw new Error(`Response plan with id ${id} not found`);
+    }
+    
+    return updatedPlan;
   }
 }
 
