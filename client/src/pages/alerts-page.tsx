@@ -76,7 +76,8 @@ import {
   Instagram,
   MessageCircle,
   MessageSquare,
-  PhoneCall
+  PhoneCall,
+  Info
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -147,6 +148,8 @@ export default function AlertsPage() {
         ...data,
         status: "active",
         incidentId: selectedIncidentId,
+        // Map notification channels to the channels property expected by the API
+        channels: data.notificationChannels,
       };
       
       const res = await apiRequest("POST", "/api/alerts", alertData);
@@ -666,15 +669,58 @@ export default function AlertsPage() {
               
               <div className="p-3 bg-neutral-50 rounded-md border border-neutral-200">
                 <h3 className="font-medium mb-2">Distribution Channels</h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="flex items-center">
-                    <Mail className="h-4 w-4 mr-2 text-primary" />
-                    <span className="text-sm">Email</span>
-                  </div>
-                  <div className="flex items-center">
-                    <Bell className="h-4 w-4 mr-2 text-primary" />
-                    <span className="text-sm">Dashboard</span>
-                  </div>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                  {/* Display channels from the alert's data */}
+                  {(selectedAlert?.channels || []).map((channel) => {
+                    // Helper function to get icon and label for a channel
+                    const getChannelInfo = (ch: string) => {
+                      switch(ch) {
+                        case 'email':
+                          return { icon: <Mail className="h-4 w-4 mr-2 text-primary" />, label: 'Email' };
+                        case 'dashboard':
+                          return { icon: <Bell className="h-4 w-4 mr-2 text-primary" />, label: 'Dashboard' };
+                        case 'twitter':
+                          return { icon: <Twitter className="h-4 w-4 mr-2 text-primary" />, label: 'X (Twitter)' };
+                        case 'facebook':
+                          return { icon: <Facebook className="h-4 w-4 mr-2 text-primary" />, label: 'Facebook' };
+                        case 'instagram':
+                          return { icon: <Instagram className="h-4 w-4 mr-2 text-primary" />, label: 'Instagram' };
+                        case 'whatsapp':
+                          return { icon: <MessageCircle className="h-4 w-4 mr-2 text-primary" />, label: 'WhatsApp' };
+                        case 'sms_twilio':
+                          return { icon: <Smartphone className="h-4 w-4 mr-2 text-primary" />, label: 'SMS (Twilio)' };
+                        case 'sms_clickatell':
+                          return { icon: <MessageSquare className="h-4 w-4 mr-2 text-primary" />, label: 'SMS (Clickatell)' };
+                        case 'call_center':
+                          return { icon: <PhoneCall className="h-4 w-4 mr-2 text-primary" />, label: 'Call Center' };
+                        default:
+                          return { icon: <Info className="h-4 w-4 mr-2 text-primary" />, label: ch };
+                      }
+                    };
+                    
+                    const { icon, label } = getChannelInfo(channel);
+                    
+                    return (
+                      <div key={channel} className="flex items-center">
+                        {icon}
+                        <span className="text-sm">{label}</span>
+                      </div>
+                    );
+                  })}
+                  
+                  {/* Show default channels if none specified */}
+                  {(!selectedAlert?.channels || selectedAlert.channels.length === 0) && (
+                    <>
+                      <div className="flex items-center">
+                        <Mail className="h-4 w-4 mr-2 text-primary" />
+                        <span className="text-sm">Email</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Bell className="h-4 w-4 mr-2 text-primary" />
+                        <span className="text-sm">Dashboard</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
