@@ -53,6 +53,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { 
   Bell, 
   Search, 
@@ -791,28 +792,30 @@ export default function AlertsPage() {
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
               {/* Incident Selection */}
               <div className="mb-4">
-                <Label htmlFor="incident-select">Associated Incident</Label>
-                <Select
-                  value={selectedIncidentId?.toString() || ""}
-                  onValueChange={(value) => {
-                    setSelectedIncidentId(value ? parseInt(value) : null);
-                  }}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select an incident" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None (General Alert)</SelectItem>
-                    {incidents?.map((incident) => (
-                      <SelectItem key={incident.id} value={incident.id.toString()}>
-                        {incident.title}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Optionally link this alert to a specific incident
-                </p>
+                <FormItem>
+                  <FormLabel htmlFor="incident-select">Associated Incident</FormLabel>
+                  <Select
+                    value={selectedIncidentId?.toString() || ""}
+                    onValueChange={(value) => {
+                      setSelectedIncidentId(value ? parseInt(value) : null);
+                    }}
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select an incident" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="">None (General Alert)</SelectItem>
+                      {incidents?.map((incident) => (
+                        <SelectItem key={incident.id} value={incident.id.toString()}>
+                          {incident.title}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormDescription>
+                    Optionally link this alert to a specific incident
+                  </FormDescription>
+                </FormItem>
               </div>
               
               <FormField
