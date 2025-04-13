@@ -10,8 +10,13 @@ import {
   insertAlertSchema,
   insertResponseActivitySchema,
   insertResponseTeamSchema,
-  insertRiskIndicatorSchema
+  insertRiskIndicatorSchema,
+  insertRiskAnalysisSchema,
+  riskAnalyses
 } from "@shared/schema";
+import { analysisService } from "./services/analysis-service";
+import { db } from "./db";
+import { desc } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -330,6 +335,107 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: error.errors });
       }
       res.status(500).json({ error: "Failed to create risk indicator" });
+    }
+  });
+
+  // Risk Analysis API
+  app.get("/api/risk-analyses", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    try {
+      const analyses = await db.select().from(riskAnalyses).orderBy(desc(riskAnalyses.id));
+      res.json(analyses);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch risk analyses" });
+    }
+  });
+
+  app.post("/api/risk-analyses", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const validatedData = insertRiskAnalysisSchema.parse(req.body);
+      const newAnalysis = await storage.createRiskAnalysis(validatedData);
+      res.status(201).json(newAnalysis);
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create risk analysis" });
+    }
+  });
+
+  // AI Analysis API
+  app.post("/api/analysis/generate", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { region, location } = req.body;
+      
+      if (!region) {
+        return res.status(400).json({ error: "Region is required" });
+      }
+      
+      const result = await analysisService.generateRiskAnalysis(region, location);
+      
+      if (!result.success) {
+        return res.status(400).json({ error: result.message });
+      }
+      
+      // Save the generated analysis to database
+      const savedAnalysis = await storage.createRiskAnalysis(result.data);
+      
+      res.status(201).json(savedAnalysis);
+    } catch (error) {
+      console.error("Error in generate analysis:", error);
+      res.status(500).json({ error: "Failed to generate analysis" });
+    }
+  });
+
+  app.post("/api/analysis/generate-alert/:analysisId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const analysisId = parseInt(req.params.analysisId);
+      
+      const result = await analysisService.generateAlerts(analysisId);
+      
+      if (!result.success) {
+        return res.status(400).json({ error: result.message });
+      }
+      
+      // Save the generated alert to database
+      const savedAlert = await storage.createAlert(result.data);
+      
+      // Notify all connected WebSocket clients about the new alert
+      wss.clients.forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(JSON.stringify({ type: 'new-alert', data: savedAlert }));
+        }
+      });
+      
+      res.status(201).json(savedAlert);
+    } catch (error) {
+      console.error("Error in generate alert:", error);
+      res.status(500).json({ error: "Failed to generate alert" });
+    }
+  });
+
+  app.post("/api/analysis/incident/:incidentId", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const incidentId = parseInt(req.params.incidentId);
+      
+      const result = await analysisService.analyzeIncident(incidentId);
+      
+      if (!result.success) {
+        return res.status(400).json({ error: result.message });
+      }
+      
+      res.json(result.data);
+    } catch (error) {
+      console.error("Error in analyze incident:", error);
+      res.status(500).json({ error: "Failed to analyze incident" });
     }
   });
 
