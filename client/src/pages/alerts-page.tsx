@@ -201,7 +201,8 @@ export default function AlertsPage() {
   }
   
   // Format date for display
-  const formatDate = (dateString: Date) => {
+  const formatDate = (dateString: Date | string | null) => {
+    if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString();
   };
   
