@@ -163,16 +163,21 @@ export default function ResponsePlansPage() {
   // Create response plan mutation
   const createPlanMutation = useMutation({
     mutationFn: async (data: ResponsePlanFormValues) => {
+      // Prepare data for submission
       const planData = {
-        ...data,
+        title: data.title,
+        description: data.description,
+        region: data.region,
+        location: data.location,
+        status: data.status,
+        category: data.category,
+        steps: data.steps || {},
+        resources: data.resources || {},
+        assignedTeams: data.selectedTeams || [],
         createdAt: new Date(),
         updatedAt: new Date(),
-        assignedTeams: data.selectedTeams || [],
         createdBy: 1, // Default to admin user
       };
-      
-      // Remove the selectedTeams field since it's not part of the schema
-      delete planData.selectedTeams;
       
       const res = await apiRequest("POST", "/api/response-plans", planData);
       return await res.json();
@@ -693,7 +698,10 @@ export default function ResponsePlansPage() {
                     <FormControl>
                       <Select 
                         onValueChange={(value) => {
-                          const teamId = parseInt(value, 10);
+                          // Safely parse to number
+                          const teamId = Number(value);
+                          if (isNaN(teamId)) return;
+                          
                           const currentValues = field.value || [];
                           if (!currentValues.includes(teamId)) {
                             field.onChange([...currentValues, teamId]);
