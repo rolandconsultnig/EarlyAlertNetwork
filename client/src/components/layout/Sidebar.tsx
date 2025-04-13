@@ -3,15 +3,22 @@ import { useLocation, Link } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { 
   LayoutDashboard, 
-  TextCursorInput, 
-  TrendingUp, 
+  Database, 
+  LineChart, 
+  BarChart3, 
+  Map, 
   Bell, 
-  ClipboardCheck, 
+  Workflow, 
+  Folder, 
   Users, 
   Settings, 
   LogOut,
   X,
-  ExternalLink
+  ExternalLink,
+  Link as LinkIcon,
+  FileText,
+  MessageCircle,
+  Brain
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -30,15 +37,54 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
 
   const isActive = (path: string) => location === path;
 
-  const navItems = [
-    { path: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="mr-3 h-5 w-5" /> },
-    { path: "/data-collection", label: "Data Collection", icon: <TextCursorInput className="mr-3 h-5 w-5" /> },
-    { path: "/analysis", label: "Analysis", icon: <TrendingUp className="mr-3 h-5 w-5" /> },
-    { path: "/alerts", label: "Alerts", icon: <Bell className="mr-3 h-5 w-5" /> },
-    { path: "/response-plans", label: "Response Plans", icon: <ClipboardCheck className="mr-3 h-5 w-5" /> },
-    { path: "/user-management", label: "User Management", icon: <Users className="mr-3 h-5 w-5" /> },
-    { path: "/settings", label: "Settings", icon: <Settings className="mr-3 h-5 w-5" /> },
+  // Define module groups for the sidebar
+  const moduleGroups = [
+    {
+      title: "Main Navigation",
+      items: [
+        { path: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="mr-3 h-5 w-5" /> },
+      ]
+    },
+    {
+      title: "Data Collection & Processing",
+      items: [
+        { path: "/data-collection", label: "Data Collection", icon: <Database className="mr-3 h-5 w-5" /> },
+        { path: "/data-processing", label: "Data Processing & Analysis", icon: <Brain className="mr-3 h-5 w-5" /> },
+      ]
+    },
+    {
+      title: "Risk Assessment",
+      items: [
+        { path: "/analysis", label: "Risk Assessment", icon: <LineChart className="mr-3 h-5 w-5" /> },
+        { path: "/visualization", label: "Visualization", icon: <Map className="mr-3 h-5 w-5" /> },
+      ]
+    },
+    {
+      title: "Response Management",
+      items: [
+        { path: "/alerts", label: "Alerts & Notifications", icon: <Bell className="mr-3 h-5 w-5" /> },
+        { path: "/response-plans", label: "Response Coordination", icon: <Workflow className="mr-3 h-5 w-5" /> },
+        { path: "/case-management", label: "Case Management", icon: <Folder className="mr-3 h-5 w-5" /> },
+      ]
+    },
+    {
+      title: "Administration",
+      items: [
+        { path: "/user-management", label: "User Management", icon: <Users className="mr-3 h-5 w-5" /> },
+        { path: "/integrations", label: "Integrations", icon: <LinkIcon className="mr-3 h-5 w-5" /> },
+        { path: "/reporting", label: "Reporting", icon: <FileText className="mr-3 h-5 w-5" /> },
+        { path: "/settings", label: "Settings", icon: <Settings className="mr-3 h-5 w-5" /> },
+      ]
+    }
   ];
+  
+  const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
+    "Main Navigation": true,
+    "Data Collection & Processing": true,
+    "Risk Assessment": true,
+    "Response Management": true,
+    "Administration": true
+  });
 
   const handleLogout = () => {
     logoutMutation.mutate();
@@ -73,27 +119,43 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
 
         {/* Navigation */}
         <div className="overflow-y-auto flex-grow">
-          <div className="px-3 pt-4">
-            <p className="px-4 text-xs font-semibold text-blue-900 uppercase tracking-wider">
-              Main Navigation
-            </p>
-          </div>
-          <nav className="mt-2 px-2 space-y-1">
-            {navItems.map((item) => (
-              <Link key={item.path} href={item.path} onClick={closeMobileMenu}>
-                <a 
-                  className={`flex items-center pl-4 py-3 pr-4 font-medium rounded-md ${
-                    isActive(item.path)
-                      ? "bg-blue-50 text-blue-600 border-l-4 border-blue-500"
-                      : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                  }`}
-                >
-                  {item.icon}
-                  {item.label}
-                </a>
-              </Link>
-            ))}
-          </nav>
+          {moduleGroups.map((group) => (
+            <div key={group.title} className="mb-3">
+              <div 
+                className="px-3 pt-4 flex items-center justify-between cursor-pointer"
+                onClick={() => setExpandedGroups(prev => ({
+                  ...prev,
+                  [group.title]: !prev[group.title]
+                }))}
+              >
+                <p className="px-4 text-xs font-semibold text-blue-900 uppercase tracking-wider">
+                  {group.title}
+                </p>
+                <span className="text-xs text-blue-500">
+                  {expandedGroups[group.title] ? '▼' : '▶'}
+                </span>
+              </div>
+              
+              {expandedGroups[group.title] && (
+                <nav className="mt-2 px-2 space-y-1">
+                  {group.items.map((item) => (
+                    <Link key={item.path} href={item.path} onClick={closeMobileMenu}>
+                      <a 
+                        className={`flex items-center pl-4 py-2 pr-4 text-sm font-medium rounded-md ${
+                          isActive(item.path)
+                            ? "bg-blue-50 text-blue-600 border-l-4 border-blue-500"
+                            : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                        }`}
+                      >
+                        {item.icon}
+                        {item.label}
+                      </a>
+                    </Link>
+                  ))}
+                </nav>
+              )}
+            </div>
+          ))}
 
           <div className="px-3 pt-6">
             <p className="px-4 text-xs font-semibold text-blue-900 uppercase tracking-wider">
