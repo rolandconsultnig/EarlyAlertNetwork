@@ -1,5 +1,6 @@
+import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,12 +10,13 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertIncidentSchema } from "@shared/schema";
+import { insertIncidentSchema, DataSource, insertDataSourceSchema } from "@shared/schema";
 import { useAuth } from "@/hooks/use-auth";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Upload, Database, Radio, Users } from "lucide-react";
+import { FileText, Upload, Database, Radio, Users, RefreshCw, Shield, AlertTriangle } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 // Create a schema for incident reporting
 const incidentSchema = insertIncidentSchema
@@ -33,10 +35,134 @@ const incidentSchema = insertIncidentSchema
 
 type IncidentFormValues = z.infer<typeof incidentSchema>;
 
+// Create a schema for data source configuration
+const dataSourceSchema = insertDataSourceSchema
+  .pick({
+    name: true,
+    type: true,
+    apiEndpoint: true,
+    apiKey: true,
+    region: true,
+    frequency: true,
+    dataFormat: true,
+  })
+  .extend({
+    description: z.string().min(3, "Description must be at least 3 characters"),
+    type: z.enum(["social_media", "news_media", "satellite", "government_report", "ngo_report", "sensor_network", "field_report"], {
+      required_error: "Please select a source type",
+    }),
+    frequency: z.enum(["hourly", "daily", "weekly", "real-time"], {
+      required_error: "Please select a frequency",
+    }),
+    dataFormat: z.enum(["json", "xml", "csv", "geojson"], {
+      required_error: "Please select a data format",
+    }),
+  });
+
+type DataSourceFormValues = z.infer<typeof dataSourceSchema>;
+
 export default function DataCollectionPage() {
   const { user } = useAuth();
   const { toast } = useToast();
   
+  // State for data sources
+  const [configureDialogOpen, setConfigureDialogOpen] = useState(false);
+  const [currentSource, setCurrentSource] = useState<Partial<DataSource>>({
+    id: 0,
+    name: "",
+    type: "",
+    region: "Nigeria",
+  });
+  const [refetchLoading, setRefetchLoading] = useState(false);
+  
+  // Data source form
+  const sourceForm = useForm<DataSourceFormValues>({
+    resolver: zodResolver(dataSourceSchema),
+    defaultValues: {
+      name: "",
+      type: "news_media",
+      description: "",
+      apiEndpoint: "",
+      apiKey: "",
+      region: "Nigeria",
+      frequency: "daily",
+      dataFormat: "json",
+    }
+  });
+  
+  // Fetch existing data sources
+  const { 
+    data: sources, 
+    isLoading: isLoadingSources,
+    refetch: refetchSources
+  } = useQuery<DataSource[]>({
+    queryKey: ["/api/data-sources"],
+  });
+  
+  // Effect to update the form when a source is selected for configuration
+  React.useEffect(() => {
+    if (currentSource && configureDialogOpen) {
+      sourceForm.reset({
+        name: currentSource.name || "",
+        type: currentSource.type as any || "news_media",
+        description: currentSource.description || "",
+        apiEndpoint: currentSource.apiEndpoint || "",
+        apiKey: currentSource.apiKey || "",
+        region: currentSource.region || "Nigeria",
+        frequency: currentSource.frequency as any || "daily",
+        dataFormat: currentSource.dataFormat as any || "json",
+      });
+    }
+  }, [currentSource, configureDialogOpen]);
+  
+  // Create or update data source mutation
+  const saveDataSourceMutation = useMutation({
+    mutationFn: async (data: DataSourceFormValues) => {
+      // If currentSource.id is positive, we're updating an existing source
+      if (currentSource.id && currentSource.id > 0) {
+        const res = await apiRequest("PUT", `/api/data-sources/${currentSource.id}`, data);
+        return await res.json();
+      } else {
+        // Otherwise we're creating a new source
+        const res = await apiRequest("POST", "/api/data-sources", data);
+        return await res.json();
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/data-sources"] });
+      toast({
+        title: currentSource.id && currentSource.id > 0 ? "Data Source Updated" : "Data Source Created",
+        description: `The data source has been ${currentSource.id && currentSource.id > 0 ? 'updated' : 'created'} successfully.`,
+      });
+      sourceForm.reset();
+      setConfigureDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to save data source",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Helper function to handle form submission
+  function onSubmitDataSource(data: DataSourceFormValues) {
+    saveDataSourceMutation.mutate(data);
+  }
+  
+  // Helper function to format date
+  const formatDate = (date: Date | null | undefined) => {
+    if (!date) return 'Never';
+    return new Date(date).toLocaleString();
+  };
+  
+  // Helper function to capitalize first letter
+  const capitalizeFirstLetter = (string: string) => {
+    return string.charAt(0).toUpperCase() + string.slice(1);
+  };
+  
+  // Incident form setup
   const form = useForm<IncidentFormValues>({
     resolver: zodResolver(incidentSchema),
     defaultValues: {
@@ -266,35 +392,108 @@ export default function DataCollectionPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    {/* News Aggregation API */}
                     <div className="flex items-center p-3 rounded-md border border-neutral-200 bg-neutral-50">
                       <Database className="h-8 w-8 text-primary mr-4" />
                       <div>
                         <h3 className="font-medium">News Aggregation API</h3>
                         <p className="text-sm text-neutral-500">Collect data from news sources</p>
                       </div>
-                      <Button variant="outline" className="ml-auto">Configure</Button>
+                      <Button 
+                        variant="outline" 
+                        className="ml-auto"
+                        onClick={() => {
+                          setCurrentSource({
+                            id: 0,
+                            name: "News Aggregation API",
+                            type: "news_media",
+                            description: "Collect and process news articles from major Nigerian outlets",
+                            apiEndpoint: "https://newsapi.org/v2/top-headlines",
+                            region: "Nigeria",
+                            frequency: "hourly",
+                            dataFormat: "json"
+                          });
+                          setConfigureDialogOpen(true);
+                        }}
+                      >
+                        Configure
+                      </Button>
                     </div>
                     
+                    {/* Social Media Monitor */}
                     <div className="flex items-center p-3 rounded-md border border-neutral-200 bg-neutral-50">
                       <Database className="h-8 w-8 text-primary mr-4" />
                       <div>
                         <h3 className="font-medium">Social Media Monitor</h3>
                         <p className="text-sm text-neutral-500">Track social media activity</p>
                       </div>
-                      <Button variant="outline" className="ml-auto">Configure</Button>
+                      <Button 
+                        variant="outline" 
+                        className="ml-auto"
+                        onClick={() => {
+                          setCurrentSource({
+                            id: 0,
+                            name: "Social Media Monitor",
+                            type: "social_media",
+                            description: "Track social media activity related to conflicts in Nigeria",
+                            apiEndpoint: "https://api.social-monitor.com/stream",
+                            region: "Nigeria",
+                            frequency: "real-time",
+                            dataFormat: "json"
+                          });
+                          setConfigureDialogOpen(true);
+                        }}
+                      >
+                        Configure
+                      </Button>
                     </div>
                     
+                    {/* Satellite Imagery */}
                     <div className="flex items-center p-3 rounded-md border border-neutral-200 bg-neutral-50">
                       <Database className="h-8 w-8 text-primary mr-4" />
                       <div>
                         <h3 className="font-medium">Satellite Imagery</h3>
                         <p className="text-sm text-neutral-500">Imagery and geographic data</p>
                       </div>
-                      <Button variant="outline" className="ml-auto">Configure</Button>
+                      <Button 
+                        variant="outline" 
+                        className="ml-auto"
+                        onClick={() => {
+                          setCurrentSource({
+                            id: 0,
+                            name: "Satellite Imagery",
+                            type: "satellite",
+                            description: "Satellite imagery for monitoring infrastructure, movements, and environmental changes",
+                            apiEndpoint: "https://api.satellite-data.com/v1/imagery",
+                            region: "Nigeria",
+                            frequency: "daily",
+                            dataFormat: "geojson"
+                          });
+                          setConfigureDialogOpen(true);
+                        }}
+                      >
+                        Configure
+                      </Button>
                     </div>
                   </div>
                   
-                  <Button variant="link" className="mt-4">
+                  <Button 
+                    variant="link" 
+                    className="mt-4"
+                    onClick={() => {
+                      setCurrentSource({
+                        id: 0,
+                        name: "",
+                        type: "",
+                        description: "",
+                        apiEndpoint: "",
+                        region: "Nigeria",
+                        frequency: "",
+                        dataFormat: ""
+                      });
+                      setConfigureDialogOpen(true);
+                    }}
+                  >
                     + Add new data source
                   </Button>
                 </CardContent>
@@ -309,42 +508,52 @@ export default function DataCollectionPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-8">
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium">News API</span>
-                        <span className="text-sm text-success">Active</span>
+                    {isLoadingSources ? (
+                      <div className="flex justify-center py-8">
+                        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full"></div>
                       </div>
-                      <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-success w-4/5 rounded-full"></div>
+                    ) : sources && sources.length > 0 ? (
+                      sources.map((source) => (
+                        <div key={source.id}>
+                          <div className="flex justify-between mb-2">
+                            <span className="text-sm font-medium">{source.name}</span>
+                            <span className={`text-sm ${
+                              source.status === 'active' ? 'text-success' : 
+                              source.status === 'degraded' ? 'text-warning' : 'text-error'
+                            }`}>
+                              {capitalizeFirstLetter(source.status)}
+                            </span>
+                          </div>
+                          <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${
+                              source.status === 'active' ? 'bg-success w-4/5' : 
+                              source.status === 'degraded' ? 'bg-warning w-1/2' : 'bg-error w-1/5'
+                            }`}></div>
+                          </div>
+                          <p className="text-xs text-neutral-500 mt-1">
+                            Last updated: {formatDate(source.lastUpdated)}
+                          </p>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-center py-6">
+                        <p className="text-neutral-500">No configured data sources</p>
+                        <p className="text-sm text-neutral-400">Configure a data source to start collecting data</p>
                       </div>
-                      <p className="text-xs text-neutral-500 mt-1">Last sync: 5 minutes ago</p>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium">Social Media Feed</span>
-                        <span className="text-sm text-warning">Degraded</span>
-                      </div>
-                      <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-warning w-1/2 rounded-full"></div>
-                      </div>
-                      <p className="text-xs text-neutral-500 mt-1">Limited access, rate limiting in effect</p>
-                    </div>
-                    
-                    <div>
-                      <div className="flex justify-between mb-2">
-                        <span className="text-sm font-medium">Satellite Data</span>
-                        <span className="text-sm text-error">Offline</span>
-                      </div>
-                      <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
-                        <div className="h-full bg-error w-1/5 rounded-full"></div>
-                      </div>
-                      <p className="text-xs text-neutral-500 mt-1">API Key expired, renew subscription</p>
-                    </div>
+                    )}
                   </div>
                   
-                  <Button className="mt-6 w-full">
-                    Refresh Data Sources
+                  <Button 
+                    className="mt-6 w-full"
+                    onClick={() => refetchSources()}
+                    disabled={refetchLoading}
+                  >
+                    {refetchLoading ? (
+                      <>
+                        <span className="animate-spin mr-2">⊝</span>
+                        Refreshing...
+                      </>
+                    ) : "Refresh Data Sources"}
                   </Button>
                 </CardContent>
               </Card>

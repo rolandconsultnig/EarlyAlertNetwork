@@ -38,6 +38,7 @@ export const dataSources = pgTable("data_sources", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
   type: text("type").notNull(), // social_media, news_media, satellite, government_report, ngo_report, sensor_network, field_report
+  description: text("description"),
   status: text("status").notNull().default("active"),
   lastUpdated: timestamp("last_updated").notNull().defaultNow(),
   apiEndpoint: text("api_endpoint"),
