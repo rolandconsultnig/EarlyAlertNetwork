@@ -798,9 +798,11 @@ export default function IntegrationsPage() {
       </div>
       
       <Tabs defaultValue="api-keys" className="space-y-6">
-        <TabsList className="grid w-full md:w-auto grid-cols-3">
+        <TabsList className="grid w-full md:w-auto grid-cols-5">
           <TabsTrigger value="api-keys">API Keys</TabsTrigger>
           <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
+          <TabsTrigger value="security">Security</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="documentation">Documentation</TabsTrigger>
         </TabsList>
         
@@ -828,6 +830,244 @@ export default function IntegrationsPage() {
             </CardHeader>
             <CardContent>
               <WebhooksList />
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="security" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>API Security & Rate Limiting</CardTitle>
+              <CardDescription>
+                Configure API security settings and rate limiting for optimal performance
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Rate Limiting</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Control how frequently your API can be accessed to prevent abuse and ensure fair usage.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div className="grid gap-2">
+                        <Label>Requests per minute</Label>
+                        <div className="flex items-center space-x-2">
+                          <Input type="number" min="10" max="1000" defaultValue="60" />
+                          <Button className="shrink-0">Update</Button>
+                        </div>
+                      </div>
+                      
+                      <div className="grid gap-2">
+                        <Label>Maximum burst size</Label>
+                        <div className="flex items-center space-x-2">
+                          <Input type="number" min="1" max="100" defaultValue="10" />
+                          <Button className="shrink-0">Update</Button>
+                        </div>
+                      </div>
+                      
+                      <div className="p-4 border rounded-md bg-blue-50">
+                        <h4 className="font-semibold mb-2">Current Settings</h4>
+                        <div className="grid grid-cols-2 gap-2 text-sm">
+                          <div>Request limit:</div>
+                          <div className="font-semibold">60 per minute</div>
+                          <div>Burst capacity:</div>
+                          <div className="font-semibold">10 requests</div>
+                          <div>Throttling:</div>
+                          <div className="font-semibold text-green-600">Enabled</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-2">Authentication Methods</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Configure authentication methods for your API access points.
+                    </p>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-start space-x-2">
+                        <Checkbox id="api-key-auth" defaultChecked />
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="api-key-auth" className="font-medium">API Key Authentication</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Require API keys in request headers (X-API-Key)
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <Checkbox id="jwt-auth" />
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="jwt-auth" className="font-medium">JWT Authentication</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Use JSON Web Tokens for authentication (Authorization: Bearer)
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-start space-x-2">
+                        <Checkbox id="ip-whitelist" />
+                        <div className="grid gap-1.5">
+                          <Label htmlFor="ip-whitelist" className="font-medium">IP Whitelisting</Label>
+                          <p className="text-sm text-muted-foreground">
+                            Restrict API access to specific IP addresses
+                          </p>
+                        </div>
+                      </div>
+                      
+                      <Button className="mt-2">Save Authentication Settings</Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        
+        <TabsContent value="analytics" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>API Usage Analytics</CardTitle>
+              <CardDescription>
+                Monitor API consumption and analyze usage patterns
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">2,453</div>
+                    <p className="text-xs text-muted-foreground">Total API calls today</p>
+                    <div className="text-xs text-green-600 mt-2">↑ 12% from yesterday</div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">18.2 ms</div>
+                    <p className="text-xs text-muted-foreground">Average response time</p>
+                    <div className="text-xs text-green-600 mt-2">↓ 3% from yesterday</div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardContent className="pt-6">
+                    <div className="text-2xl font-bold">99.98%</div>
+                    <p className="text-xs text-muted-foreground">API availability</p>
+                    <div className="text-xs text-green-600 mt-2">↑ 0.01% from yesterday</div>
+                  </CardContent>
+                </Card>
+              </div>
+              
+              <div className="space-y-6">
+                <div>
+                  <h3 className="text-lg font-medium mb-4">API Requests by Endpoint (Last 24 hours)</h3>
+                  <div className="border rounded-md overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[250px]">Endpoint</TableHead>
+                          <TableHead>Requests</TableHead>
+                          <TableHead>Avg. Response Time</TableHead>
+                          <TableHead>Success Rate</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        <TableRow>
+                          <TableCell className="font-medium">/api/external/incidents</TableCell>
+                          <TableCell>1,245</TableCell>
+                          <TableCell>15.3 ms</TableCell>
+                          <TableCell>99.9%</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">/api/external/alerts</TableCell>
+                          <TableCell>842</TableCell>
+                          <TableCell>18.7 ms</TableCell>
+                          <TableCell>100%</TableCell>
+                        </TableRow>
+                        <TableRow>
+                          <TableCell className="font-medium">/api/external/risk-indicators</TableCell>
+                          <TableCell>366</TableCell>
+                          <TableCell>22.1 ms</TableCell>
+                          <TableCell>99.7%</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Top API Consumers</h3>
+                    <div className="border rounded-md overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>API Key</TableHead>
+                            <TableHead>Requests</TableHead>
+                            <TableHead>Usage</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="font-medium">NEMA Integration</TableCell>
+                            <TableCell>845</TableCell>
+                            <TableCell>34.4%</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">Ministry Dashboard</TableCell>
+                            <TableCell>621</TableCell>
+                            <TableCell>25.3%</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">Mobile App</TableCell>
+                            <TableCell>487</TableCell>
+                            <TableCell>19.9%</TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-lg font-medium mb-4">Error Distribution</h3>
+                    <div className="border rounded-md overflow-hidden">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Status Code</TableHead>
+                            <TableHead>Description</TableHead>
+                            <TableHead>Count</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          <TableRow>
+                            <TableCell className="font-medium">401</TableCell>
+                            <TableCell>Unauthorized</TableCell>
+                            <TableCell>12</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">403</TableCell>
+                            <TableCell>Forbidden</TableCell>
+                            <TableCell>5</TableCell>
+                          </TableRow>
+                          <TableRow>
+                            <TableCell className="font-medium">429</TableCell>
+                            <TableCell>Too Many Requests</TableCell>
+                            <TableCell>3</TableCell>
+                          </TableRow>
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

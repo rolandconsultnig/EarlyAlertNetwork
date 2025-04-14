@@ -126,7 +126,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+    const [user] = await db.insert(users).values([insertUser]).returning();
     return user;
   }
 
@@ -416,7 +416,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createApiKey(apiKey: InsertApiKey): Promise<ApiKey> {
-    const [newApiKey] = await db.insert(apiKeys).values(apiKey).returning();
+    const [newApiKey] = await db.insert(apiKeys).values([apiKey]).returning();
     return newApiKey;
   }
 
@@ -453,7 +453,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWebhook(webhook: InsertWebhook): Promise<Webhook> {
-    const [newWebhook] = await db.insert(webhooks).values(webhook).returning();
+    const [newWebhook] = await db.insert(webhooks).values([webhook]).returning();
     return newWebhook;
   }
 
