@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { 
@@ -122,8 +122,20 @@ export default function ResponsePlansPage() {
     error: plansError,
     refetch: refetchPlans 
   } = useQuery<ResponsePlan[]>({
-    queryKey: ["/api/response-plans"],
+    queryKey: ["/api/response-plans"]
   });
+  
+  // Handle error display
+  React.useEffect(() => {
+    if (plansError) {
+      console.error("Error fetching response plans:", plansError);
+      toast({
+        title: "Failed to load response plans",
+        description: plansError instanceof Error ? plansError.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  }, [plansError, toast]);
   
   // Fetch incidents for the select dropdown
   const { 
@@ -152,7 +164,7 @@ export default function ResponsePlansPage() {
     defaultValues: {
       title: "",
       description: "",
-      region: "",
+      region: "Nigeria", // Default to Nigeria
       location: "",
       status: "draft",
       category: "preventive",

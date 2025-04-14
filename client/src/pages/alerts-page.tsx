@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Alert, insertAlertSchema, Incident } from "@shared/schema";
@@ -119,15 +119,27 @@ export default function AlertsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIncidentId, setSelectedIncidentId] = useState<number | null>(null);
   
-  // Fetch alerts
+  // Fetch alerts from API
   const { 
     data: alerts, 
     isLoading: isLoadingAlerts, 
     error: alertsError,
     refetch: refetchAlerts 
   } = useQuery<Alert[]>({
-    queryKey: ["/api/alerts"],
+    queryKey: ["/api/alerts"]
   });
+  
+  // Handle error display
+  React.useEffect(() => {
+    if (alertsError) {
+      console.error("Error fetching alerts:", alertsError);
+      toast({
+        title: "Failed to load alerts",
+        description: alertsError instanceof Error ? alertsError.message : "An unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  }, [alertsError, toast]);
   
   // Fetch incidents for the select dropdown
   const { 
