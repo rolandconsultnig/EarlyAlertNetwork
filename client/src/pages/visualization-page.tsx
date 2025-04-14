@@ -9,8 +9,12 @@ import PageTemplate from "@/components/modules/PageTemplate";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Expand, Filter, Layers, MapPin, AlertTriangle, Tractor, Home, Activity, AlertCircle } from "lucide-react";
+import { Expand, Filter, Layers, MapPin, AlertTriangle, Tractor, Home, Activity, AlertCircle, PlusCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
 
 // Sample incident data
 const incidents = [
@@ -510,6 +514,7 @@ export default function VisualizationPage() {
                   </LayersControl>
                   
                   <FullscreenControl mapRef={incidentMapRef} />
+                  <AddConflictEventControl />
                 </MapContainer>
               </div>
             </CardContent>
@@ -690,6 +695,7 @@ export default function VisualizationPage() {
                   </LayersControl>
                   
                   <FullscreenControl mapRef={riskMapRef} />
+                  <AddConflictEventControl />
                 </MapContainer>
               </div>
             </CardContent>
