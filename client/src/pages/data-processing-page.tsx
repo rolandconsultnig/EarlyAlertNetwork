@@ -16,7 +16,9 @@ import {
   ArrowRight
 } from "lucide-react";
 import { useState } from "react";
-import { apiRequest } from "@/lib/queryClient";
+
+// Using direct fetch instead of apiRequest to troubleshoot
+const API_URL = window.location.origin;
 
 export default function DataProcessingPage() {
   const { toast } = useToast();
@@ -28,17 +30,30 @@ export default function DataProcessingPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   
   const toolbar = (
-    <Button onClick={() => {
-      setShowNlpInput(false);
-      setNlpTask(null);
-      setNlpResult(null);
-      setInputText("");
-    }}>
+    <Button 
+      onClick={() => {
+        setShowNlpInput(false);
+        setNlpTask(null);
+        setNlpResult(null);
+        setInputText("");
+      }}
+      type="button"
+    >
       <FileCheck className="h-4 w-4 mr-2" />
       Reset Analysis
     </Button>
   );
   
+  // Handle button click to open NLP input form
+  const handleOpenNlpInput = (task: "sentiment" | "keywords" | "classify" | "summarize" | "entities") => {
+    console.log(`Opening ${task} input`);
+    setShowNlpInput(true);
+    setNlpTask(task);
+    setNlpResult(null);
+    setInputText("");
+  };
+  
+  // Handle NLP analysis
   const handleNlpAnalysis = async () => {
     if (!inputText.trim()) {
       toast({
@@ -73,8 +88,23 @@ export default function DataProcessingPage() {
           throw new Error("Invalid NLP task");
       }
       
-      const response = await apiRequest("POST", endpoint, { text: inputText });
+      console.log(`Sending request to ${endpoint} with text: ${inputText.substring(0, 30)}...`);
+      
+      const response = await fetch(`${API_URL}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: inputText }),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
+      }
+      
       const result = await response.json();
+      console.log('NLP result:', result);
       setNlpResult(result);
     } catch (error) {
       console.error("NLP analysis error:", error);
