@@ -291,7 +291,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRiskIndicator(indicator: InsertRiskIndicator): Promise<RiskIndicator> {
-    const [newIndicator] = await db.insert(riskIndicators).values(indicator).returning();
+    const [newIndicator] = await db.insert(riskIndicators).values([indicator]).returning();
     return newIndicator;
   }
 
@@ -333,7 +333,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createRiskAnalysis(analysis: InsertRiskAnalysis): Promise<RiskAnalysis> {
-    const [newAnalysis] = await db.insert(riskAnalyses).values(analysis).returning();
+    const [newAnalysis] = await db.insert(riskAnalyses).values([analysis]).returning();
     return newAnalysis;
   }
 
@@ -362,7 +362,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createResponsePlan(plan: InsertResponsePlan): Promise<ResponsePlan> {
-    const [newPlan] = await db.insert(responsePlans).values(plan).returning();
+    const [newPlan] = await db.insert(responsePlans).values([plan]).returning();
     return newPlan;
   }
 
