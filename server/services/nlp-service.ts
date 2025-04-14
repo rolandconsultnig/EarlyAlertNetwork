@@ -253,16 +253,22 @@ export class NLPService {
       return text; // Text is already short enough
     }
     
-    // Score sentences based on position and keywords
-    const sentenceScores: {sentence: string, score: number}[] = [];
+    // Create sentence objects with scores
+    type SentenceWithScore = {
+      text: string;
+      score: number;
+      position: number;
+    };
+    
+    // Get keywords for scoring
     const keywords = this.extractKeywords(text, 20);
     
-    for (let i = 0; i < sentences.length; i++) {
-      const sentence = sentences[i];
+    // Score each sentence
+    const scoredSentences: SentenceWithScore[] = sentences.map((sentence, index) => {
       let score = 0;
       
       // Position scoring - first and last sentences are important
-      if (i === 0 || i === sentences.length - 1) {
+      if (index === 0 || index === sentences.length - 1) {
         score += 0.3;
       }
       
@@ -274,43 +280,30 @@ export class NLPService {
         }
       }
       
-      sentenceScores.push({ sentence, score });
-    }
+      return {
+        text: sentence,
+        score: score,
+        position: index
+      };
+    });
     
-    // Sort sentences by score
-    sentenceScores.sort((a, b) => b.score - a.score);
+    // Sort sentences by score (highest first)
+    scoredSentences.sort((a, b) => b.score - a.score);
     
-    // Take top sentences until we reach max length
+    // Take top 5 sentences
+    const topSentences = scoredSentences.slice(0, 5);
+    
+    // Sort back by original position
+    topSentences.sort((a, b) => a.position - b.position);
+    
+    // Build the summary
     let summary = '';
     let currentLength = 0;
     
-    // Get top 5 sentences by score
-    const topScoredSentences = sentenceScores.slice(0, 5);
-    
-    // Create array of indices for sorting
-    const orderedSentences: {index: number, sentence: string}[] = [];
-    
-    // Find the original position of each top sentence
-    for (let i = 0; i < topScoredSentences.length; i++) {
-      const scoredSentence = topScoredSentences[i];
-      const sentenceText = scoredSentence.sentence;
-      const sentenceIndex = sentences.indexOf(sentenceText);
-      if (sentenceIndex !== -1) {
-        orderedSentences.push({
-          index: sentenceIndex,
-          sentence: sentenceText
-        });
-      }
-    }
-    
-    // Sort by original position
-    orderedSentences.sort((a, b) => a.index - b.index);
-    
-    // Build summary with the sentences in original order
-    for (const item of orderedSentences) {
-      if (currentLength + item.sentence.length <= maxLength) {
-        summary += item.sentence + ' ';
-        currentLength += item.sentence.length + 1;
+    for (const sentence of topSentences) {
+      if (currentLength + sentence.text.length <= maxLength) {
+        summary += sentence.text + ' ';
+        currentLength += sentence.text.length + 1;
       } else {
         break;
       }
