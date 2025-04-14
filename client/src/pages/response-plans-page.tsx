@@ -100,6 +100,7 @@ const responsePlanFormSchema = insertResponsePlanSchema
     }),
     steps: z.record(z.string(), z.string()).default({}),
     resources: z.record(z.string(), z.union([z.string(), z.number()])).default({}),
+    interAgencyPortal: z.record(z.string(), z.any()).optional(),
     selectedTeams: z.array(z.number()).optional(),
   });
 
@@ -156,6 +157,7 @@ export default function ResponsePlansPage() {
       category: "preventive",
       steps: {},
       resources: {},
+      interAgencyPortal: {},
       selectedTeams: [],
     },
   });

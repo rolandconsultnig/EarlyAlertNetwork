@@ -282,6 +282,7 @@ export const responsePlans = pgTable("response_plans", {
   assignedTeams: integer("assigned_teams").array(),
   resources: jsonb("resources"),
   timeline: jsonb("timeline"),
+  interAgencyPortal: jsonb("inter_agency_portal"), // Message centers for various agencies
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
   approvedBy: integer("approved_by"),
   approvedAt: timestamp("approved_at"),
@@ -301,6 +302,7 @@ export const insertResponsePlanSchema = createInsertSchema(responsePlans).pick({
   assignedTeams: true,
   resources: true,
   timeline: true,
+  interAgencyPortal: true,
   approvedBy: true,
 });
 
