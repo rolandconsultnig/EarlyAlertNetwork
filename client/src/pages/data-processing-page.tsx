@@ -482,14 +482,122 @@ export default function DataProcessingPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex items-center justify-center p-6 text-center">
-                <div>
-                  <Globe className="h-20 w-20 text-blue-400 mx-auto mb-4 opacity-70" />
-                  <h3 className="text-lg font-medium">Geospatial Analysis Module</h3>
-                  <p className="text-muted-foreground mt-2 max-w-md mx-auto">
-                    This module will include hotspot mapping, proximity analysis, and geographical clustering of incidents across Nigeria.
-                  </p>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="border border-blue-100">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Hotspot Mapping</CardTitle>
+                    <CardDescription>Identify areas with high incident concentration</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      Visualize areas with high concentrations of conflict incidents to identify patterns and prioritize response efforts.
+                    </p>
+                    <div className="mt-4">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => {
+                          toast({
+                            title: "Map Feature Activated",
+                            description: "Conflict hotspot map for Nigeria is now available in the Visualization page.",
+                          });
+                          // Navigate to the visualization page
+                          window.location.href = "/visualization";
+                        }}
+                      >
+                        View Hotspot Map
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border border-blue-100">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Proximity Analysis</CardTitle>
+                    <CardDescription>Measure distance between incidents and resources</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      Calculate distances between conflict events and response resources to optimize deployment strategies and identify coverage gaps.
+                    </p>
+                    <div className="mt-4">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => {
+                          toast({
+                            title: "Proximity Analysis",
+                            description: "The proximity analysis tool is available in the Visualization page.",
+                          });
+                          // Navigate to the visualization page
+                          window.location.href = "/visualization";
+                        }}
+                      >
+                        Run Proximity Analysis
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border border-blue-100">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Spatial Clustering</CardTitle>
+                    <CardDescription>Group incidents by geographic proximity</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      Group incidents based on spatial relationships to identify patterns and focus areas for intervention.
+                    </p>
+                    <div className="mt-4">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => {
+                          toast({
+                            title: "Spatial Clustering",
+                            description: "Spatial clustering analysis is available in the Visualization page.",
+                          });
+                          // Navigate to the visualization page
+                          window.location.href = "/visualization";
+                        }}
+                      >
+                        Generate Clusters
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card className="border border-blue-100">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Administrative Boundaries</CardTitle>
+                    <CardDescription>Analyze incidents by political divisions</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground">
+                      View incidents by states, local government areas, and other administrative boundaries to coordinate with relevant authorities.
+                    </p>
+                    <div className="mt-4">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full"
+                        onClick={() => {
+                          toast({
+                            title: "Administrative Analysis",
+                            description: "Administrative boundary analysis is available in the Visualization page.",
+                          });
+                          // Navigate to the visualization page
+                          window.location.href = "/visualization";
+                        }}
+                      >
+                        View Boundary Analysis
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </CardContent>
           </Card>
