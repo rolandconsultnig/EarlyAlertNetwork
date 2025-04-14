@@ -10,8 +10,8 @@ import {
 } from "@shared/schema";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ErrorMessage } from "@/components/ui/error-message";
-import { DataLoader } from "@/components/ui/data-loader";
+// import { ErrorMessage } from "@/components/ui/error-message";
+// import { DataLoader } from "@/components/ui/data-loader";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -453,18 +453,29 @@ export default function ResponsePlansPage() {
                   <p className="text-neutral-500">Loading response plans...</p>
                 </div>
               ) : plansError ? (
-                <ErrorMessage 
-                  variant="card"
-                  title="Failed to load response plans"
-                  description="We encountered a problem while retrieving response plan data."
-                  error={plansError instanceof Error ? plansError : undefined}
-                  troubleshootingTips={[
-                    "Check your internet connection and try again.",
-                    "The server might be temporarily unavailable.",
-                    "If the problem persists, contact technical support."
-                  ]}
-                  onRetry={() => refetchPlans()}
-                />
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <AlertCircle className="h-12 w-12 text-amber-500 mb-4" />
+                  <h3 className="text-lg font-semibold mb-2">Failed to load response plans</h3>
+                  <p className="text-muted-foreground mb-4">
+                    We encountered a problem while retrieving response plan data.
+                  </p>
+                  <div className="text-sm text-left max-w-md mx-auto mb-6">
+                    <p className="font-medium mb-1">Troubleshooting tips:</p>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Check your internet connection and try again.</li>
+                      <li>The server might be temporarily unavailable.</li>
+                      <li>If the problem persists, contact technical support.</li>
+                    </ul>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={() => refetchPlans()}
+                  >
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Try Again
+                  </Button>
+                </div>
               ) : filteredPlans && filteredPlans.length > 0 ? (
                 <Table>
                   <TableHeader>

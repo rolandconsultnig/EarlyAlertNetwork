@@ -54,8 +54,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { DataLoader } from "@/components/ui/data-loader";
-import { ErrorMessage } from "@/components/ui/error-message";
+// import { DataLoader } from "@/components/ui/data-loader";
+// import { ErrorMessage } from "@/components/ui/error-message";
 import { 
   Bell, 
   Search, 
@@ -429,18 +429,29 @@ export default function AlertsPage() {
               <p className="text-neutral-500">Loading alerts...</p>
             </div>
           ) : alertsError ? (
-            <ErrorMessage 
-              variant="card"
-              title="Failed to load alerts"
-              description="We encountered a problem while retrieving alert data."
-              error={alertsError instanceof Error ? alertsError : undefined}
-              troubleshootingTips={[
-                "Check your internet connection and try again.",
-                "The data source might be temporarily unavailable.",
-                "If the problem persists, contact technical support."
-              ]}
-              onRetry={() => refetchAlerts()}
-            />
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">Failed to load alerts</h3>
+              <p className="text-muted-foreground mb-4">
+                We encountered a problem while retrieving alert data.
+              </p>
+              <div className="text-sm text-left max-w-md mx-auto mb-6">
+                <p className="font-medium mb-1">Troubleshooting tips:</p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>Check your internet connection and try again.</li>
+                  <li>The data source might be temporarily unavailable.</li>
+                  <li>If the problem persists, contact technical support.</li>
+                </ul>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => refetchAlerts()}
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Try Again
+              </Button>
+            </div>
           ) : filteredAlerts && filteredAlerts.length > 0 ? (
             <Table>
               <TableHeader>
