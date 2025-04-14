@@ -108,10 +108,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    // We need to ensure dates are provided
-    if (!insertUser.createdAt) insertUser.createdAt = new Date();
-    if (!insertUser.updatedAt) insertUser.updatedAt = new Date();
-    
+    // Using values directly from the insert schema - this should match the database columns
     const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
