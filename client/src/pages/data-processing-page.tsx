@@ -16,6 +16,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import { useState } from "react";
+import { useLocation } from "wouter";
 
 // Using direct fetch instead of apiRequest to troubleshoot
 const API_URL = window.location.origin;
@@ -28,6 +29,7 @@ export default function DataProcessingPage() {
   const [nlpTask, setNlpTask] = useState<"sentiment" | "keywords" | "classify" | "summarize" | "entities" | null>(null);
   const [nlpResult, setNlpResult] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [, setLocation] = useLocation();
   
   const toolbar = (
     <Button 
@@ -503,7 +505,7 @@ export default function DataProcessingPage() {
                             description: "Conflict hotspot map for Nigeria is now available in the Visualization page.",
                           });
                           // Navigate to the visualization page
-                          window.location.href = "/visualization";
+                          setLocation("/visualization");
                         }}
                       >
                         View Hotspot Map
@@ -532,7 +534,7 @@ export default function DataProcessingPage() {
                             description: "The proximity analysis tool is available in the Visualization page.",
                           });
                           // Navigate to the visualization page
-                          window.location.href = "/visualization";
+                          setLocation("/visualization");
                         }}
                       >
                         Run Proximity Analysis
@@ -561,7 +563,7 @@ export default function DataProcessingPage() {
                             description: "Spatial clustering analysis is available in the Visualization page.",
                           });
                           // Navigate to the visualization page
-                          window.location.href = "/visualization";
+                          setLocation("/visualization");
                         }}
                       >
                         Generate Clusters
@@ -590,7 +592,7 @@ export default function DataProcessingPage() {
                             description: "Administrative boundary analysis is available in the Visualization page.",
                           });
                           // Navigate to the visualization page
-                          window.location.href = "/visualization";
+                          setLocation("/visualization");
                         }}
                       >
                         View Boundary Analysis
