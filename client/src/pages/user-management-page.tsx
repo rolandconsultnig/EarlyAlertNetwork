@@ -73,10 +73,17 @@ const userFormSchema = insertUserSchema
     password: true,
     fullName: true,
     role: true,
+    securityLevel: true,
+    permissions: true,
+    department: true,
+    position: true,
+    phoneNumber: true,
+    email: true,
   })
   .extend({
     password: z.string().min(6, "Password must be at least 6 characters"),
     confirmPassword: z.string(),
+    securityLevel: z.coerce.number().min(1).max(7).default(1),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -177,36 +184,34 @@ export default function UserManagementPage() {
     <MainLayout title="User Management">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          <TabsList>
-            <TabsTrigger 
-              value="all" 
-              onClick={() => setRoleFilter("all")}
-              className={roleFilter === "all" ? "bg-primary text-primary-foreground" : ""}
-            >
-              All Users
-            </TabsTrigger>
-            <TabsTrigger 
-              value="admin" 
-              onClick={() => setRoleFilter("admin")}
-              className={roleFilter === "admin" ? "bg-primary text-primary-foreground" : ""}
-            >
-              Admins
-            </TabsTrigger>
-            <TabsTrigger 
-              value="coordinator" 
-              onClick={() => setRoleFilter("coordinator")}
-              className={roleFilter === "coordinator" ? "bg-primary text-primary-foreground" : ""}
-            >
-              Coordinators
-            </TabsTrigger>
-            <TabsTrigger 
-              value="analyst" 
-              onClick={() => setRoleFilter("analyst")}
-              className={roleFilter === "analyst" ? "bg-primary text-primary-foreground" : ""}
-            >
-              Analysts
-            </TabsTrigger>
-          </TabsList>
+          <Tabs defaultValue="all" className="w-auto">
+            <TabsList>
+              <TabsTrigger 
+                value="all" 
+                onClick={() => setRoleFilter("all")}
+              >
+                All Users
+              </TabsTrigger>
+              <TabsTrigger 
+                value="admin" 
+                onClick={() => setRoleFilter("admin")}
+              >
+                Admins
+              </TabsTrigger>
+              <TabsTrigger 
+                value="coordinator" 
+                onClick={() => setRoleFilter("coordinator")}
+              >
+                Coordinators
+              </TabsTrigger>
+              <TabsTrigger 
+                value="analyst" 
+                onClick={() => setRoleFilter("analyst")}
+              >
+                Analysts
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
           
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />

@@ -9,6 +9,7 @@ export const users = pgTable("users", {
   password: text("password").notNull(),
   fullName: text("full_name").notNull(),
   role: text("role").notNull().default("user"), // 'admin', 'analyst', 'responder', 'manager', 'user'
+  securityLevel: integer("security_level").notNull().default(1), // Security clearance level from 1 to 7
   permissions: jsonb("permissions").$type<string[]>().default(['view']),
   department: text("department"),
   position: text("position"),
@@ -24,6 +25,7 @@ export const insertUserSchema = createInsertSchema(users).pick({
   password: true,
   fullName: true,
   role: true,
+  securityLevel: true,
   permissions: true,
   department: true,
   position: true,
