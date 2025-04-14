@@ -140,9 +140,11 @@ const getResourceStyle = (type: string) => {
   }
 };
 
-// Nigeria center and zoom level
+// Nigeria center and zoom level - focused specifically on Nigeria
 const nigeriaCenter: [number, number] = [9.0820, 8.6753];
-const defaultZoom = 6;
+const defaultZoom = 6.5; // Increased zoom to focus more on Nigeria
+const nigeriaMinZoom = 5; // Minimum zoom level to keep focus on Nigeria
+const nigeriaMaxZoom = 12; // Maximum zoom level for detailed view
 
 // Fullscreen control component
 function FullscreenControl({ mapRef }: { mapRef: React.RefObject<HTMLDivElement> }) {
@@ -183,6 +185,171 @@ function FullscreenControl({ mapRef }: { mapRef: React.RefObject<HTMLDivElement>
       <Expand className="h-4 w-4 mr-1" />
       {isFullscreen ? "Exit" : "Full Screen"}
     </Button>
+  );
+}
+
+// Component to add conflict events (for level 2 access users)
+function AddConflictEventControl() {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState<[number, number] | null>(null);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [type, setType] = useState('Violent');
+  const [severity, setSeverity] = useState('Medium');
+  const map = useMap();
+  const { toast } = useToast();
+  
+  // Access check for level 2 users
+  const hasAddEventAccess = true; // This would come from your auth context in a real implementation
+  
+  useEffect(() => {
+    if (!hasAddEventAccess) return;
+    
+    // Add click handler to map for capturing coordinates
+    const handleMapClick = (e: L.LeafletMouseEvent) => {
+      if (open) {
+        setPosition([e.latlng.lat, e.latlng.lng]);
+      }
+    };
+    
+    map.on('click', handleMapClick);
+    
+    return () => {
+      map.off('click', handleMapClick);
+    };
+  }, [map, open, hasAddEventAccess]);
+  
+  const handleSubmit = async () => {
+    if (!position || !title.trim() || !description.trim()) {
+      toast({
+        title: "Validation Error",
+        description: "Please provide all required information and select a position on the map.",
+        variant: "destructive"
+      });
+      return;
+    }
+    
+    try {
+      // This would send data to your API in a real implementation
+      console.log('Submitting conflict event:', {
+        title,
+        description,
+        type,
+        severity,
+        coordinates: [position[1], position[0]], // [long, lat] format for consistency
+        date: new Date().toISOString(),
+        location: `Coordinates: ${position[0].toFixed(6)}, ${position[1].toFixed(6)}`
+      });
+      
+      toast({
+        title: "Event Added",
+        description: "Conflict event has been added successfully.",
+      });
+      
+      // Reset form
+      setOpen(false);
+      setPosition(null);
+      setTitle('');
+      setDescription('');
+      setType('Violent');
+      setSeverity('Medium');
+    } catch (error) {
+      console.error('Error adding conflict event:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add conflict event. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+  
+  if (!hasAddEventAccess) return null;
+  
+  return (
+    <div className="absolute bottom-4 right-4 z-[1000]">
+      {!open ? (
+        <Button 
+          className="bg-red-600 hover:bg-red-700 text-white" 
+          onClick={() => setOpen(true)}
+        >
+          <PlusCircle className="mr-2 h-4 w-4" />
+          Report Conflict Event
+        </Button>
+      ) : (
+        <Card className="w-[300px] shadow-lg">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-lg">Add Conflict Event</CardTitle>
+            <CardDescription>
+              {position 
+                ? `Selected: ${position[0].toFixed(6)}, ${position[1].toFixed(6)}` 
+                : "Click on the map to select a location"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="title">Title</Label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="Event title"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="description">Description</Label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Describe what happened..."
+                rows={3}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="space-y-1">
+                <Label htmlFor="type">Type</Label>
+                <Select value={type} onValueChange={setType}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Violent">Violent</SelectItem>
+                    <SelectItem value="Kidnapping">Kidnapping</SelectItem>
+                    <SelectItem value="Terrorism">Terrorism</SelectItem>
+                    <SelectItem value="Civil Unrest">Civil Unrest</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1">
+                <Label htmlFor="severity">Severity</Label>
+                <Select value={severity} onValueChange={setSeverity}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select severity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Critical">Critical</SelectItem>
+                    <SelectItem value="High">High</SelectItem>
+                    <SelectItem value="Medium">Medium</SelectItem>
+                    <SelectItem value="Low">Low</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+          <CardFooter className="flex justify-between">
+            <Button variant="outline" onClick={() => {
+              setOpen(false);
+              setPosition(null);
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleSubmit} disabled={!position}>
+              Submit
+            </Button>
+          </CardFooter>
+        </Card>
+      )}
+    </div>
   );
 }
 
