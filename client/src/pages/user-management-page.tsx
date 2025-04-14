@@ -587,36 +587,115 @@ export default function UserManagementPage() {
                 />
               </div>
               
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="role"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>User Role</FormLabel>
+                      <Select 
+                        onValueChange={field.onChange} 
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="admin">Administrator</SelectItem>
+                          <SelectItem value="coordinator">Response Coordinator</SelectItem>
+                          <SelectItem value="analyst">Data Analyst</SelectItem>
+                          <SelectItem value="field_agent">Field Agent</SelectItem>
+                          <SelectItem value="user">Standard User</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        This determines the user's permissions
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="securityLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Security Clearance Level</FormLabel>
+                      <Select 
+                        onValueChange={(value) => field.onChange(parseInt(value))} 
+                        defaultValue={field.value?.toString() || "1"}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select clearance level" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="1">Level 1 - Basic</SelectItem>
+                          <SelectItem value="2">Level 2 - Low</SelectItem>
+                          <SelectItem value="3">Level 3 - Medium</SelectItem>
+                          <SelectItem value="4">Level 4 - High</SelectItem>
+                          <SelectItem value="5">Level 5 - Very High</SelectItem>
+                          <SelectItem value="6">Level 6 - Extreme</SelectItem>
+                          <SelectItem value="7">Level 7 - Maximum</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormDescription>
+                        Determines access to sensitive information
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
               <FormField
                 control={form.control}
-                name="role"
+                name="department"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>User Role</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a role" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="admin">Administrator</SelectItem>
-                        <SelectItem value="coordinator">Response Coordinator</SelectItem>
-                        <SelectItem value="analyst">Data Analyst</SelectItem>
-                        <SelectItem value="field_agent">Field Agent</SelectItem>
-                        <SelectItem value="user">Standard User</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormDescription>
-                      This determines the user's permissions in the system
-                    </FormDescription>
+                    <FormLabel>Department</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter department" {...field} value={field.value || ''} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email Address</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter email" type="email" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="phoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter phone number" {...field} value={field.value || ''} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
               
               <DialogFooter>
                 <Button
