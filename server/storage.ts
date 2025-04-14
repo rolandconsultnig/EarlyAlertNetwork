@@ -1,4 +1,4 @@
-import { users, dataSources, incidents, alerts, responseActivities, responseTeams, riskIndicators, riskAnalyses, responsePlans } from "@shared/schema";
+import { users, dataSources, incidents, alerts, responseActivities, responseTeams, riskIndicators, riskAnalyses, responsePlans, apiKeys, webhooks } from "@shared/schema";
 import type { 
   User, InsertUser, 
   DataSource, InsertDataSource, 
@@ -8,7 +8,9 @@ import type {
   ResponseTeam, InsertResponseTeam, 
   RiskIndicator, InsertRiskIndicator,
   RiskAnalysis, InsertRiskAnalysis,
-  ResponsePlan, InsertResponsePlan
+  ResponsePlan, InsertResponsePlan,
+  ApiKey, InsertApiKey,
+  Webhook, InsertWebhook
 } from "@shared/schema";
 import session from "express-session";
 import { db, pool } from "./db";

@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response, NextFunction } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
@@ -13,10 +13,13 @@ import {
   insertRiskIndicatorSchema,
   insertRiskAnalysisSchema,
   insertResponsePlanSchema,
+  insertApiKeySchema,
+  insertWebhookSchema,
   riskAnalyses
 } from "@shared/schema";
 import { analysisService } from "./services/analysis-service";
 import { nlpService } from "./services/nlp-service";
+import { apiIntegrationService } from "./services/api-integration-service";
 import { db } from "./db";
 import { desc } from "drizzle-orm";
 
@@ -625,6 +628,308 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in entity extraction:", error);
       res.status(500).json({ error: "Failed to extract entities" });
+    }
+  });
+
+  // API Integration - API Keys
+  app.get("/api/integration/api-keys", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      let apiKeys;
+      // Admin users can see all API keys, others only see their own
+      if (req.user?.role === 'admin') {
+        apiKeys = await storage.getApiKeys();
+      } else {
+        apiKeys = await storage.getApiKeys(req.user?.id);
+      }
+      res.json(apiKeys);
+    } catch (error) {
+      console.error("Error fetching API keys:", error);
+      res.status(500).json({ error: "Failed to fetch API keys" });
+    }
+  });
+
+  app.get("/api/integration/api-keys/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const apiKey = await storage.getApiKey(id);
+      
+      if (!apiKey) {
+        return res.status(404).json({ error: "API key not found" });
+      }
+      
+      // Only allow access to own API keys unless admin
+      if (apiKey.userId !== req.user?.id && req.user?.role !== 'admin') {
+        return res.sendStatus(403);
+      }
+      
+      res.json(apiKey);
+    } catch (error) {
+      console.error("Error fetching API key:", error);
+      res.status(500).json({ error: "Failed to fetch API key" });
+    }
+  });
+
+  app.post("/api/integration/api-keys", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { name, permissions, expiresAt } = req.body;
+      
+      if (!name || !permissions || !Array.isArray(permissions)) {
+        return res.status(400).json({ error: "Name and permissions array are required" });
+      }
+      
+      const newApiKey = await apiIntegrationService.createApiKey(
+        req.user?.id,
+        name,
+        permissions,
+        expiresAt ? new Date(expiresAt) : undefined
+      );
+      
+      res.status(201).json(newApiKey);
+    } catch (error) {
+      console.error("Error creating API key:", error);
+      res.status(500).json({ error: "Failed to create API key" });
+    }
+  });
+
+  app.put("/api/integration/api-keys/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const apiKey = await storage.getApiKey(id);
+      
+      if (!apiKey) {
+        return res.status(404).json({ error: "API key not found" });
+      }
+      
+      // Only allow access to own API keys unless admin
+      if (apiKey.userId !== req.user?.id && req.user?.role !== 'admin') {
+        return res.sendStatus(403);
+      }
+      
+      const updatedApiKey = await storage.updateApiKey(id, req.body);
+      res.json(updatedApiKey);
+    } catch (error) {
+      console.error("Error updating API key:", error);
+      res.status(500).json({ error: "Failed to update API key" });
+    }
+  });
+
+  app.delete("/api/integration/api-keys/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const apiKey = await storage.getApiKey(id);
+      
+      if (!apiKey) {
+        return res.status(404).json({ error: "API key not found" });
+      }
+      
+      // Only allow access to own API keys unless admin
+      if (apiKey.userId !== req.user?.id && req.user?.role !== 'admin') {
+        return res.sendStatus(403);
+      }
+      
+      await storage.deleteApiKey(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting API key:", error);
+      res.status(500).json({ error: "Failed to delete API key" });
+    }
+  });
+
+  // API Integration - Webhooks
+  app.get("/api/integration/webhooks", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      let webhooks;
+      // Admin users can see all webhooks, others only see their own
+      if (req.user?.role === 'admin') {
+        webhooks = await storage.getWebhooks();
+      } else {
+        webhooks = await storage.getWebhooks(req.user?.id);
+      }
+      res.json(webhooks);
+    } catch (error) {
+      console.error("Error fetching webhooks:", error);
+      res.status(500).json({ error: "Failed to fetch webhooks" });
+    }
+  });
+
+  app.get("/api/integration/webhooks/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const webhook = await storage.getWebhook(id);
+      
+      if (!webhook) {
+        return res.status(404).json({ error: "Webhook not found" });
+      }
+      
+      // Only allow access to own webhooks unless admin
+      if (webhook.userId !== req.user?.id && req.user?.role !== 'admin') {
+        return res.sendStatus(403);
+      }
+      
+      res.json(webhook);
+    } catch (error) {
+      console.error("Error fetching webhook:", error);
+      res.status(500).json({ error: "Failed to fetch webhook" });
+    }
+  });
+
+  app.post("/api/integration/webhooks", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { name, url, events } = req.body;
+      
+      if (!name || !url || !events || !Array.isArray(events)) {
+        return res.status(400).json({ error: "Name, URL, and events array are required" });
+      }
+      
+      const webhook = await apiIntegrationService.createWebhook(
+        req.user?.id,
+        name,
+        url,
+        events
+      );
+      
+      res.status(201).json(webhook);
+    } catch (error) {
+      console.error("Error creating webhook:", error);
+      res.status(500).json({ error: "Failed to create webhook" });
+    }
+  });
+
+  app.put("/api/integration/webhooks/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const webhook = await storage.getWebhook(id);
+      
+      if (!webhook) {
+        return res.status(404).json({ error: "Webhook not found" });
+      }
+      
+      // Only allow access to own webhooks unless admin
+      if (webhook.userId !== req.user?.id && req.user?.role !== 'admin') {
+        return res.sendStatus(403);
+      }
+      
+      const updatedWebhook = await storage.updateWebhook(id, req.body);
+      res.json(updatedWebhook);
+    } catch (error) {
+      console.error("Error updating webhook:", error);
+      res.status(500).json({ error: "Failed to update webhook" });
+    }
+  });
+
+  app.delete("/api/integration/webhooks/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const webhook = await storage.getWebhook(id);
+      
+      if (!webhook) {
+        return res.status(404).json({ error: "Webhook not found" });
+      }
+      
+      // Only allow access to own webhooks unless admin
+      if (webhook.userId !== req.user?.id && req.user?.role !== 'admin') {
+        return res.sendStatus(403);
+      }
+      
+      await storage.deleteWebhook(id);
+      res.status(204).send();
+    } catch (error) {
+      console.error("Error deleting webhook:", error);
+      res.status(500).json({ error: "Failed to delete webhook" });
+    }
+  });
+
+  // External API access middleware
+  const apiKeyAuth = async (req: Request, res: Response, next: NextFunction) => {
+    // Check if request is already authenticated via session
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    
+    const apiKey = req.header('X-API-Key');
+    
+    if (!apiKey) {
+      return res.status(401).json({ error: "API key required" });
+    }
+    
+    // Determine the required permission based on the endpoint and method
+    let requiredPermission = 'read';
+    
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+      requiredPermission = 'write';
+    }
+    
+    // Check some endpoints that require specific permissions
+    if (req.path.includes('/admin')) {
+      requiredPermission = 'admin';
+    }
+    
+    // Validate API key
+    const isValid = await apiIntegrationService.validateApiKey(apiKey, requiredPermission);
+    
+    if (!isValid) {
+      return res.status(403).json({ error: "Invalid or expired API key" });
+    }
+    
+    next();
+  };
+  
+  // External API routes (accessible with API key)
+  app.use('/api/external', apiKeyAuth);
+  
+  app.get('/api/external/incidents', async (req, res) => {
+    try {
+      const incidents = await storage.getIncidents();
+      
+      // Send webhook event for this API access
+      await apiIntegrationService.triggerWebhooks('api.incidents.accessed', {
+        timestamp: new Date(),
+        endpoint: '/api/external/incidents',
+        method: 'GET'
+      });
+      
+      res.json(incidents);
+    } catch (error) {
+      console.error("Error in external incidents API:", error);
+      res.status(500).json({ error: "Failed to fetch incidents" });
+    }
+  });
+
+  app.get('/api/external/alerts', async (req, res) => {
+    try {
+      const alerts = await storage.getAlerts();
+      
+      // Send webhook event for this API access
+      await apiIntegrationService.triggerWebhooks('api.alerts.accessed', {
+        timestamp: new Date(),
+        endpoint: '/api/external/alerts',
+        method: 'GET'
+      });
+      
+      res.json(alerts);
+    } catch (error) {
+      console.error("Error in external alerts API:", error);
+      res.status(500).json({ error: "Failed to fetch alerts" });
     }
   });
 
