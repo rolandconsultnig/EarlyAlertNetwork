@@ -449,14 +449,22 @@ export default function ResponsePlansPage() {
             <CardContent className="p-6">
               {isLoadingPlans ? (
                 <div className="text-center py-8">
-                  <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
                   <p className="text-neutral-500">Loading response plans...</p>
                 </div>
               ) : plansError ? (
-                <div className="text-center py-8 text-red-500">
-                  <AlertCircle className="h-8 w-8 mx-auto mb-4" />
-                  <p>Failed to load response plans. Please try again.</p>
-                </div>
+                <ErrorMessage 
+                  variant="card"
+                  title="Failed to load response plans"
+                  description="We encountered a problem while retrieving response plan data."
+                  error={plansError instanceof Error ? plansError : undefined}
+                  troubleshootingTips={[
+                    "Check your internet connection and try again.",
+                    "The server might be temporarily unavailable.",
+                    "If the problem persists, contact technical support."
+                  ]}
+                  onRetry={() => refetchPlans()}
+                />
               ) : filteredPlans && filteredPlans.length > 0 ? (
                 <Table>
                   <TableHeader>
