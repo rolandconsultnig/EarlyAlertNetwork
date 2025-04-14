@@ -16,6 +16,7 @@ import {
   riskAnalyses
 } from "@shared/schema";
 import { analysisService } from "./services/analysis-service";
+import { nlpService } from "./services/nlp-service";
 import { db } from "./db";
 import { desc } from "drizzle-orm";
 
@@ -530,6 +531,100 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error in analyze incident:", error);
       res.status(500).json({ error: "Failed to analyze incident" });
+    }
+  });
+
+  // NLP API Endpoints
+  app.post("/api/nlp/sentiment", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { text } = req.body;
+      
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: "Text is required and must be a string" });
+      }
+      
+      const result = nlpService.analyzeSentiment(text);
+      res.json(result);
+    } catch (error) {
+      console.error("Error in sentiment analysis:", error);
+      res.status(500).json({ error: "Failed to analyze sentiment" });
+    }
+  });
+  
+  app.post("/api/nlp/keywords", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { text, maxResults } = req.body;
+      
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: "Text is required and must be a string" });
+      }
+      
+      const limit = maxResults && !isNaN(maxResults) ? parseInt(maxResults) : 10;
+      const result = nlpService.extractKeywords(text, limit);
+      res.json(result);
+    } catch (error) {
+      console.error("Error in keyword extraction:", error);
+      res.status(500).json({ error: "Failed to extract keywords" });
+    }
+  });
+  
+  app.post("/api/nlp/classify", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { text, maxResults } = req.body;
+      
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: "Text is required and must be a string" });
+      }
+      
+      const limit = maxResults && !isNaN(maxResults) ? parseInt(maxResults) : 3;
+      const result = nlpService.classifyText(text, limit);
+      res.json(result);
+    } catch (error) {
+      console.error("Error in text classification:", error);
+      res.status(500).json({ error: "Failed to classify text" });
+    }
+  });
+  
+  app.post("/api/nlp/summarize", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { text, maxLength } = req.body;
+      
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: "Text is required and must be a string" });
+      }
+      
+      const limit = maxLength && !isNaN(maxLength) ? parseInt(maxLength) : 200;
+      const result = nlpService.summarizeText(text, limit);
+      res.json({ summary: result });
+    } catch (error) {
+      console.error("Error in text summarization:", error);
+      res.status(500).json({ error: "Failed to summarize text" });
+    }
+  });
+  
+  app.post("/api/nlp/entities", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { text } = req.body;
+      
+      if (!text || typeof text !== 'string') {
+        return res.status(400).json({ error: "Text is required and must be a string" });
+      }
+      
+      const result = nlpService.extractEntities(text);
+      res.json(result);
+    } catch (error) {
+      console.error("Error in entity extraction:", error);
+      res.status(500).json({ error: "Failed to extract entities" });
     }
   });
 
