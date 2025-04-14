@@ -126,8 +126,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    // Values needs to be wrapped in an array for Drizzle PostgreSQL driver
-    const [user] = await db.insert(users).values([insertUser]).returning();
+    const [user] = await db.insert(users).values(insertUser).returning();
     return user;
   }
 
@@ -156,7 +155,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createDataSource(source: InsertDataSource): Promise<DataSource> {
-    const [dataSource] = await db.insert(dataSources).values([source]).returning();
+    const [dataSource] = await db.insert(dataSources).values(source).returning();
     return dataSource;
   }
 
@@ -417,7 +416,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createApiKey(apiKey: InsertApiKey): Promise<ApiKey> {
-    const [newApiKey] = await db.insert(apiKeys).values([apiKey]).returning();
+    const [newApiKey] = await db.insert(apiKeys).values(apiKey).returning();
     return newApiKey;
   }
 
@@ -454,7 +453,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async createWebhook(webhook: InsertWebhook): Promise<Webhook> {
-    const [newWebhook] = await db.insert(webhooks).values([webhook]).returning();
+    const [newWebhook] = await db.insert(webhooks).values(webhook).returning();
     return newWebhook;
   }
 
