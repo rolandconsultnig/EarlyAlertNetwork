@@ -75,10 +75,10 @@ function Router() {
 
 function App() {
   return (
-    <QueryClientProvider client={queryClient}>
+    <div>
       <Router />
       <Toaster />
-    </QueryClientProvider>
+    </div>
   );
 }
 

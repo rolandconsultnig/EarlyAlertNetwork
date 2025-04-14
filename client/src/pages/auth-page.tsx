@@ -1,3 +1,4 @@
+import React from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -39,11 +40,12 @@ export default function AuthPage() {
     });
   };
 
-  // Redirect if already logged in
-  if (user) {
-    navigate("/dashboard");
-    return null;
-  }
+  // Using useEffect for navigation to avoid react warnings about setState during render
+  React.useEffect(() => {
+    if (user) {
+      navigate("/dashboard");
+    }
+  }, [user, navigate]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-sky-50 to-white flex items-center justify-center p-4">
