@@ -115,6 +115,7 @@ export default function AlertsPage() {
   const [viewDialogOpen, setViewDialogOpen] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [alertFilter, setAlertFilter] = useState("all");
+  const [sourceFilter, setSourceFilter] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedIncidentId, setSelectedIncidentId] = useState<number | null>(null);
   
@@ -230,12 +231,24 @@ export default function AlertsPage() {
       (alertFilter === "active" && alert.status === "active") ||
       (alertFilter === "resolved" && alert.status === "resolved");
     
+    // Apply source filter
+    const sourceMatch = sourceFilter === "all" || 
+      (sourceFilter === "twitter" && alert.channels?.includes("twitter")) ||
+      (sourceFilter === "facebook" && alert.channels?.includes("facebook")) ||
+      (sourceFilter === "instagram" && alert.channels?.includes("instagram")) ||
+      (sourceFilter === "tiktok" && alert.channels?.includes("tiktok")) ||
+      (sourceFilter === "sms" && alert.channels?.includes("sms")) ||
+      (sourceFilter === "email" && alert.channels?.includes("email")) ||
+      (sourceFilter === "dashboard" && alert.channels?.includes("dashboard")) ||
+      (sourceFilter === "phone" && alert.channels?.includes("phone")) ||
+      (sourceFilter === "system" && (!alert.channels || alert.channels.length === 0));
+    
     // Apply search filter if search query exists
     const searchMatch = !searchQuery || 
       alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       alert.description.toLowerCase().includes(searchQuery.toLowerCase());
     
-    return statusMatch && searchMatch;
+    return statusMatch && sourceMatch && searchMatch;
   });
   
   // Handle resolve alert
@@ -284,29 +297,79 @@ export default function AlertsPage() {
     <MainLayout title="Alerts">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div className="flex flex-wrap items-center gap-3">
-          <TabsList>
-            <TabsTrigger 
-              value="all" 
-              onClick={() => setAlertFilter("all")}
-              className={alertFilter === "all" ? "bg-primary text-primary-foreground" : ""}
-            >
-              All Alerts
-            </TabsTrigger>
-            <TabsTrigger 
-              value="active" 
-              onClick={() => setAlertFilter("active")}
-              className={alertFilter === "active" ? "bg-primary text-primary-foreground" : ""}
-            >
-              Active
-            </TabsTrigger>
-            <TabsTrigger 
-              value="resolved" 
-              onClick={() => setAlertFilter("resolved")}
-              className={alertFilter === "resolved" ? "bg-primary text-primary-foreground" : ""}
-            >
-              Resolved
-            </TabsTrigger>
-          </TabsList>
+          {/* Status Filter */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">Status</label>
+            <TabsList>
+              <TabsTrigger 
+                value="all" 
+                onClick={() => setAlertFilter("all")}
+                className={alertFilter === "all" ? "bg-primary text-primary-foreground" : ""}
+              >
+                All Alerts
+              </TabsTrigger>
+              <TabsTrigger 
+                value="active" 
+                onClick={() => setAlertFilter("active")}
+                className={alertFilter === "active" ? "bg-primary text-primary-foreground" : ""}
+              >
+                Active
+              </TabsTrigger>
+              <TabsTrigger 
+                value="resolved" 
+                onClick={() => setAlertFilter("resolved")}
+                className={alertFilter === "resolved" ? "bg-primary text-primary-foreground" : ""}
+              >
+                Resolved
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          {/* Source Filter */}
+          <div>
+            <label className="text-sm font-medium text-gray-700 mb-1 block">Source</label>
+            <TabsList>
+              <TabsTrigger 
+                value="all" 
+                onClick={() => setSourceFilter("all")}
+                className={sourceFilter === "all" ? "bg-primary text-primary-foreground" : ""}
+              >
+                All Sources
+              </TabsTrigger>
+              <TabsTrigger 
+                value="social" 
+                onClick={() => setSourceFilter("twitter")}
+                className={sourceFilter === "twitter" ? "bg-primary text-primary-foreground" : ""}
+              >
+                <Twitter className="h-4 w-4 mr-1" />
+                Twitter
+              </TabsTrigger>
+              <TabsTrigger 
+                value="facebook" 
+                onClick={() => setSourceFilter("facebook")}
+                className={sourceFilter === "facebook" ? "bg-primary text-primary-foreground" : ""}
+              >
+                <Facebook className="h-4 w-4 mr-1" />
+                Facebook
+              </TabsTrigger>
+              <TabsTrigger 
+                value="sms" 
+                onClick={() => setSourceFilter("sms")}
+                className={sourceFilter === "sms" ? "bg-primary text-primary-foreground" : ""}
+              >
+                <MessageSquare className="h-4 w-4 mr-1" />
+                SMS
+              </TabsTrigger>
+              <TabsTrigger 
+                value="phone" 
+                onClick={() => setSourceFilter("phone")}
+                className={sourceFilter === "phone" ? "bg-primary text-primary-foreground" : ""}
+              >
+                <PhoneCall className="h-4 w-4 mr-1" />
+                Phone
+              </TabsTrigger>
+            </TabsList>
+          </div>
           
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
@@ -354,6 +417,7 @@ export default function AlertsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Title</TableHead>
+                  <TableHead>Source</TableHead>
                   <TableHead>Severity</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Generated At</TableHead>
@@ -364,6 +428,17 @@ export default function AlertsPage() {
                 {filteredAlerts.map((alert) => (
                   <TableRow key={alert.id}>
                     <TableCell className="font-medium">{alert.title}</TableCell>
+                    <TableCell>
+                      <div className="flex space-x-1">
+                        {alert.channels?.includes("twitter") && <Twitter className="h-4 w-4 text-blue-500" />}
+                        {alert.channels?.includes("facebook") && <Facebook className="h-4 w-4 text-blue-600" />}
+                        {alert.channels?.includes("instagram") && <Instagram className="h-4 w-4 text-pink-500" />}
+                        {alert.channels?.includes("sms") && <MessageSquare className="h-4 w-4 text-green-500" />}
+                        {alert.channels?.includes("phone") && <PhoneCall className="h-4 w-4 text-red-500" />}
+                        {alert.channels?.includes("email") && <Mail className="h-4 w-4 text-gray-500" />}
+                        {(!alert.channels || alert.channels.length === 0) && <Info className="h-4 w-4 text-gray-400" />}
+                      </div>
+                    </TableCell>
                     <TableCell>{getSeverityBadge(alert.severity)}</TableCell>
                     <TableCell>{getStatusBadge(alert.status)}</TableCell>
                     <TableCell>{formatDate(alert.generatedAt)}</TableCell>
@@ -471,6 +546,50 @@ export default function AlertsPage() {
                     </div>
                     <span className="text-sm font-medium">
                       {alerts?.filter(a => a.status === "resolved").length || 0}
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <p className="text-sm font-medium text-neutral-500 mb-2">Alerts by Source</p>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Twitter className="h-4 w-4 text-blue-500 mr-2" />
+                      <span className="text-sm">X (Twitter)</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {alerts?.filter(a => a.channels?.includes("twitter")).length || 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Facebook className="h-4 w-4 text-blue-600 mr-2" />
+                      <span className="text-sm">Facebook</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {alerts?.filter(a => a.channels?.includes("facebook")).length || 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <MessageSquare className="h-4 w-4 text-green-500 mr-2" />
+                      <span className="text-sm">SMS</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {alerts?.filter(a => a.channels?.includes("sms")).length || 0}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center">
+                      <Mail className="h-4 w-4 text-gray-600 mr-2" />
+                      <span className="text-sm">Email</span>
+                    </div>
+                    <span className="text-sm font-medium">
+                      {alerts?.filter(a => a.channels?.includes("email")).length || 0}
                     </span>
                   </div>
                 </div>
