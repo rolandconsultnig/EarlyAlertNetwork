@@ -77,6 +77,7 @@ import {
   PhoneCall,
   Eye,
   FileBarChart2,
+  Shield,
   ShieldCheck,
   X as XCircle
 } from "lucide-react";
@@ -175,6 +176,7 @@ export default function ResponsePlansPage() {
         category: data.category,
         steps: data.steps || {},
         resources: data.resources || {},
+        interAgencyPortal: data.interAgencyPortal || {},
         assignedTeams: data.selectedTeams || [],
         createdAt: new Date(),
         updatedAt: new Date(),
@@ -744,6 +746,70 @@ export default function ResponsePlansPage() {
                 )}
               />
               
+              <FormField
+                control={form.control}
+                name="interAgencyPortal"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Inter-Agency Portal</FormLabel>
+                    <FormDescription>
+                      Configure communication centers for different security agencies
+                    </FormDescription>
+                    <div className="space-y-4 mt-2">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {[
+                          'Air Force', 'Police', 'Navy', 'Immigration', 'Customs', 
+                          'DSS', 'NIA', 'NSCDC', 'Forest Guard', 'Amotekun', 'NSA'
+                        ].map((agency) => {
+                          const agencyKey = agency.toLowerCase().replace(/\s+/g, '_');
+                          return (
+                            <div key={agency} className="border rounded-md p-3">
+                              <div className="flex items-center mb-2">
+                                <Shield className="h-4 w-4 mr-2 text-primary" />
+                                <h4 className="font-medium text-sm">{agency}</h4>
+                              </div>
+                              <div className="space-y-2">
+                                <FormControl>
+                                  <Input
+                                    placeholder={`${agency} contact person`}
+                                    value={field.value?.[agencyKey]?.contact || ''}
+                                    onChange={(e) => {
+                                      const currentValues = { ...field.value } || {};
+                                      currentValues[agencyKey] = {
+                                        ...currentValues[agencyKey],
+                                        contact: e.target.value
+                                      };
+                                      field.onChange(currentValues);
+                                    }}
+                                    className="text-xs"
+                                  />
+                                </FormControl>
+                                <FormControl>
+                                  <Textarea
+                                    placeholder={`Notes for ${agency}`}
+                                    value={field.value?.[agencyKey]?.notes || ''}
+                                    onChange={(e) => {
+                                      const currentValues = { ...field.value } || {};
+                                      currentValues[agencyKey] = {
+                                        ...currentValues[agencyKey],
+                                        notes: e.target.value
+                                      };
+                                      field.onChange(currentValues);
+                                    }}
+                                    className="text-xs min-h-[60px]"
+                                  />
+                                </FormControl>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
               <DialogFooter>
                 <Button 
                   type="button" 
@@ -818,6 +884,41 @@ export default function ResponsePlansPage() {
                   }
                 </div>
               </div>
+              
+              {selectedPlan.interAgencyPortal && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Inter-Agency Portal</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {Object.entries(selectedPlan.interAgencyPortal).map(([key, data]: [string, any]) => {
+                      if (!data.contact && !data.notes) return null;
+                      const agencyName = key.split('_').map(word => 
+                        word.charAt(0).toUpperCase() + word.slice(1)
+                      ).join(' ');
+                      
+                      return (
+                        <div key={key} className="border rounded-md p-3 bg-neutral-50">
+                          <div className="flex items-center mb-1">
+                            <Shield className="h-4 w-4 mr-2 text-primary" />
+                            <h4 className="font-medium text-sm">{agencyName}</h4>
+                          </div>
+                          {data.contact && (
+                            <div className="mb-1">
+                              <span className="text-xs font-medium">Contact:</span>
+                              <p className="text-xs text-neutral-600">{data.contact}</p>
+                            </div>
+                          )}
+                          {data.notes && (
+                            <div>
+                              <span className="text-xs font-medium">Notes:</span>
+                              <p className="text-xs text-neutral-600">{data.notes}</p>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               
               <div>
                 <h4 className="text-sm font-medium mb-1">Change Status</h4>
