@@ -117,6 +117,11 @@ export default function UserManagementPage() {
       confirmPassword: "",
       fullName: "",
       role: "user",
+      securityLevel: 1,
+      department: "",
+      position: "",
+      phoneNumber: "",
+      email: "",
     },
   });
   
