@@ -20,6 +20,8 @@ import ReportingPage from "@/pages/reporting-page";
 import SettingsPage from "@/pages/settings-page";
 import SmsPage from "@/pages/sms-page";
 import SocialMediaPage from "@/pages/social-media-page";
+import AiAnalysisPage from "@/pages/ai-analysis-page";
+import AiPredictionPage from "@/pages/ai-prediction-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -32,6 +34,11 @@ function Router() {
       {/* Data Collection & Processing */}
       <ProtectedRoute path="/data-collection" component={DataCollectionPage} />
       <ProtectedRoute path="/data-processing" component={DataProcessingPage} />
+      
+      {/* AI Assistant */}
+      <ProtectedRoute path="/ai-analysis" component={AiAnalysisPage} />
+      <ProtectedRoute path="/ai-prediction" component={AiPredictionPage} />
+      <ProtectedRoute path="/ai-advisor" component={AiAnalysisPage} />
       
       {/* Risk Assessment */}
       <ProtectedRoute path="/analysis" component={RiskAssessmentPage} />

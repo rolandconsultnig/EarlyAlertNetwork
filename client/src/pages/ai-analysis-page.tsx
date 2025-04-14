@@ -186,7 +186,7 @@ export default function AiAnalysisPage() {
                             <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                             Loading data...
                           </span> : 
-                          `${incidents?.length || 0} incidents and ${riskIndicators?.length || 0} indicators available for analysis`
+                          `${incidents ? incidents.length : 0} incidents and ${riskIndicators ? riskIndicators.length : 0} indicators available for analysis`
                         }
                       </span>
                     </div>
