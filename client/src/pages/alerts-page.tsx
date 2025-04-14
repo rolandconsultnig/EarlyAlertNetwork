@@ -147,6 +147,12 @@ export default function AlertsPage() {
       location: "Nigeria", // Required by the API
       region: "Nigeria",   // Required by the API
       channels: [],        // Will be populated from notificationChannels
+      recipients: {
+        emails: [],
+        phoneNumbers: [],
+        userIds: [],
+        roles: []
+      }
     },
   });
   
@@ -999,6 +1005,7 @@ export default function AlertsPage() {
               
               <div>
                 <h3 className="text-sm font-medium mb-3">Notification Channels</h3>
+                <p className="text-xs text-neutral-500 mb-3">Select the channels through which this alert will be distributed</p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="flex items-center">
                     <Switch
@@ -1164,6 +1171,142 @@ export default function AlertsPage() {
                     </label>
                   </div>
                 </div>
+              </div>
+              
+              {/* Recipients Section */}
+              <div className="border rounded-md p-4">
+                <h3 className="text-sm font-medium mb-3">Recipients</h3>
+                <p className="text-xs text-neutral-500 mb-3">Add specific recipients for targeted notifications</p>
+                
+                {/* Email Recipients */}
+                <FormField
+                  control={form.control}
+                  name="recipients.emails"
+                  render={({ field }) => (
+                    <FormItem className="mb-4">
+                      <FormLabel>Email Recipients</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter email and press Enter" 
+                            id="email-input"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const input = e.currentTarget;
+                                const email = input.value.trim();
+                                if (email && email.includes('@')) {
+                                  const currentEmails = field.value || [];
+                                  if (!currentEmails.includes(email)) {
+                                    field.onChange([...currentEmails, email]);
+                                    input.value = '';
+                                  }
+                                }
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={() => {
+                            const input = document.getElementById('email-input') as HTMLInputElement;
+                            const email = input.value.trim();
+                            if (email && email.includes('@')) {
+                              const currentEmails = field.value || [];
+                              if (!currentEmails.includes(email)) {
+                                field.onChange([...currentEmails, email]);
+                                input.value = '';
+                              }
+                            }
+                          }}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {field.value?.map((email: string, index: number) => (
+                          <Badge 
+                            key={index}
+                            variant="outline"
+                            className="cursor-pointer"
+                            onClick={() => {
+                              field.onChange(field.value?.filter((_, i) => i !== index));
+                            }}
+                          >
+                            {email} <XCircle className="h-3 w-3 ml-1" />
+                          </Badge>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Phone Recipients */}
+                <FormField
+                  control={form.control}
+                  name="recipients.phoneNumbers"
+                  render={({ field }) => (
+                    <FormItem className="mb-4">
+                      <FormLabel>Phone Recipients</FormLabel>
+                      <div className="flex items-center gap-2">
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter phone number and press Enter" 
+                            id="phone-input"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                const input = e.currentTarget;
+                                const phone = input.value.trim();
+                                if (phone) {
+                                  const currentPhones = field.value || [];
+                                  if (!currentPhones.includes(phone)) {
+                                    field.onChange([...currentPhones, phone]);
+                                    input.value = '';
+                                  }
+                                }
+                              }
+                            }}
+                          />
+                        </FormControl>
+                        <Button 
+                          type="button" 
+                          variant="outline"
+                          onClick={() => {
+                            const input = document.getElementById('phone-input') as HTMLInputElement;
+                            const phone = input.value.trim();
+                            if (phone) {
+                              const currentPhones = field.value || [];
+                              if (!currentPhones.includes(phone)) {
+                                field.onChange([...currentPhones, phone]);
+                                input.value = '';
+                              }
+                            }
+                          }}
+                        >
+                          Add
+                        </Button>
+                      </div>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {field.value?.map((phone: string, index: number) => (
+                          <Badge 
+                            key={index}
+                            variant="outline"
+                            className="cursor-pointer"
+                            onClick={() => {
+                              field.onChange(field.value?.filter((_, i) => i !== index));
+                            }}
+                          >
+                            {phone} <XCircle className="h-3 w-3 ml-1" />
+                          </Badge>
+                        ))}
+                      </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
               
               <DialogFooter>
