@@ -284,19 +284,33 @@ export class NLPService {
     let summary = '';
     let currentLength = 0;
     
-    // Resort selected sentences by their original order
-    const topSentences: Array<{index: number, sentence: string}> = [];
-    for (const { sentence } of sentenceScores.slice(0, 5)) {
-      const index = sentences.indexOf(sentence);
-      topSentences.push({ index, sentence });
+    // Get top 5 sentences by score
+    const topScoredSentences = sentenceScores.slice(0, 5);
+    
+    // Create array of indices for sorting
+    const orderedSentences: {index: number, sentence: string}[] = [];
+    
+    // Find the original position of each top sentence
+    for (let i = 0; i < topScoredSentences.length; i++) {
+      const scoredSentence = topScoredSentences[i];
+      const sentenceText = scoredSentence.sentence;
+      const sentenceIndex = sentences.indexOf(sentenceText);
+      if (sentenceIndex !== -1) {
+        orderedSentences.push({
+          index: sentenceIndex,
+          sentence: sentenceText
+        });
+      }
     }
     
-    topSentences.sort((a, b) => a.index - b.index);
+    // Sort by original position
+    orderedSentences.sort((a, b) => a.index - b.index);
     
-    for (const { sentence } of topSentences) {
-      if (currentLength + sentence.length <= maxLength) {
-        summary += sentence + ' ';
-        currentLength += sentence.length + 1;
+    // Build summary with the sentences in original order
+    for (const item of orderedSentences) {
+      if (currentLength + item.sentence.length <= maxLength) {
+        summary += item.sentence + ' ';
+        currentLength += item.sentence.length + 1;
       } else {
         break;
       }

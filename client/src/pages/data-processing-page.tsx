@@ -2,18 +2,91 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import PageTemplate from "@/components/modules/PageTemplate";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Brain, BarChart3, Globe, Clock, AlertCircle, Filter, FileCheck } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Brain, 
+  BarChart3, 
+  Globe, 
+  Clock, 
+  AlertCircle, 
+  Filter, 
+  FileCheck,
+  Loader2,
+  ArrowRight
+} from "lucide-react";
 import { useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
 
 export default function DataProcessingPage() {
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("nlp");
+  const [inputText, setInputText] = useState("");
+  const [showNlpInput, setShowNlpInput] = useState(false);
+  const [nlpTask, setNlpTask] = useState<"sentiment" | "keywords" | "classify" | "summarize" | "entities" | null>(null);
+  const [nlpResult, setNlpResult] = useState<any>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const toolbar = (
-    <Button>
+    <Button onClick={() => {
+      setShowNlpInput(false);
+      setNlpTask(null);
+      setNlpResult(null);
+      setInputText("");
+    }}>
       <FileCheck className="h-4 w-4 mr-2" />
-      Run Analysis
+      Reset Analysis
     </Button>
   );
+  
+  const handleNlpAnalysis = async () => {
+    if (!inputText.trim()) {
+      toast({
+        title: "Empty input",
+        description: "Please enter some text to analyze.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setIsProcessing(true);
+    
+    try {
+      let endpoint = "";
+      switch (nlpTask) {
+        case "sentiment":
+          endpoint = "/api/nlp/sentiment";
+          break;
+        case "keywords":
+          endpoint = "/api/nlp/keywords";
+          break;
+        case "classify":
+          endpoint = "/api/nlp/classify";
+          break;
+        case "summarize":
+          endpoint = "/api/nlp/summarize";
+          break;
+        case "entities":
+          endpoint = "/api/nlp/entities";
+          break;
+        default:
+          throw new Error("Invalid NLP task");
+      }
+      
+      const response = await apiRequest("POST", endpoint, { text: inputText });
+      const result = await response.json();
+      setNlpResult(result);
+    } catch (error) {
+      console.error("NLP analysis error:", error);
+      toast({
+        title: "Analysis failed",
+        description: "Could not complete the analysis. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
   
   return (
     <PageTemplate 
@@ -56,85 +129,318 @@ export default function DataProcessingPage() {
         </TabsList>
         
         <TabsContent value="nlp" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Natural Language Processing</CardTitle>
-              <CardDescription>
-                Extract meaning, sentiment, and key insights from textual data
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <Card className="border border-blue-100">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Sentiment Analysis</CardTitle>
-                    <CardDescription>Analyze emotional tone of content</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Sentiment analysis measures the positive, negative, or neutral tone in text data from news reports, social media, and community feedback related to conflict events.
-                    </p>
-                    <div className="mt-4">
-                      <Button variant="outline" size="sm" className="w-full">
-                        Run Sentiment Analysis
+          {!showNlpInput ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Natural Language Processing</CardTitle>
+                <CardDescription>
+                  Extract meaning, sentiment, and key insights from textual data
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card className="border border-blue-100">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">Sentiment Analysis</CardTitle>
+                      <CardDescription>Analyze emotional tone of content</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Sentiment analysis measures the positive, negative, or neutral tone in text data from news reports, social media, and community feedback related to conflict events.
+                      </p>
+                      <div className="mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => {
+                            setShowNlpInput(true);
+                            setNlpTask("sentiment");
+                            setNlpResult(null);
+                          }}
+                        >
+                          Run Sentiment Analysis
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border border-blue-100">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">Keyword Extraction</CardTitle>
+                      <CardDescription>Identify important terms and topics</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Extract key terms, phrases, named entities, and topics from unstructured text to identify emerging conflict issues, involved parties, and potential crisis triggers.
+                      </p>
+                      <div className="mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => {
+                            setShowNlpInput(true);
+                            setNlpTask("keywords");
+                            setNlpResult(null);
+                          }}
+                        >
+                          Extract Keywords
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border border-blue-100">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">Classification</CardTitle>
+                      <CardDescription>Categorize text by content type</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Automatically classify text into predefined categories such as conflict type, involved actors, and potential humanitarian impacts to organize information.
+                      </p>
+                      <div className="mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => {
+                            setShowNlpInput(true);
+                            setNlpTask("classify");
+                            setNlpResult(null);
+                          }}
+                        >
+                          Classify Content
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border border-blue-100">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">Summarization</CardTitle>
+                      <CardDescription>Generate concise overviews of text data</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Create condensed summaries of lengthy reports, articles, and social media discussions to facilitate rapid information processing during crisis situations.
+                      </p>
+                      <div className="mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => {
+                            setShowNlpInput(true);
+                            setNlpTask("summarize");
+                            setNlpResult(null);
+                          }}
+                        >
+                          Generate Summaries
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card className="border border-blue-100">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-lg">Entity Recognition</CardTitle>
+                      <CardDescription>Extract named entities from text</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground">
+                        Identify and extract named entities such as people, organizations, locations, and events from text to understand key actors and contexts in conflict situations.
+                      </p>
+                      <div className="mt-4">
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => {
+                            setShowNlpInput(true);
+                            setNlpTask("entities");
+                            setNlpResult(null);
+                          }}
+                        >
+                          Extract Entities
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle>
+                    {nlpTask === "sentiment" && "Sentiment Analysis"}
+                    {nlpTask === "keywords" && "Keyword Extraction"}
+                    {nlpTask === "classify" && "Text Classification"}
+                    {nlpTask === "summarize" && "Text Summarization"}
+                    {nlpTask === "entities" && "Named Entity Recognition"}
+                  </CardTitle>
+                  <CardDescription>
+                    Enter your text below to analyze
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <Textarea
+                      placeholder="Enter text to analyze..."
+                      className="min-h-[200px]"
+                      value={inputText}
+                      onChange={(e) => setInputText(e.target.value)}
+                    />
+                    <div className="flex justify-end space-x-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setShowNlpInput(false);
+                          setNlpTask(null);
+                          setInputText("");
+                          setNlpResult(null);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={handleNlpAnalysis}
+                        disabled={isProcessing || !inputText.trim()}
+                      >
+                        {isProcessing ? (
+                          <>
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            Processing...
+                          </>
+                        ) : (
+                          <>
+                            <ArrowRight className="mr-2 h-4 w-4" />
+                            Analyze
+                          </>
+                        )}
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border border-blue-100">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Keyword Extraction</CardTitle>
-                    <CardDescription>Identify important terms and topics</CardDescription>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {nlpResult && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Analysis Results</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Extract key terms, phrases, named entities, and topics from unstructured text to identify emerging conflict issues, involved parties, and potential crisis triggers.
-                    </p>
-                    <div className="mt-4">
-                      <Button variant="outline" size="sm" className="w-full">
-                        Extract Keywords
-                      </Button>
-                    </div>
+                    {nlpTask === "sentiment" && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center p-4 bg-blue-50 rounded-md">
+                          <div>
+                            <p className="font-semibold">Sentiment:</p>
+                            <p className="text-2xl font-bold capitalize">
+                              {nlpResult.label}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-semibold">Score:</p>
+                            <p className="text-2xl font-bold">
+                              {(nlpResult.score * 100).toFixed(1)}%
+                            </p>
+                          </div>
+                          <div>
+                            <p className="font-semibold">Confidence:</p>
+                            <p className="text-2xl font-bold">
+                              {(nlpResult.confidence * 100).toFixed(1)}%
+                            </p>
+                          </div>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Sentiment scores range from -100% (negative) to 100% (positive).
+                          Scores near 0% indicate neutral sentiment.
+                        </p>
+                      </div>
+                    )}
+
+                    {nlpTask === "keywords" && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          {nlpResult.map((keyword: any, index: number) => (
+                            <div 
+                              key={index} 
+                              className="p-3 bg-blue-50 rounded-md flex justify-between items-center"
+                            >
+                              <div>
+                                <p className="font-semibold">{keyword.text}</p>
+                                <p className="text-xs text-blue-600">Type: {keyword.type}</p>
+                              </div>
+                              <div className="text-sm">
+                                <span className="inline-block bg-blue-100 px-2 py-1 rounded-full">
+                                  {(keyword.relevance * 100).toFixed(0)}%
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {nlpTask === "classify" && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-2">
+                          {nlpResult.map((category: any, index: number) => (
+                            <div 
+                              key={index} 
+                              className="p-3 bg-blue-50 rounded-md flex justify-between items-center"
+                            >
+                              <p className="font-semibold capitalize">{category.category}</p>
+                              <span className="inline-block bg-blue-100 px-2 py-1 rounded-full">
+                                {(category.confidence * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {nlpTask === "summarize" && (
+                      <div className="space-y-4">
+                        <div className="p-4 bg-blue-50 rounded-md">
+                          <p className="font-semibold">Summary:</p>
+                          <p className="mt-2">{nlpResult.summary}</p>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          The summary is an extractive summary that preserves the most important sentences 
+                          from the original text.
+                        </p>
+                      </div>
+                    )}
+
+                    {nlpTask === "entities" && (
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 gap-2">
+                          {nlpResult.map((entity: any, index: number) => (
+                            <div 
+                              key={index} 
+                              className="p-3 bg-blue-50 rounded-md flex justify-between items-center"
+                            >
+                              <div>
+                                <p className="font-semibold">{entity.text}</p>
+                                <p className="text-xs text-blue-600">Type: {entity.type}</p>
+                              </div>
+                              <span className="inline-block bg-blue-100 px-2 py-1 rounded-full">
+                                {(entity.relevance * 100).toFixed(0)}%
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
-                
-                <Card className="border border-blue-100">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Classification</CardTitle>
-                    <CardDescription>Categorize text by content type</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Automatically classify text into predefined categories such as conflict type, involved actors, and potential humanitarian impacts to organize information.
-                    </p>
-                    <div className="mt-4">
-                      <Button variant="outline" size="sm" className="w-full">
-                        Classify Content
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                <Card className="border border-blue-100">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">Summarization</CardTitle>
-                    <CardDescription>Generate concise overviews of text data</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">
-                      Create condensed summaries of lengthy reports, articles, and social media discussions to facilitate rapid information processing during crisis situations.
-                    </p>
-                    <div className="mt-4">
-                      <Button variant="outline" size="sm" className="w-full">
-                        Generate Summaries
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
+              )}
+            </>
+          )}
         </TabsContent>
         
         <TabsContent value="geospatial" className="space-y-6">
