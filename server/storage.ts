@@ -75,6 +75,22 @@ export interface IStorage {
   createResponsePlan(plan: InsertResponsePlan): Promise<ResponsePlan>;
   updateResponsePlan(id: number, plan: Partial<ResponsePlan>): Promise<ResponsePlan>;
   
+  // API keys methods
+  getApiKeys(userId?: number): Promise<ApiKey[]>;
+  getApiKey(id: number): Promise<ApiKey | undefined>;
+  getApiKeyByKey(key: string): Promise<ApiKey | undefined>;
+  createApiKey(apiKey: InsertApiKey): Promise<ApiKey>;
+  updateApiKey(id: number, apiKey: Partial<ApiKey>): Promise<ApiKey>;
+  deleteApiKey(id: number): Promise<boolean>;
+  
+  // Webhook methods
+  getWebhooks(userId?: number): Promise<Webhook[]>;
+  getWebhook(id: number): Promise<Webhook | undefined>;
+  createWebhook(webhook: InsertWebhook): Promise<Webhook>;
+  updateWebhook(id: number, webhook: Partial<Webhook>): Promise<Webhook>;
+  deleteWebhook(id: number): Promise<boolean>;
+  updateWebhookLastTriggered(id: number): Promise<Webhook>;
+  
   // Session store
   sessionStore: any;
 }
@@ -378,6 +394,99 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedPlan;
+  }
+
+  // API Key methods
+  async getApiKeys(userId?: number): Promise<ApiKey[]> {
+    if (userId) {
+      return db.select().from(apiKeys).where(eq(apiKeys.userId, userId)).orderBy(desc(apiKeys.createdAt));
+    }
+    return db.select().from(apiKeys).orderBy(desc(apiKeys.createdAt));
+  }
+
+  async getApiKey(id: number): Promise<ApiKey | undefined> {
+    const [apiKey] = await db.select().from(apiKeys).where(eq(apiKeys.id, id));
+    return apiKey;
+  }
+
+  async getApiKeyByKey(key: string): Promise<ApiKey | undefined> {
+    const [apiKey] = await db.select().from(apiKeys).where(eq(apiKeys.key, key));
+    return apiKey;
+  }
+
+  async createApiKey(apiKey: InsertApiKey): Promise<ApiKey> {
+    const [newApiKey] = await db.insert(apiKeys).values([apiKey]).returning();
+    return newApiKey;
+  }
+
+  async updateApiKey(id: number, apiKeyData: Partial<ApiKey>): Promise<ApiKey> {
+    const [updatedApiKey] = await db
+      .update(apiKeys)
+      .set(apiKeyData)
+      .where(eq(apiKeys.id, id))
+      .returning();
+    
+    if (!updatedApiKey) {
+      throw new Error(`API key with id ${id} not found`);
+    }
+    
+    return updatedApiKey;
+  }
+
+  async deleteApiKey(id: number): Promise<boolean> {
+    const result = await db.delete(apiKeys).where(eq(apiKeys.id, id));
+    return true;
+  }
+
+  // Webhook methods
+  async getWebhooks(userId?: number): Promise<Webhook[]> {
+    if (userId) {
+      return db.select().from(webhooks).where(eq(webhooks.userId, userId)).orderBy(desc(webhooks.createdAt));
+    }
+    return db.select().from(webhooks).orderBy(desc(webhooks.createdAt));
+  }
+
+  async getWebhook(id: number): Promise<Webhook | undefined> {
+    const [webhook] = await db.select().from(webhooks).where(eq(webhooks.id, id));
+    return webhook;
+  }
+
+  async createWebhook(webhook: InsertWebhook): Promise<Webhook> {
+    const [newWebhook] = await db.insert(webhooks).values([webhook]).returning();
+    return newWebhook;
+  }
+
+  async updateWebhook(id: number, webhookData: Partial<Webhook>): Promise<Webhook> {
+    const [updatedWebhook] = await db
+      .update(webhooks)
+      .set(webhookData)
+      .where(eq(webhooks.id, id))
+      .returning();
+    
+    if (!updatedWebhook) {
+      throw new Error(`Webhook with id ${id} not found`);
+    }
+    
+    return updatedWebhook;
+  }
+
+  async deleteWebhook(id: number): Promise<boolean> {
+    const result = await db.delete(webhooks).where(eq(webhooks.id, id));
+    return true;
+  }
+
+  async updateWebhookLastTriggered(id: number): Promise<Webhook> {
+    const [updatedWebhook] = await db
+      .update(webhooks)
+      .set({ lastTriggered: new Date() })
+      .where(eq(webhooks.id, id))
+      .returning();
+    
+    if (!updatedWebhook) {
+      throw new Error(`Webhook with id ${id} not found`);
+    }
+    
+    return updatedWebhook;
   }
 }
 

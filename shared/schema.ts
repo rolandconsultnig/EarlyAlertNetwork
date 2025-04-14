@@ -536,3 +536,53 @@ export type Setting = typeof settings.$inferSelect;
 
 export type InsertAccessLog = z.infer<typeof insertAccessLogSchema>;
 export type AccessLog = typeof accessLogs.$inferSelect;
+
+// 11. API Integration Module - API Keys
+export const apiKeys = pgTable("api_keys", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  key: text("key").notNull(),
+  permissions: jsonb("permissions").$type<string[]>().notNull(),
+  expiresAt: timestamp("expires_at"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastUsed: timestamp("last_used"),
+  status: text("status").notNull().default("active"),
+});
+
+export const insertApiKeySchema = createInsertSchema(apiKeys).pick({
+  userId: true,
+  name: true,
+  key: true,
+  permissions: true,
+  expiresAt: true,
+  status: true,
+});
+
+export type InsertApiKey = z.infer<typeof insertApiKeySchema>;
+export type ApiKey = typeof apiKeys.$inferSelect;
+
+// 12. Webhook Module - Webhooks
+export const webhooks = pgTable("webhooks", {
+  id: serial("id").primaryKey(),
+  userId: integer("user_id").references(() => users.id).notNull(),
+  name: text("name").notNull(),
+  url: text("url").notNull(),
+  secret: text("secret").notNull(),
+  events: jsonb("events").$type<string[]>().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  lastTriggered: timestamp("last_triggered"),
+  status: text("status").notNull().default("active"),
+});
+
+export const insertWebhookSchema = createInsertSchema(webhooks).pick({
+  userId: true,
+  name: true,
+  url: true,
+  secret: true,
+  events: true,
+  status: true,
+});
+
+export type InsertWebhook = z.infer<typeof insertWebhookSchema>;
+export type Webhook = typeof webhooks.$inferSelect;
