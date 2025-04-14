@@ -27,7 +27,10 @@ import {
   Facebook,
   Instagram,
   Video,
-  MessageSquareDashed
+  MessageSquareDashed,
+  Sparkles,
+  Bot,
+  Globe
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -52,6 +55,14 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
       title: "Main Navigation",
       items: [
         { path: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="mr-3 h-5 w-5" /> },
+      ]
+    },
+    {
+      title: "AI Assistant",
+      items: [
+        { path: "/ai-analysis", label: "AI Analysis", icon: <Sparkles className="mr-3 h-5 w-5" /> },
+        { path: "/ai-prediction", label: "Predictive Models", icon: <Bot className="mr-3 h-5 w-5" /> },
+        { path: "/ai-advisor", label: "Response Advisor", icon: <Globe className="mr-3 h-5 w-5" /> },
       ]
     },
     {
@@ -108,6 +119,7 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
   
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     "Main Navigation": true,
+    "AI Assistant": true,
     "Data Collection & Processing": true,
     "Risk Assessment": true,
     "Response Management": true,
