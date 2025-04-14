@@ -54,6 +54,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { DataLoader } from "@/components/ui/data-loader";
+import { ErrorMessage } from "@/components/ui/error-message";
 import { 
   Bell, 
   Search, 
@@ -78,7 +80,8 @@ import {
   MessageCircle,
   MessageSquare,
   PhoneCall,
-  Info
+  Info,
+  Loader2
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
@@ -422,14 +425,22 @@ export default function AlertsPage() {
         <CardContent className="p-6">
           {isLoadingAlerts ? (
             <div className="text-center py-8">
-              <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+              <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
               <p className="text-neutral-500">Loading alerts...</p>
             </div>
           ) : alertsError ? (
-            <div className="text-center py-8 text-red-500">
-              <AlertTriangle className="h-8 w-8 mx-auto mb-4" />
-              <p>Failed to load alerts. Please try again.</p>
-            </div>
+            <ErrorMessage 
+              variant="card"
+              title="Failed to load alerts"
+              description="We encountered a problem while retrieving alert data."
+              error={alertsError instanceof Error ? alertsError : undefined}
+              troubleshootingTips={[
+                "Check your internet connection and try again.",
+                "The data source might be temporarily unavailable.",
+                "If the problem persists, contact technical support."
+              ]}
+              onRetry={() => refetchAlerts()}
+            />
           ) : filteredAlerts && filteredAlerts.length > 0 ? (
             <Table>
               <TableHeader>
