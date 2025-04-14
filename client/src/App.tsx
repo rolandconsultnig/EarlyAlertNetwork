@@ -46,7 +46,7 @@ function Router() {
       
       {/* Response Management */}
       <ProtectedRoute path="/alerts" component={AlertsPage} />
-      <ProtectedRoute path="/response-plans" component={ResponsePlansPage} />
+      <ProtectedRoute path="/inter-agency-portal" component={ResponsePlansPage} />
       <ProtectedRoute path="/case-management" component={CaseManagementPage} />
       
       {/* Communications - SMS Management */}

@@ -298,7 +298,7 @@ export default function ResponsePlansPage() {
   };
 
   return (
-    <MainLayout title="Response Plans">
+    <MainLayout title="Inter-Agency Portal">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
         <div className="flex flex-wrap items-center gap-3">
           <TabsList>
@@ -426,9 +426,9 @@ export default function ResponsePlansPage() {
         <div className="lg:col-span-2">
           <Card>
             <CardHeader className="p-6 pb-2">
-              <CardTitle>Response Plans</CardTitle>
+              <CardTitle>Inter-Agency Communication Portal</CardTitle>
               <CardDescription>
-                Manage and coordinate response strategies
+                Coordinate response strategies across security agencies
               </CardDescription>
             </CardHeader>
             <CardContent className="p-6">
