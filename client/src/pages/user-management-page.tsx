@@ -98,45 +98,7 @@ export default function UserManagementPage() {
     error: usersError,
     refetch: refetchUsers 
   } = useQuery<User[]>({
-    queryKey: ["/api/user/all"],
-    queryFn: async () => {
-      // This is a mock implementation since the API endpoint doesn't exist yet
-      // In a real implementation, we would call the actual API
-      return [
-        {
-          id: 1,
-          username: "admin",
-          password: "*****",
-          fullName: "System Administrator",
-          role: "admin",
-          avatar: null
-        },
-        {
-          id: 2,
-          username: "coordinator",
-          password: "*****",
-          fullName: "Response Coordinator",
-          role: "coordinator",
-          avatar: null
-        },
-        {
-          id: 3,
-          username: "analyst",
-          password: "*****",
-          fullName: "Data Analyst",
-          role: "analyst",
-          avatar: null
-        },
-        {
-          id: 4, 
-          username: "fieldagent",
-          password: "*****",
-          fullName: "Field Agent",
-          role: "field_agent",
-          avatar: null
-        }
-      ];
-    }
+    queryKey: ["/api/user/all"]
   });
   
   // Create form using react-hook-form

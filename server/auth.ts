@@ -94,4 +94,21 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
   });
+
+  app.get("/api/user/all", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    // Only allow admins to access all users
+    const user = req.user as SelectUser;
+    if (user.role !== 'admin') {
+      return res.status(403).json({ error: "Only administrators can access user management" });
+    }
+    
+    try {
+      const users = await storage.getAllUsers();
+      res.json(users);
+    } catch (error) {
+      res.status(500).json({ error: "Failed to fetch users" });
+    }
+  });
 }
