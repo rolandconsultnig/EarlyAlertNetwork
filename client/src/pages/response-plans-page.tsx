@@ -774,9 +774,9 @@ export default function ResponsePlansPage() {
                                     placeholder={`${agency} contact person`}
                                     value={field.value?.[agencyKey]?.contact || ''}
                                     onChange={(e) => {
-                                      const currentValues = { ...field.value } || {};
+                                      const currentValues = { ...(field.value || {}) };
                                       currentValues[agencyKey] = {
-                                        ...currentValues[agencyKey],
+                                        ...(currentValues[agencyKey] || {}),
                                         contact: e.target.value
                                       };
                                       field.onChange(currentValues);
@@ -789,9 +789,9 @@ export default function ResponsePlansPage() {
                                     placeholder={`Notes for ${agency}`}
                                     value={field.value?.[agencyKey]?.notes || ''}
                                     onChange={(e) => {
-                                      const currentValues = { ...field.value } || {};
+                                      const currentValues = { ...(field.value || {}) };
                                       currentValues[agencyKey] = {
-                                        ...currentValues[agencyKey],
+                                        ...(currentValues[agencyKey] || {}),
                                         notes: e.target.value
                                       };
                                       field.onChange(currentValues);
@@ -885,40 +885,51 @@ export default function ResponsePlansPage() {
                 </div>
               </div>
               
-              {selectedPlan.interAgencyPortal && (
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Inter-Agency Portal</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {Object.entries(selectedPlan.interAgencyPortal).map(([key, data]: [string, any]) => {
-                      if (!data.contact && !data.notes) return null;
-                      const agencyName = key.split('_').map(word => 
-                        word.charAt(0).toUpperCase() + word.slice(1)
-                      ).join(' ');
-                      
-                      return (
-                        <div key={key} className="border rounded-md p-3 bg-neutral-50">
-                          <div className="flex items-center mb-1">
-                            <Shield className="h-4 w-4 mr-2 text-primary" />
-                            <h4 className="font-medium text-sm">{agencyName}</h4>
+              {/* Inter-Agency Portal Section */}
+              {(() => {
+                // Type safety checks
+                if (!selectedPlan.interAgencyPortal) return null;
+                if (typeof selectedPlan.interAgencyPortal !== 'object') return null;
+                if (Object.keys(selectedPlan.interAgencyPortal).length === 0) return null;
+                
+                const portalData = selectedPlan.interAgencyPortal as Record<string, {contact?: string, notes?: string}>;
+                
+                return (
+                  <div>
+                    <h4 className="text-sm font-medium mb-2">Inter-Agency Portal</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                      {Object.entries(portalData).map(([key, data]) => {
+                        if (!data || (!data.contact && !data.notes)) return null;
+                        
+                        const agencyName = key.split('_').map(word => 
+                          word.charAt(0).toUpperCase() + word.slice(1)
+                        ).join(' ');
+                        
+                        return (
+                          <div key={key} className="border rounded-md p-3 bg-neutral-50">
+                            <div className="flex items-center mb-1">
+                              <Shield className="h-4 w-4 mr-2 text-primary" />
+                              <h4 className="font-medium text-sm">{agencyName}</h4>
+                            </div>
+                            {data.contact && (
+                              <div className="mb-1">
+                                <span className="text-xs font-medium">Contact:</span>
+                                <p className="text-xs text-neutral-600">{data.contact}</p>
+                              </div>
+                            )}
+                            {data.notes && (
+                              <div>
+                                <span className="text-xs font-medium">Notes:</span>
+                                <p className="text-xs text-neutral-600">{data.notes}</p>
+                              </div>
+                            )}
                           </div>
-                          {data.contact && (
-                            <div className="mb-1">
-                              <span className="text-xs font-medium">Contact:</span>
-                              <p className="text-xs text-neutral-600">{data.contact}</p>
-                            </div>
-                          )}
-                          {data.notes && (
-                            <div>
-                              <span className="text-xs font-medium">Notes:</span>
-                              <p className="text-xs text-neutral-600">{data.notes}</p>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
               
               <div>
                 <h4 className="text-sm font-medium mb-1">Change Status</h4>
