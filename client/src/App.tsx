@@ -11,7 +11,7 @@ import DataProcessingPage from "@/pages/data-processing-page";
 import AnalysisPage from "@/pages/analysis-page";
 import RiskAssessmentPage from "@/pages/risk-assessment-page";
 import VisualizationPage from "@/pages/visualization-page";
-import AlertsPage from "@/pages/alerts-page";
+import AlertsPage from "@/pages/alerts-page-fixed";
 import ResponsePlansPage from "@/pages/response-plans-page";
 import CaseManagementPage from "@/pages/case-management-page";
 import UserManagementPage from "@/pages/user-management-page";
