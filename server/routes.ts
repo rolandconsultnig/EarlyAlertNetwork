@@ -934,5 +934,137 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Data Collection API
+  app.post("/api/data-sources/fetch-all", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // Start fetching data from all active sources
+      await dataSourceService.fetchFromAllSources();
+      
+      // Process the collected data
+      await dataSourceService.processCollectedData();
+      
+      res.status(200).json({ success: true, message: "Data fetch initiated from all active sources" });
+    } catch (error) {
+      console.error("Error fetching data from sources:", error);
+      res.status(500).json({ success: false, error: "Failed to fetch data from sources" });
+    }
+  });
+  
+  app.post("/api/data-sources/:id/fetch", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const sourceId = parseInt(req.params.id);
+      
+      // Check if source exists
+      const source = await storage.getDataSource(sourceId);
+      if (!source) {
+        return res.status(404).json({ success: false, error: "Data source not found" });
+      }
+      
+      // Fetch data from the specific source
+      await dataSourceService.fetchFromSource(sourceId);
+      
+      // Process the collected data
+      await dataSourceService.processCollectedData();
+      
+      res.status(200).json({ success: true, message: `Data fetch initiated from source: ${source.name}` });
+    } catch (error) {
+      console.error(`Error fetching data from source:`, error);
+      res.status(500).json({ success: false, error: "Failed to fetch data from source" });
+    }
+  });
+  
+  app.post("/api/data-sources/:id/manual-data", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const sourceId = parseInt(req.params.id);
+      
+      // Check if source exists
+      const source = await storage.getDataSource(sourceId);
+      if (!source) {
+        return res.status(404).json({ success: false, error: "Data source not found" });
+      }
+      
+      // Validate the manual data
+      const { content, metadata } = req.body;
+      if (!content) {
+        return res.status(400).json({ success: false, error: "Content is required" });
+      }
+      
+      // Add manual data
+      const data = await dataSourceService.addManualData(sourceId, { content, metadata });
+      
+      // Process the collected data
+      await dataSourceService.processCollectedData();
+      
+      res.status(201).json({ success: true, data });
+    } catch (error) {
+      console.error("Error adding manual data:", error);
+      res.status(500).json({ success: false, error: "Failed to add manual data" });
+    }
+  });
+  
+  // Manual Incident Coordinate API
+  app.post("/api/incidents/manual-coordinates", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { latitude, longitude, title, description, severity, region } = req.body;
+      
+      if (!latitude || !longitude || !title) {
+        return res.status(400).json({ success: false, error: "Latitude, longitude and title are required" });
+      }
+      
+      // Validate coordinates are within Nigeria's bounding box
+      const nigeriaBox = {
+        minLat: 4.0, maxLat: 14.0,
+        minLng: 2.5, maxLng: 15.0
+      };
+      
+      if (latitude < nigeriaBox.minLat || latitude > nigeriaBox.maxLat || 
+          longitude < nigeriaBox.minLng || longitude > nigeriaBox.maxLng) {
+        return res.status(400).json({ 
+          success: false, 
+          error: "Coordinates are outside Nigeria's boundaries"
+        });
+      }
+      
+      // Create location string in the format "lat,lng"
+      const location = `${latitude},${longitude}`;
+      
+      // Create additional location metadata
+      const locationMetadata = {
+        coordinates: location,
+        region: region || "Unknown"
+      };
+      
+      // Create incident data
+      const incidentData = {
+        title,
+        description: description || "",
+        severity: severity || "medium",
+        region: region || "Unknown",
+        location,
+        locationMetadata,
+        status: 'active',
+        reportedAt: new Date().toISOString(),
+        reportedBy: req.user?.id || 1, // Default to admin if no user
+        category: "conflict"
+      };
+      
+      // Save the incident
+      const newIncident = await storage.createIncident(incidentData);
+      
+      res.status(201).json({ success: true, incident: newIncident });
+    } catch (error) {
+      console.error("Error creating incident from coordinates:", error);
+      res.status(500).json({ success: false, error: "Failed to create incident from coordinates" });
+    }
+  });
+
   return httpServer;
 }

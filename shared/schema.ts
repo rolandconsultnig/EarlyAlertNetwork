@@ -43,6 +43,7 @@ export const dataSources = pgTable("data_sources", {
   description: text("description"),
   status: text("status").notNull().default("active"),
   lastUpdated: timestamp("last_updated").notNull().defaultNow(),
+  lastFetchedAt: timestamp("last_fetched_at"),
   apiEndpoint: text("api_endpoint"),
   apiKey: text("api_key"),
   region: text("region").notNull().default("Nigeria"),
@@ -74,6 +75,8 @@ export const collectedData = pgTable("collected_data", {
   coordinates: jsonb("coordinates"),
   region: text("region").notNull().default("Nigeria"),
   processed: boolean("processed").notNull().default(false),
+  processedAt: timestamp("processed_at"),
+  status: text("status").notNull().default("unprocessed"), // unprocessed, processed, error
   sentiment: text("sentiment"),
   keywords: text("keywords").array(),
   mediaUrls: text("media_urls").array(),

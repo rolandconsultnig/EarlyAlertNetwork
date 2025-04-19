@@ -87,12 +87,13 @@ export class DataSourceService {
           const dataToInsert = {
             sourceId: dataSource.id,
             content: item.content || '',
-            metadata: item.metadata || {},
-            collectedAt: new Date().toISOString(),
+            region: item.metadata?.region || 'Nigeria',
+            location: item.metadata?.location || null,
+            coordinates: item.metadata?.coordinates || null,
             status: 'unprocessed'
           };
           
-          await db.insert(collectedData).values(dataToInsert);
+          await db.insert(collectedData).values([dataToInsert]);
         }
         
         console.log(`Collected ${collectedItems.length} items from source ${dataSource.id} (${dataSource.name})`);
