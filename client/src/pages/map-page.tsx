@@ -225,7 +225,7 @@ export default function MapPage() {
           </div>
         </CardHeader>
         <CardContent className="p-6 pt-2">
-          <div className="border rounded-md overflow-hidden">
+          <div className="border rounded-md overflow-hidden" style={{ position: 'relative', zIndex: 5 }}>
             {!isMapReady ? (
               <div style={{ height: mapHeight }} className="flex items-center justify-center bg-gray-50">
                 <div className="text-center">
@@ -234,12 +234,14 @@ export default function MapPage() {
                 </div>
               </div>
             ) : (
-              <NigeriaMap 
-                height={mapHeight}
-                showIncidents={true}
-                // Force use of component's internal mock data
-                incidents={undefined}
-              />
+              <div className="map-wrapper">
+                <NigeriaMap 
+                  height={mapHeight}
+                  showIncidents={true}
+                  // Force use of component's internal mock data
+                  incidents={undefined}
+                />
+              </div>
             )}
           </div>
         </CardContent>

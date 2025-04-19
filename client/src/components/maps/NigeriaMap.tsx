@@ -471,7 +471,7 @@ export default function NigeriaMap({
   };
   
   return (
-    <div className="map-container" style={{ height, position: 'relative', zIndex: 25 }}>
+    <div className="map-container" style={{ height, position: 'static', overflow: 'visible' }}>
       <MapContainer 
         center={[9.0765, 7.3986]} 
         zoom={6} 
