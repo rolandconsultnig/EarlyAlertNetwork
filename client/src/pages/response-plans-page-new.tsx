@@ -52,7 +52,6 @@ import {
   Filter,
   RefreshCw,
   Building,
-  BuildingGovernment,
   Users2,
   UserPlus,
   UserCog,

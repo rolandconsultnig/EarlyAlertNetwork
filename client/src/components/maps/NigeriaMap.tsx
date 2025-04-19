@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, useMap, Circle } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap, Circle, useMapEvents } from 'react-leaflet';
 import { Incident } from '@shared/schema';
 import { useQuery } from '@tanstack/react-query';
 import L from 'leaflet';
@@ -74,6 +74,14 @@ function SetBoundsRectangles() {
   return null;
 }
 
+// Component to handle map clicks
+function MapClickHandler({ onClick }: { onClick: (e: L.LeafletMouseEvent) => void }) {
+  useMapEvents({
+    click: onClick
+  });
+  return null;
+}
+
 // Interface for map props
 interface NigeriaMapProps {
   height?: string;
@@ -83,8 +91,20 @@ interface NigeriaMapProps {
   incidents?: Incident[];
 }
 
+// Custom interface for mock incidents data
+interface MockIncident {
+  id: number;
+  title: string;
+  description: string;
+  latitude: number;
+  longitude: number;
+  severity: string;
+  status: string;
+  region: string;
+}
+
 // Mock incidents data for testing if no incidents are provided
-const mockIncidents = [
+const mockIncidents: MockIncident[] = [
   {
     id: 1,
     title: "Farmer-Herder Clash in Benue",
@@ -168,6 +188,29 @@ export default function NigeriaMap({
     setShowConfirmation(false);
   };
   
+  // Get coordinates from an incident
+  const getCoordinates = (incident: Incident | MockIncident): [number, number] => {
+    // For mock incidents with predefined coordinates
+    if ('latitude' in incident && 'longitude' in incident) {
+      return [incident.latitude, incident.longitude];
+    }
+    
+    // For regular incidents, try to extract coordinates from location string
+    if ('location' in incident && incident.location && incident.location.includes(',')) {
+      try {
+        const [lat, lng] = incident.location.split(',').map(coord => parseFloat(coord.trim()));
+        if (!isNaN(lat) && !isNaN(lng)) {
+          return [lat, lng];
+        }
+      } catch (e) {
+        console.error("Failed to parse location coordinates", e);
+      }
+    }
+    
+    // Default to center of Nigeria if no valid coordinates found
+    return [9.0765, 7.3986];
+  };
+  
   return (
     <div style={{ height }}>
       <MapContainer 
@@ -175,7 +218,6 @@ export default function NigeriaMap({
         zoom={6} 
         style={{ height: "100%", width: "100%" }}
         maxBoundsViscosity={1.0}
-        onClick={handleMapClick}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -184,34 +226,43 @@ export default function NigeriaMap({
         
         <SetBoundsRectangles />
         
+        {/* Map click handler */}
+        {showAddIncidentButton && (
+          <MapClickHandler onClick={handleMapClick} />
+        )}
+        
         {/* Display incidents on the map */}
-        {showIncidents && incidents?.map((incident) => (
-          <Marker 
-            key={incident.id}
-            position={[incident.latitude || 9.0765, incident.longitude || 7.3986]}
-            icon={getIncidentIcon(incident.severity)}
-          >
-            <Popup className="custom-popup">
-              <div className="p-1">
-                <div className="font-bold mb-1">{incident.title}</div>
-                <p className="text-sm mb-2">{incident.description}</p>
-                <div className="flex items-center text-xs mb-1">
-                  <AlertTriangle className="h-3 w-3 mr-1" />
-                  <span>Severity: {incident.severity}</span>
+        {showIncidents && incidents?.map((incident) => {
+          const [lat, lng] = getCoordinates(incident);
+          
+          return (
+            <Marker 
+              key={incident.id}
+              position={[lat, lng]}
+              icon={getIncidentIcon(incident.severity)}
+            >
+              <Popup className="custom-popup">
+                <div className="p-1">
+                  <div className="font-bold mb-1">{incident.title}</div>
+                  <p className="text-sm mb-2">{incident.description}</p>
+                  <div className="flex items-center text-xs mb-1">
+                    <AlertTriangle className="h-3 w-3 mr-1" />
+                    <span>Severity: {incident.severity}</span>
+                  </div>
+                  <div className="flex items-center text-xs mb-1">
+                    <Info className="h-3 w-3 mr-1" />
+                    <span>Status: {incident.status}</span>
+                  </div>
+                  <div className="flex items-center text-xs">
+                    <AlertCircle className="h-3 w-3 mr-1" />
+                    <span>Region: {incident.region}</span>
+                  </div>
+                  <Button className="w-full mt-2 text-xs h-7">View Details</Button>
                 </div>
-                <div className="flex items-center text-xs mb-1">
-                  <Info className="h-3 w-3 mr-1" />
-                  <span>Status: {incident.status}</span>
-                </div>
-                <div className="flex items-center text-xs">
-                  <AlertCircle className="h-3 w-3 mr-1" />
-                  <span>Region: {incident.region}</span>
-                </div>
-                <Button className="w-full mt-2 text-xs h-7">View Details</Button>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+              </Popup>
+            </Marker>
+          );
+        })}
         
         {/* Show pin for location being added */}
         {clickedPosition && (
@@ -246,14 +297,18 @@ export default function NigeriaMap({
         )}
         
         {/* Show risk heatmap for Nigeria */}
-        {showIncidents && incidents?.filter(i => i.severity === 'high').map((incident, idx) => (
-          <Circle 
-            key={`heat-${incident.id}-${idx}`}
-            center={[incident.latitude || 9.0765, incident.longitude || 7.3986]}
-            radius={50000}
-            pathOptions={{ fillColor: 'red', fillOpacity: 0.2, weight: 0 }}
-          />
-        ))}
+        {showIncidents && incidents?.filter(i => i.severity === 'high').map((incident, idx) => {
+          const [lat, lng] = getCoordinates(incident);
+          
+          return (
+            <Circle 
+              key={`heat-${incident.id}-${idx}`}
+              center={[lat, lng]}
+              radius={50000}
+              pathOptions={{ fillColor: 'red', fillOpacity: 0.2, weight: 0 }}
+            />
+          );
+        })}
       </MapContainer>
     </div>
   );
