@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -251,6 +251,15 @@ export default function DataCollectionPage() {
   } | null>(null);
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   
+  // Clean up polling interval on component unmount
+  useEffect(() => {
+    return () => {
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
+      }
+    };
+  }, [pollingInterval]);
+  
   // Function to fetch data from active sources
   const fetchFromAllSources = async () => {
     try {
@@ -326,41 +335,52 @@ export default function DataCollectionPage() {
       clearInterval(pollingInterval);
     }
     
+    // Do an initial fetch right away
+    await fetchProcessingStatus();
+    
     // Create a new polling interval
-    const interval = setInterval(async () => {
-      try {
-        const res = await apiRequest("GET", "/api/collected-data/status", null);
+    const interval = setInterval(fetchProcessingStatus, 3000); // Poll every 3 seconds
+    setPollingInterval(interval);
+  };
+  
+  // Function to fetch processing status
+  const fetchProcessingStatus = async () => {
+    try {
+      const res = await apiRequest("GET", "/api/collected-data/status", null);
+      
+      if (!res.ok) {
+        throw new Error("Failed to fetch processing status");
+      }
+      
+      const data = await res.json();
+      
+      if (data.success && data.stats) {
+        setProcessingStats(data.stats);
         
-        if (!res.ok) {
-          throw new Error("Failed to fetch processing status");
-        }
-        
-        const data = await res.json();
-        
-        if (data.success && data.stats) {
-          setProcessingStats(data.stats);
-          
-          // If all data is processed or there are no unprocessed items, stop polling
-          if (data.stats.unprocessed === 0 || 
-              (data.stats.processed + data.stats.errors === data.stats.total)) {
-            clearInterval(interval);
+        // If all data is processed or there are no unprocessed items, stop polling
+        if (data.stats.unprocessed === 0 || 
+            (data.stats.processed + data.stats.errors === data.stats.total)) {
+          if (pollingInterval) {
+            clearInterval(pollingInterval);
             setPollingInterval(null);
-            
-            // Show completion toast
+          }
+          
+          // Only show completion toast if we actually processed something
+          if (data.stats.total > 0) {
             toast({
               title: "Data Processing Complete",
               description: `Processed ${data.stats.processed} items with ${data.stats.errors} errors.`,
             });
           }
         }
-      } catch (error) {
-        console.error("Error polling data status:", error);
-        clearInterval(interval);
+      }
+    } catch (error) {
+      console.error("Error polling data status:", error);
+      if (pollingInterval) {
+        clearInterval(pollingInterval);
         setPollingInterval(null);
       }
-    }, 3000); // Poll every 3 seconds
-    
-    setPollingInterval(interval);
+    }
   };
   
   return (
