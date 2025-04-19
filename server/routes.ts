@@ -120,13 +120,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
+      // Add debug logging
+      console.log("Received incident payload:", JSON.stringify(req.body, null, 2));
+      
       const validatedData = insertIncidentSchema.parse(req.body);
       const newIncident = await storage.createIncident(validatedData);
       res.status(201).json(newIncident);
     } catch (error) {
       if (error instanceof z.ZodError) {
+        console.error("Validation error:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ error: error.errors });
       }
+      console.error("Failed to create incident:", error);
       res.status(500).json({ error: "Failed to create incident" });
     }
   });

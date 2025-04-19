@@ -198,11 +198,18 @@ export default function DataCollectionPage() {
 
   const reportIncidentMutation = useMutation({
     mutationFn: async (data: IncidentFormValues) => {
-      // Add the required reportedBy field (current user's ID)
+      // Add the required fields for the incident schema
       const incidentData = {
         ...data,
         reportedBy: user!.id,
         status: "active",
+        region: "Nigeria",
+        category: "conflict",
+        locationMetadata: {
+          coordinates: data.location,
+          region: "Nigeria"
+        },
+        verificationStatus: "unverified"
       };
       
       const res = await apiRequest("POST", "/api/incidents", incidentData);
