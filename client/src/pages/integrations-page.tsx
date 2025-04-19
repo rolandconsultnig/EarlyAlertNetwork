@@ -84,14 +84,17 @@ export default function IntegrationsPage() {
   const [testDialogOpen, setTestDialogOpen] = useState(false);
   const [currentService, setCurrentService] = useState<string | null>(null);
 
-  // Fetch integration status
+  // Fetch integration status - using public endpoint for initial load
   const { 
     data: integrationStatus,
     isLoading: isLoadingStatus,
     error: statusError,
     refetch: refetchStatus
   } = useQuery<AllIntegrationsStatus>({
-    queryKey: ['/api/integration/status'],
+    queryKey: ['/api/integration/status/public'],
+    // Retry configuration for better error handling
+    retry: 2,
+    retryDelay: 1000,
   });
   
   // Form for testing integrations
