@@ -266,6 +266,49 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Individual incident reaction endpoints for direct operations
+  app.post("/api/incident-reactions", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const validatedData = insertIncidentReactionSchema.parse(req.body);
+      
+      // Check if incident exists
+      const incident = await storage.getIncident(validatedData.incidentId);
+      if (!incident) {
+        return res.status(404).json({ error: "Incident not found" });
+      }
+      
+      // Create the reaction
+      const reaction = await storage.createIncidentReaction(validatedData);
+      res.status(201).json(reaction);
+    } catch (error) {
+      console.error("Error creating incident reaction:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(500).json({ error: "Failed to create reaction" });
+    }
+  });
+  
+  app.delete("/api/incident-reactions/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const success = await storage.deleteIncidentReaction(id);
+      
+      if (!success) {
+        return res.status(404).json({ error: "Reaction not found" });
+      }
+      
+      res.status(200).json({ message: "Reaction deleted" });
+    } catch (error) {
+      console.error("Error deleting incident reaction:", error);
+      res.status(500).json({ error: "Failed to delete reaction" });
+    }
+  });
+
   // Public incident reporting endpoint - does not require authentication
   app.post("/api/public/incidents", async (req, res) => {
     try {
