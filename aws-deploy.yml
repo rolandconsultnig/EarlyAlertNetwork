@@ -1,45 +1,66 @@
 AWSTemplateFormatVersion: '2010-09-09'
-Description: 'IPCR Early Warning & Early Response System - AWS Deployment'
+Description: 'CloudFormation template for IPCR Early Warning & Response System'
 
 Parameters:
   EnvironmentName:
-    Description: Environment name to deploy to (e.g. dev, prod)
+    Description: Environment name (dev, staging, prod)
     Type: String
     Default: dev
     AllowedValues:
       - dev
       - staging
       - prod
-
-  InstanceType:
-    Description: EC2 instance type to deploy the application
+  
+  DatabaseUsername:
+    Description: Username for the database
     Type: String
-    Default: t2.medium
+    Default: dbadmin
+    MinLength: 1
+    MaxLength: 16
+    AllowedPattern: '[a-zA-Z][a-zA-Z0-9]*'
+    ConstraintDescription: Must begin with a letter and contain only alphanumeric characters
+  
+  DatabasePassword:
+    Description: Password for the database
+    Type: String
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 41
+    AllowedPattern: '[a-zA-Z0-9]*'
+    ConstraintDescription: Must contain only alphanumeric characters
+  
+  AppInstanceType:
+    Description: EC2 instance type for the application servers
+    Type: String
+    Default: t3.small
     AllowedValues:
-      - t2.micro
-      - t2.small
-      - t2.medium
+      - t3.micro
+      - t3.small
       - t3.medium
       - t3.large
-
-  DBInstanceClass:
-    Description: RDS instance class for PostgreSQL database
+  
+  DatabaseInstanceType:
+    Description: Instance type for the RDS database
     Type: String
     Default: db.t3.small
     AllowedValues:
       - db.t3.micro
       - db.t3.small
       - db.t3.medium
-      - db.r5.large
-
-  DBStorage:
-    Description: PostgreSQL storage size in GB
-    Type: Number
-    Default: 20
-    MinValue: 20
-    MaxValue: 1000
+      - db.t3.large
+  
+  SessionSecret:
+    Description: Secret key for session encryption
+    Type: String
+    NoEcho: true
+    MinLength: 16
+    ConstraintDescription: Must be at least 16 characters
 
 Resources:
+  ###################
+  # VPC and Networking
+  ###################
+  
   VPC:
     Type: AWS::EC2::VPC
     Properties:
@@ -48,21 +69,8 @@ Resources:
       EnableDnsHostnames: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-VPC
-
-  InternetGateway:
-    Type: AWS::EC2::InternetGateway
-    Properties:
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-IGW
-
-  InternetGatewayAttachment:
-    Type: AWS::EC2::VPCGatewayAttachment
-    Properties:
-      InternetGatewayId: !Ref InternetGateway
-      VpcId: !Ref VPC
-
+          Value: !Sub ${EnvironmentName}-vpc
+  
   PublicSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -72,8 +80,8 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-PublicSubnet1
-
+          Value: !Sub ${EnvironmentName}-public-subnet-1
+  
   PublicSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
@@ -83,8 +91,8 @@ Resources:
       MapPublicIpOnLaunch: true
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-PublicSubnet2
-
+          Value: !Sub ${EnvironmentName}-public-subnet-2
+  
   PrivateSubnet1:
     Type: AWS::EC2::Subnet
     Properties:
@@ -94,8 +102,8 @@ Resources:
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-PrivateSubnet1
-
+          Value: !Sub ${EnvironmentName}-private-subnet-1
+  
   PrivateSubnet2:
     Type: AWS::EC2::Subnet
     Properties:
@@ -105,60 +113,99 @@ Resources:
       MapPublicIpOnLaunch: false
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-PrivateSubnet2
-
+          Value: !Sub ${EnvironmentName}-private-subnet-2
+  
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-igw
+  
+  InternetGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      InternetGatewayId: !Ref InternetGateway
+      VpcId: !Ref VPC
+  
+  NatGatewayEIP:
+    Type: AWS::EC2::EIP
+    DependsOn: InternetGatewayAttachment
+    Properties:
+      Domain: vpc
+  
+  NatGateway:
+    Type: AWS::EC2::NatGateway
+    Properties:
+      AllocationId: !GetAtt NatGatewayEIP.AllocationId
+      SubnetId: !Ref PublicSubnet1
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-natgw
+  
   PublicRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-PublicRouteTable
-
-  PublicRoute:
+          Value: !Sub ${EnvironmentName}-public-rt
+  
+  DefaultPublicRoute:
     Type: AWS::EC2::Route
     DependsOn: InternetGatewayAttachment
     Properties:
       RouteTableId: !Ref PublicRouteTable
       DestinationCidrBlock: 0.0.0.0/0
       GatewayId: !Ref InternetGateway
-
+  
   PublicSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet1
-
+  
   PublicSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PublicRouteTable
       SubnetId: !Ref PublicSubnet2
-
+  
   PrivateRouteTable:
     Type: AWS::EC2::RouteTable
     Properties:
       VpcId: !Ref VPC
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-PrivateRouteTable
-
+          Value: !Sub ${EnvironmentName}-private-rt
+  
+  DefaultPrivateRoute:
+    Type: AWS::EC2::Route
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      DestinationCidrBlock: 0.0.0.0/0
+      NatGatewayId: !Ref NatGateway
+  
   PrivateSubnet1RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateRouteTable
       SubnetId: !Ref PrivateSubnet1
-
+  
   PrivateSubnet2RouteTableAssociation:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       RouteTableId: !Ref PrivateRouteTable
       SubnetId: !Ref PrivateSubnet2
-
-  AppSecurityGroup:
+  
+  ###################
+  # Security Groups
+  ###################
+  
+  ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for the application
+      GroupDescription: Security group for the application load balancer
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -169,18 +216,32 @@ Resources:
           FromPort: 443
           ToPort: 443
           CidrIp: 0.0.0.0/0
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-alb-sg
+  
+  AppSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Security group for the application servers
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5000
+          ToPort: 5000
+          SourceSecurityGroupId: !Ref ALBSecurityGroup
         - IpProtocol: tcp
           FromPort: 22
           ToPort: 22
-          CidrIp: 0.0.0.0/0  # Best practice would be to restrict to specific IPs
+          CidrIp: 0.0.0.0/0
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-AppSG
-
+          Value: !Sub ${EnvironmentName}-app-sg
+  
   DBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for PostgreSQL database
+      GroupDescription: Security group for the database
       VpcId: !Ref VPC
       SecurityGroupIngress:
         - IpProtocol: tcp
@@ -189,152 +250,163 @@ Resources:
           SourceSecurityGroupId: !Ref AppSecurityGroup
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-DBSG
-
+          Value: !Sub ${EnvironmentName}-db-sg
+  
+  ###################
+  # Database
+  ###################
+  
   DBSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
-      DBSubnetGroupDescription: Subnet group for IPCR database
+      DBSubnetGroupDescription: Subnet group for the RDS database
       SubnetIds:
         - !Ref PrivateSubnet1
         - !Ref PrivateSubnet2
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-DBSubnetGroup
-
-  PostgreSQLDB:
+          Value: !Sub ${EnvironmentName}-db-subnet-group
+  
+  Database:
     Type: AWS::RDS::DBInstance
     Properties:
-      DBName: ipcr
+      DBName: ipcrdb
+      AllocatedStorage: 20
+      DBInstanceClass: !Ref DatabaseInstanceType
       Engine: postgres
-      EngineVersion: '13.4'
-      MasterUsername: dbadmin
-      MasterUserPassword: !Sub '{{resolve:secretsmanager:${EnvironmentName}-IPCR-DB-Credentials:SecretString:password}}'
-      DBInstanceClass: !Ref DBInstanceClass
-      AllocatedStorage: !Ref DBStorage
+      EngineVersion: 13.7
+      MasterUsername: !Ref DatabaseUsername
+      MasterUserPassword: !Ref DatabasePassword
+      MultiAZ: false
       StorageType: gp2
-      MultiAZ: true
       DBSubnetGroupName: !Ref DBSubnetGroup
       VPCSecurityGroups:
-        - !Ref DBSecurityGroup
-      PubliclyAccessible: false
+        - !GetAtt DBSecurityGroup.GroupId
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-PostgreSQL
-
+          Value: !Sub ${EnvironmentName}-database
+    DeletionPolicy: Snapshot
+  
+  ###################
+  # Application Load Balancer
+  ###################
+  
   AppLoadBalancer:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
+      Name: !Sub ${EnvironmentName}-alb
       Subnets:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
       SecurityGroups:
-        - !Ref AppSecurityGroup
+        - !Ref ALBSecurityGroup
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-ALB
-
+          Value: !Sub ${EnvironmentName}-alb
+  
+  ALBTargetGroup:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    Properties:
+      Name: !Sub ${EnvironmentName}-tg
+      Port: 5000
+      Protocol: HTTP
+      VpcId: !Ref VPC
+      HealthCheckPath: /api/health
+      HealthCheckIntervalSeconds: 30
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      UnhealthyThresholdCount: 5
+      TargetType: instance
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-tg
+  
   ALBListener:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
         - Type: forward
-          TargetGroupArn: !Ref AppTargetGroup
+          TargetGroupArn: !Ref ALBTargetGroup
       LoadBalancerArn: !Ref AppLoadBalancer
       Port: 80
       Protocol: HTTP
-
-  AppTargetGroup:
-    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+  
+  ###################
+  # Auto Scaling Group
+  ###################
+  
+  AppLaunchTemplate:
+    Type: AWS::EC2::LaunchTemplate
     Properties:
-      HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /api/health
-      HealthCheckProtocol: HTTP
-      HealthCheckTimeoutSeconds: 5
-      HealthyThresholdCount: 2
-      UnhealthyThresholdCount: 5
-      Port: 5000
-      Protocol: HTTP
-      VpcId: !Ref VPC
-      TargetType: instance
-      Tags:
-        - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-TG
-
+      LaunchTemplateName: !Sub ${EnvironmentName}-app-launch-template
+      VersionDescription: Initial version
+      LaunchTemplateData:
+        ImageId: ami-0cff7528ff583bf9a # Amazon Linux 2 AMI (HVM) - Kernel 5.10, SSD Volume Type
+        InstanceType: !Ref AppInstanceType
+        SecurityGroupIds:
+          - !GetAtt AppSecurityGroup.GroupId
+        UserData:
+          Fn::Base64: !Sub |
+            #!/bin/bash -xe
+            yum update -y
+            yum install -y git
+            
+            # Install Node.js
+            curl -sL https://rpm.nodesource.com/setup_16.x | bash -
+            yum install -y nodejs
+            
+            # Install PM2
+            npm install -g pm2
+            
+            # Create app directory
+            mkdir -p /var/app
+            cd /var/app
+            
+            # Clone repository
+            git clone https://github.com/yourusername/ipcr-ewers.git .
+            
+            # Set environment variables
+            cat > /var/app/.env << EOL
+            NODE_ENV=${EnvironmentName}
+            DATABASE_URL=postgresql://${DatabaseUsername}:${DatabasePassword}@${Database.Endpoint.Address}:${Database.Endpoint.Port}/ipcrdb
+            SESSION_SECRET=${SessionSecret}
+            EOL
+            
+            # Install dependencies and build app
+            npm ci
+            npm run build
+            
+            # Run database migrations
+            npm run db:push
+            
+            # Start application with PM2
+            pm2 start npm --name "ipcr-app" -- start
+            pm2 startup
+            pm2 save
+  
   AppAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
+      AutoScalingGroupName: !Sub ${EnvironmentName}-asg
+      MinSize: 2
+      MaxSize: 4
+      DesiredCapacity: 2
+      LaunchTemplate:
+        LaunchTemplateId: !Ref AppLaunchTemplate
+        Version: !GetAtt AppLaunchTemplate.LatestVersionNumber
       VPCZoneIdentifier:
         - !Ref PublicSubnet1
         - !Ref PublicSubnet2
-      LaunchConfigurationName: !Ref AppLaunchConfiguration
-      MinSize: 2
-      MaxSize: 6
-      DesiredCapacity: 2
       TargetGroupARNs:
-        - !Ref AppTargetGroup
+        - !Ref ALBTargetGroup
+      HealthCheckType: ELB
+      HealthCheckGracePeriod: 300
       Tags:
         - Key: Name
-          Value: !Sub ${EnvironmentName}-IPCR-ASG
+          Value: !Sub ${EnvironmentName}-app-instance
           PropagateAtLaunch: true
-
-  AppLaunchConfiguration:
-    Type: AWS::AutoScaling::LaunchConfiguration
-    Properties:
-      ImageId: ami-0c55b159cbfafe1f0  # Amazon Linux 2 AMI (adjust for your region)
-      InstanceType: !Ref InstanceType
-      SecurityGroups:
-        - !Ref AppSecurityGroup
-      UserData:
-        Fn::Base64: !Sub |
-          #!/bin/bash -xe
-          yum update -y
-          yum install -y docker git
-          service docker start
-          usermod -a -G docker ec2-user
-          
-          # Install Node.js
-          curl -sL https://rpm.nodesource.com/setup_16.x | bash -
-          yum install -y nodejs
-          
-          # Install PM2 for process management
-          npm install pm2 -g
-          
-          # Clone the application repository
-          mkdir -p /app
-          cd /app
-          git clone https://github.com/ipcr/ewers-app.git .
-          
-          # Set environment variables
-          cat > /app/.env << EOL
-          NODE_ENV=production
-          PORT=5000
-          DATABASE_URL=postgresql://dbadmin:{{resolve:secretsmanager:${EnvironmentName}-IPCR-DB-Credentials:SecretString:password}}@${PostgreSQLDB.Endpoint.Address}:${PostgreSQLDB.Endpoint.Port}/ipcr
-          EOL
-          
-          # Install dependencies and build the application
-          cd /app
-          npm ci
-          npm run build
-          
-          # Start the application with PM2
-          pm2 start npm --name "ipcr-app" -- start
-          pm2 startup
-          pm2 save
-          
-          # Configure health check endpoint
-          echo '
-          const express = require("express");
-          const app = express();
-          app.get("/api/health", (req, res) => {
-            res.status(200).send("OK");
-          });
-          app.listen(8081);
-          ' > /app/healthcheck.js
-          
-          node /app/healthcheck.js &
-
-  ScaleUpPolicy:
+  
+  AppScalingPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AutoScalingGroupName: !Ref AppAutoScalingGroup
@@ -343,22 +415,131 @@ Resources:
         PredefinedMetricSpecification:
           PredefinedMetricType: ASGAverageCPUUtilization
         TargetValue: 70.0
+  
+  ###################
+  # S3 Bucket for Assets
+  ###################
+  
+  AssetsBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub ipcr-ewers-assets-${EnvironmentName}-${AWS::AccountId}
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-assets-bucket
+  
+  AssetsBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref AssetsBucket
+      PolicyDocument:
+        Statement:
+          - Effect: Allow
+            Principal:
+              AWS: !GetAtt AppInstanceRole.Arn
+            Action:
+              - s3:GetObject
+              - s3:PutObject
+              - s3:ListBucket
+            Resource:
+              - !Sub arn:aws:s3:::${AssetsBucket}
+              - !Sub arn:aws:s3:::${AssetsBucket}/*
+  
+  ###################
+  # IAM Roles
+  ###################
+  
+  AppInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore
+      Policies:
+        - PolicyName: AppS3Access
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:ListBucket
+                Resource:
+                  - !Sub arn:aws:s3:::${AssetsBucket}
+                  - !Sub arn:aws:s3:::${AssetsBucket}/*
+      Tags:
+        - Key: Name
+          Value: !Sub ${EnvironmentName}-app-role
+  
+  AppInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - !Ref AppInstanceRole
+  
+  ###################
+  # CloudWatch Alarms
+  ###################
+  
+  HighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Alarm if CPU exceeds 80% for 5 minutes
+      Namespace: AWS/EC2
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: AutoScalingGroupName
+          Value: !Ref AppAutoScalingGroup
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
+      AlarmActions:
+        - !Ref AppScalingPolicy
+  
+  DatabaseHighCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Alarm if database CPU exceeds 80% for 5 minutes
+      Namespace: AWS/RDS
+      MetricName: CPUUtilization
+      Dimensions:
+        - Name: DBInstanceIdentifier
+          Value: !Ref Database
+      Statistic: Average
+      Period: 300
+      EvaluationPeriods: 1
+      Threshold: 80
+      ComparisonOperator: GreaterThanThreshold
 
 Outputs:
-  LoadBalancerDNS:
-    Description: DNS name of the application load balancer
-    Value: !GetAtt AppLoadBalancer.DNSName
-    Export:
-      Name: !Sub ${EnvironmentName}-IPCR-ALBDNS
-
+  ApplicationURL:
+    Description: URL of the application
+    Value: !Sub http://${AppLoadBalancer.DNSName}
+  
   DatabaseEndpoint:
-    Description: Endpoint of the PostgreSQL database
-    Value: !GetAtt PostgreSQLDB.Endpoint.Address
-    Export:
-      Name: !Sub ${EnvironmentName}-IPCR-DBEndpoint
-
-  VPCId:
+    Description: Connection endpoint for the database
+    Value: !GetAtt Database.Endpoint.Address
+  
+  DatabasePort:
+    Description: Port for the database connection
+    Value: !GetAtt Database.Endpoint.Port
+  
+  AssetsBucketName:
+    Description: Name of the S3 bucket for application assets
+    Value: !Ref AssetsBucket
+  
+  VpcId:
     Description: ID of the VPC
     Value: !Ref VPC
-    Export:
-      Name: !Sub ${EnvironmentName}-IPCR-VPCID
