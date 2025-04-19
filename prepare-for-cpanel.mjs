@@ -1,11 +1,16 @@
 /**
- * IPCR Early Warning & Response System - cPanel Preparation Script (CommonJS version)
+ * IPCR Early Warning & Response System - cPanel Preparation Script
  * This script creates the necessary files for cPanel deployment
  */
 
-const fs = require('fs');
-const path = require('path');
-const { execSync } = require('child_process');
+import fs from 'fs';
+import path from 'path';
+import { execSync } from 'child_process';
+import { fileURLToPath } from 'url';
+
+// Get current directory (equivalent to __dirname in CommonJS)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Define paths
 const outputDir = path.join(__dirname, 'cpanel-deploy');
@@ -17,31 +22,50 @@ if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir);
 }
 
-// Copy required files
-console.log('Creating files for cPanel deployment with MySQL support...');
-
-// Make sure MySQL adapter files exist
-const requiredFiles = [
-  'db-mysql.js',
-  'server-mysql.js',
-  'mysql-schema.js',
-  'start-mysql.cjs',
-  'README.md'
-];
-
-for (const file of requiredFiles) {
-  const srcPath = path.join(__dirname, 'cpanel-deploy', file);
-  const destPath = path.join(outputDir, file);
-  
-  if (!fs.existsSync(srcPath)) {
-    console.error(`Error: Required file not found: ${srcPath}`);
-    console.error('Please run the preparation script first to create all necessary files.');
-    process.exit(1);
-  }
-  
-  fs.copyFileSync(srcPath, destPath);
-  console.log(`Copied ${file}`);
+// Build the project
+console.log('Building the application...');
+try {
+  execSync('npm run build', { stdio: 'inherit' });
+} catch (error) {
+  console.error('Build failed:', error);
+  process.exit(1);
 }
+
+// Copy required files
+console.log('Copying files for cPanel deployment...');
+
+// Copy client build output
+console.log('Copying client build...');
+copyDir(path.join(__dirname, 'dist'), path.join(outputDir, 'dist'));
+
+// Copy server files (modified for MySQL compatibility)
+console.log('Creating server files with MySQL support...');
+
+// Copy MySQL-specific files
+fs.copyFileSync(
+  path.join(__dirname, 'cpanel-deploy', 'db-mysql.js'),
+  path.join(outputDir, 'db-mysql.js')
+);
+
+fs.copyFileSync(
+  path.join(__dirname, 'cpanel-deploy', 'server-mysql.js'),
+  path.join(outputDir, 'server-mysql.js')
+);
+
+fs.copyFileSync(
+  path.join(__dirname, 'cpanel-deploy', 'mysql-schema.js'),
+  path.join(outputDir, 'mysql-schema.js')
+);
+
+fs.copyFileSync(
+  path.join(__dirname, 'cpanel-deploy', 'start-mysql.cjs'),
+  path.join(outputDir, 'start-mysql.cjs')
+);
+
+fs.copyFileSync(
+  path.join(__dirname, 'cpanel-deploy', 'README.md'),
+  path.join(outputDir, 'README.md')
+);
 
 // Make start script executable
 try {
@@ -110,7 +134,25 @@ fs.writeFileSync(
 console.log('cPanel deployment package created successfully!');
 console.log(`Package location: ${outputDir}`);
 console.log('Next steps:');
-console.log('1. Build your application with "npm run build"');
-console.log('2. Copy the built files from "dist/public" to "cpanel-deploy/dist/public"');
-console.log('3. Upload the contents of the cpanel-deploy directory to your cPanel hosting');
-console.log('4. Follow the instructions in README.md to complete the deployment');
+console.log('1. Upload the contents of the cpanel-deploy directory to your cPanel hosting');
+console.log('2. Follow the instructions in README.md to complete the deployment');
+
+// Utility function to copy directories recursively
+function copyDir(src, dest) {
+  if (!fs.existsSync(dest)) {
+    fs.mkdirSync(dest, { recursive: true });
+  }
+  
+  const entries = fs.readdirSync(src, { withFileTypes: true });
+  
+  for (const entry of entries) {
+    const srcPath = path.join(src, entry.name);
+    const destPath = path.join(dest, entry.name);
+    
+    if (entry.isDirectory()) {
+      copyDir(srcPath, destPath);
+    } else {
+      fs.copyFileSync(srcPath, destPath);
+    }
+  }
+}
