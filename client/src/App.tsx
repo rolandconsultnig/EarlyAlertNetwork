@@ -21,6 +21,7 @@ import SmsPage from "@/pages/sms-page";
 import SocialMediaPage from "@/pages/social-media-page";
 import AiAnalysisPage from "@/pages/ai-analysis-page";
 import AiPredictionPage from "@/pages/ai-prediction-page";
+import ReportIncidentPage from "@/pages/report-incident-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -28,6 +29,7 @@ function Router() {
     <Switch>
       <Route path="/" component={HomePage} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/report-incident" component={ReportIncidentPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
       
       {/* Data Collection & Processing */}

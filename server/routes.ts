@@ -154,6 +154,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public incident reporting endpoint - does not require authentication
+  app.post("/api/public/incidents", async (req, res) => {
+    try {
+      console.log("Received public incident payload:", JSON.stringify(req.body, null, 2));
+      
+      // Extract the necessary incident data from the request
+      const { 
+        title, description, location, region, actorType, actorName,
+        contactName, contactEmail, contactPhone
+      } = req.body;
+
+      // Format the data to match the incident schema
+      const incidentData = {
+        title,
+        description,
+        latitude: 0, // These will be updated by admins during verification
+        longitude: 0,
+        status: "pending",
+        category: "conflict",
+        reportedAt: new Date().toISOString(),
+        locationMetadata: JSON.stringify({
+          location,
+          region,
+          coordinates: "To be verified"
+        }),
+        actors: JSON.stringify({
+          type: actorType,
+          name: actorName
+        }),
+        reporterInfo: JSON.stringify({
+          name: contactName,
+          email: contactEmail || "",
+          phone: contactPhone
+        }),
+        verificationStatus: "unverified"
+      };
+
+      // Create the incident
+      const incident = await storage.createIncident(incidentData);
+      res.status(201).json(incident);
+    } catch (error) {
+      console.error("Error creating public incident:", error);
+      if (error instanceof z.ZodError) {
+        return res.status(400).json({ error: error.errors });
+      }
+      res.status(400).json({ error: "Failed to create incident", details: error.message });
+    }
+  });
+
   // Alerts API
   app.get("/api/alerts", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

@@ -36,7 +36,7 @@ export default function HomePage() {
           <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-8">
             Monitoring, analyzing, and responding to conflict indicators for a peaceful Nigeria
           </p>
-          <Link href="/data-collection">
+          <Link href="/report-incident">
             <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50">
               Report an Incident <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
@@ -127,7 +127,7 @@ export default function HomePage() {
                 and save lives.
               </p>
               <div className="space-y-2">
-                <Link href="/data-collection">
+                <Link href="/report-incident">
                   <Button className="w-full">Report Online</Button>
                 </Link>
                 <Button variant="outline" className="w-full">Call Hotline: 0800-PEACE-NG</Button>
