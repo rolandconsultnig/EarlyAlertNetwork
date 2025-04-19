@@ -36,9 +36,11 @@ export default function HomePage() {
           <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-8">
             Monitoring, analyzing, and responding to conflict indicators for a peaceful Nigeria
           </p>
-          <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50">
-            Report an Incident <ArrowRight className="ml-2 h-5 w-5" />
-          </Button>
+          <Link href="/data-collection">
+            <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50">
+              Report an Incident <ArrowRight className="ml-2 h-5 w-5" />
+            </Button>
+          </Link>
         </div>
       </section>
 
@@ -125,7 +127,9 @@ export default function HomePage() {
                 and save lives.
               </p>
               <div className="space-y-2">
-                <Button className="w-full">Report Online</Button>
+                <Link href="/data-collection">
+                  <Button className="w-full">Report Online</Button>
+                </Link>
                 <Button variant="outline" className="w-full">Call Hotline: 0800-PEACE-NG</Button>
                 <Button variant="outline" className="w-full">SMS Reporting</Button>
               </div>
