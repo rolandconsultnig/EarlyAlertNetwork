@@ -644,7 +644,6 @@ const IncidentTrendPrediction: React.FC<IncidentTrendPredictionProps> = ({
                           type="category"
                           allowDuplicatedCategory={false}
                           tick={{ fontSize: 10 }}
-                          data={['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']}
                         />
                         <YAxis tick={{ fontSize: 10 }} />
                         <Tooltip />

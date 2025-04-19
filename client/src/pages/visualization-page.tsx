@@ -801,6 +801,86 @@ export default function VisualizationPage() {
           </div>
         </TabsContent>
         
+        <TabsContent value="trends" className="space-y-4">
+          <IncidentTrendPrediction 
+            title="Incident Trend Prediction and Early Warning"
+            description="AI-powered prediction of conflict patterns across Nigeria with regional breakdown"
+            onPredictionGenerated={(predictions) => {
+              console.log("New predictions generated:", predictions);
+              // In a production app, you would use this for updating state or triggering other components
+            }}
+          />
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Methodology Notes</CardTitle>
+              </CardHeader>
+              <CardContent className="text-sm">
+                <p>
+                  Predictions are based on historical incident patterns, seasonal variations, and
+                  regional stability indicators. The AI model is continuously trained on verified incident data.
+                </p>
+                <p className="mt-2">
+                  Confidence levels reflect the model's certainty based on data quality and regional coverage.
+                </p>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Data Sources</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-sm space-y-1">
+                  <li className="flex items-start">
+                    <span className="text-primary mr-2">•</span>
+                    <span>IPCR Verified Incident Database</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary mr-2">•</span>
+                    <span>National Security Agency Reports</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary mr-2">•</span>
+                    <span>Community Early Warning Networks</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary mr-2">•</span>
+                    <span>Civic Society Organization Reports</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-lg">Recommended Actions</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="text-sm space-y-1">
+                  <li className="flex items-start">
+                    <span className="text-primary mr-2">•</span>
+                    <span>Increase monitoring in anomaly regions</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary mr-2">•</span>
+                    <span>Alert local response teams to heightened risk</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary mr-2">•</span>
+                    <span>Review resource allocation based on regional trends</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="text-primary mr-2">•</span>
+                    <span>Prepare contingency plans for high-risk scenarios</span>
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
         <TabsContent value="layers" className="space-y-4">
           <Card>
             <CardHeader>
