@@ -182,15 +182,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Incident not found" });
       }
       
-      // For initial testing, return mock data
-      // In production, this would be fetched from the database
-      const mockReactions = [
-        { emoji: "👍", count: 12, users: [2, 3, 5] },
-        { emoji: "😢", count: 8, users: [1, 4] },
-        { emoji: "🙏", count: 5, users: [] },
-      ];
+      // Get all reactions for this incident
+      const reactions = await storage.getIncidentReactions(incidentId);
       
-      res.json(mockReactions);
+      // Group reactions by emoji and count them
+      interface GroupedReaction {
+        emoji: string;
+        count: number;
+        users: number[];
+      }
+      
+      const groupedReactions = reactions.reduce<Record<string, GroupedReaction>>((acc, reaction) => {
+        if (!acc[reaction.emoji]) {
+          acc[reaction.emoji] = { 
+            emoji: reaction.emoji, 
+            count: 0, 
+            users: [] 
+          };
+        }
+        acc[reaction.emoji].count += 1;
+        acc[reaction.emoji].users.push(reaction.userId);
+        return acc;
+      }, {});
+      
+      // Convert the grouped reactions to an array
+      const result = Object.values(groupedReactions);
+      
+      res.json(result);
     } catch (error) {
       console.error("Error fetching incident reactions:", error);
       res.status(500).json({ error: "Failed to fetch reactions" });
@@ -215,19 +233,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(404).json({ error: "Incident not found" });
       }
       
-      // In production, this would check if user already reacted with this emoji
-      // and toggle it appropriately
+      // Check if the user has already reacted with this emoji
+      const existingReaction = await storage.getUserIncidentReaction(incidentId, userId, emoji);
       
-      // Mock successful response
-      res.status(201).json({ 
-        message: "Reaction added",
-        action: "added", 
-        reaction: {
+      if (existingReaction) {
+        // If reaction exists, remove it (toggle off)
+        await storage.deleteIncidentReaction(existingReaction.id);
+        return res.status(200).json({ 
+          message: "Reaction removed",
+          action: "removed", 
+          reaction: existingReaction
+        });
+      } else {
+        // If reaction doesn't exist, add it
+        const reaction = await storage.createIncidentReaction({
           incidentId,
           userId,
           emoji
-        }
-      });
+        });
+        
+        return res.status(201).json({ 
+          message: "Reaction added",
+          action: "added", 
+          reaction
+        });
+      }
     } catch (error) {
       console.error("Error updating incident reaction:", error);
       res.status(500).json({ error: "Failed to update reaction" });

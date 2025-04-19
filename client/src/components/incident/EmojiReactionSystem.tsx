@@ -84,16 +84,15 @@ const EmojiReactionSystem: React.FC<EmojiReactionSystemProps> = ({
         if (onReactionUpdate) {
           onReactionUpdate(data);
         }
+      } else {
+        console.error("Failed to fetch reactions:", await response.text());
+        // Initialize with empty reactions array on API error
+        setReactions([]);
       }
     } catch (error) {
       console.error("Failed to fetch reactions:", error);
-      // Use sample data for demo if API fails
-      const sampleData: Reaction[] = [
-        { emoji: "👍", count: 12, users: [2, 3, 5] },
-        { emoji: "😢", count: 8, users: [1, 4] },
-        { emoji: "🙏", count: 5, users: [] },
-      ];
-      setReactions(sampleData);
+      // Initialize with empty reactions array on API error
+      setReactions([]);
     }
   };
 
@@ -155,7 +154,7 @@ const EmojiReactionSystem: React.FC<EmojiReactionSystemProps> = ({
       const response = await apiRequest(
         'POST', 
         `/api/incidents/${incidentId}/reactions`,
-        { emoji, userId }
+        { emoji }
       );
       
       if (!response.ok) {

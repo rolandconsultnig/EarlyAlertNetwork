@@ -1,8 +1,9 @@
-import { users, dataSources, incidents, alerts, responseActivities, responseTeams, riskIndicators, riskAnalyses, responsePlans, apiKeys, webhooks } from "@shared/schema";
+import { users, dataSources, incidents, incidentReactions, alerts, responseActivities, responseTeams, riskIndicators, riskAnalyses, responsePlans, apiKeys, webhooks } from "@shared/schema";
 import type { 
   User, InsertUser, 
   DataSource, InsertDataSource, 
-  Incident, InsertIncident, 
+  Incident, InsertIncident,
+  IncidentReaction, InsertIncidentReaction,
   Alert, InsertAlert, 
   ResponseActivity, InsertResponseActivity, 
   ResponseTeam, InsertResponseTeam, 
