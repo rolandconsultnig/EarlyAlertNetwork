@@ -35,6 +35,8 @@ import {
 import NigeriaMap from "@/components/maps/NigeriaMap";
 import { formatDate } from "@/lib/utils";
 import { Alert, Incident, RiskIndicator } from "@shared/schema";
+import { LocationSearch, LocationSearchResult } from "@/components/location/LocationSearch";
+import { RegionSelector } from "@/components/location/RegionSelector";
 import {
   Calendar,
   Clock,
@@ -48,6 +50,28 @@ import {
   BarChart3,
 } from "lucide-react";
 
+// Nigeria's regions and states
+const nigeriaRegions: Record<string, string[]> = {
+  'North Central': [
+    'Benue', 'Kogi', 'Kwara', 'Nasarawa', 'Niger', 'Plateau', 'FCT'
+  ],
+  'North East': [
+    'Adamawa', 'Bauchi', 'Borno', 'Gombe', 'Taraba', 'Yobe'
+  ],
+  'North West': [
+    'Jigawa', 'Kaduna', 'Kano', 'Katsina', 'Kebbi', 'Sokoto', 'Zamfara'
+  ],
+  'South East': [
+    'Abia', 'Anambra', 'Ebonyi', 'Enugu', 'Imo'
+  ],
+  'South South': [
+    'Akwa Ibom', 'Bayelsa', 'Cross River', 'Delta', 'Edo', 'Rivers'
+  ],
+  'South West': [
+    'Ekiti', 'Lagos', 'Ogun', 'Ondo', 'Osun', 'Oyo'
+  ]
+};
+
 // Dashboard Page Component
 // Custom type for risk indicators with level property
 interface EnhancedRiskIndicator extends RiskIndicator {
@@ -58,6 +82,9 @@ export default function DashboardPage() {
   const [mapHeight, setMapHeight] = useState("500px");
   const [showAddIncidentDialog, setShowAddIncidentDialog] = useState(false);
   const [clickedPosition, setClickedPosition] = useState<{lat: number, lng: number} | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<LocationSearchResult | null>(null);
+  const [selectedRegion, setSelectedRegion] = useState<string>('');
+  const [selectedState, setSelectedState] = useState<string>('');
   
   // Data fetching
   const { data: incidents, isLoading: isLoadingIncidents } = useQuery<Incident[]>({
@@ -86,6 +113,45 @@ export default function DashboardPage() {
     setShowAddIncidentDialog(true);
   };
   
+  // Function to handle location selection from search
+  const handleLocationSelect = (location: LocationSearchResult) => {
+    setSelectedLocation(location);
+    setClickedPosition(location.coords);
+    
+    // If the location has a state, find the corresponding region
+    if (location.state) {
+      // Find region for the selected state
+      const regionEntry = Object.entries(nigeriaRegions).find(([_, states]) => 
+        states.includes(location.state!)
+      );
+      
+      if (regionEntry) {
+        setSelectedRegion(regionEntry[0]);
+      }
+      
+      setSelectedState(location.state);
+    }
+  };
+  
+  // Function to handle region selection
+  const handleRegionSelect = (region: string) => {
+    setSelectedRegion(region);
+  };
+  
+  // Function to handle state selection
+  const handleStateSelect = (state: string) => {
+    setSelectedState(state);
+  };
+  
+  // Reset form function
+  const resetForm = () => {
+    setShowAddIncidentDialog(false);
+    setClickedPosition(null);
+    setSelectedLocation(null);
+    setSelectedRegion('');
+    setSelectedState('');
+  };
+  
   // Function to create a new incident
   const createIncidentMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -107,9 +173,8 @@ export default function DashboardPage() {
       // Invalidate the incidents query to refetch the data
       queryClient.invalidateQueries({ queryKey: ['/api/incidents'] });
       
-      // Close the dialog
-      setShowAddIncidentDialog(false);
-      setClickedPosition(null);
+      // Close the dialog and reset form
+      resetForm();
     },
     onError: (error) => {
       console.error('Error creating incident:', error);
@@ -124,10 +189,25 @@ export default function DashboardPage() {
     const title = (form.elements.namedItem('title') as HTMLInputElement).value;
     const description = (form.elements.namedItem('description') as HTMLTextAreaElement).value;
     const severity = (form.querySelector('select[name="severity"]') as HTMLSelectElement)?.value || 'medium';
-    const region = (form.querySelector('select[name="region"]') as HTMLSelectElement)?.value || 'North Central';
     
-    // Format location as "lat,lng" string
-    const location = clickedPosition ? `${clickedPosition.lat},${clickedPosition.lng}` : '';
+    // Determine the region and location coordinates
+    let region = selectedRegion || 'North Central';
+    let location = '';
+    
+    // Use clicked position from map if available, otherwise use from location search
+    if (clickedPosition) {
+      location = `${clickedPosition.lat},${clickedPosition.lng}`;
+    } else if (selectedLocation) {
+      location = `${selectedLocation.coords.lat},${selectedLocation.coords.lng}`;
+    }
+    
+    // Create additional location metadata
+    const locationMetadata = {
+      coordinates: location,
+      city: selectedLocation?.name || '',
+      state: selectedState || '',
+      region: region
+    };
     
     // Create the incident data
     const incidentData = {
@@ -136,6 +216,7 @@ export default function DashboardPage() {
       severity,
       region,
       location,
+      locationMetadata,
       status: 'active',
       reportedAt: new Date().toISOString(),
     };
@@ -499,40 +580,47 @@ export default function DashboardPage() {
                   />
                 </div>
                 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="grid gap-2">
-                    <label htmlFor="severity" className="text-sm font-medium">
-                      Severity
+                <div className="grid gap-4">
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">
+                      Search for a location
                     </label>
-                    <Select name="severity" defaultValue="medium">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select severity" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <LocationSearch 
+                      onSelectLocation={handleLocationSelect}
+                      placeholder="Search for cities in Nigeria..."
+                    />
                   </div>
                   
-                  <div className="grid gap-2">
-                    <label htmlFor="region" className="text-sm font-medium">
-                      Region
+                  <Separator className="my-2" />
+                  
+                  <div>
+                    <label className="text-sm font-medium mb-1 block">
+                      Region and State
                     </label>
-                    <Select name="region" defaultValue="North Central">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select region" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="North Central">North Central</SelectItem>
-                        <SelectItem value="North East">North East</SelectItem>
-                        <SelectItem value="North West">North West</SelectItem>
-                        <SelectItem value="South East">South East</SelectItem>
-                        <SelectItem value="South South">South South</SelectItem>
-                        <SelectItem value="South West">South West</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <RegionSelector
+                      defaultRegion={selectedRegion}
+                      defaultState={selectedState} 
+                      onSelectRegion={handleRegionSelect}
+                      onSelectState={handleStateSelect}
+                    />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="grid gap-2">
+                      <label htmlFor="severity" className="text-sm font-medium">
+                        Severity
+                      </label>
+                      <Select name="severity" defaultValue="medium">
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select severity" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
                 
@@ -541,6 +629,14 @@ export default function DashboardPage() {
                     <p className="font-medium mb-1">Selected Location:</p>
                     <p>Latitude: {clickedPosition.lat.toFixed(6)}</p>
                     <p>Longitude: {clickedPosition.lng.toFixed(6)}</p>
+                    {selectedLocation && (
+                      <>
+                        <p className="font-medium mt-2 mb-1">Location Details:</p>
+                        <p>City: {selectedLocation.name}</p>
+                        {selectedLocation.state && <p>State: {selectedLocation.state}</p>}
+                        {selectedRegion && <p>Region: {selectedRegion}</p>}
+                      </>
+                    )}
                   </div>
                 )}
               </div>
