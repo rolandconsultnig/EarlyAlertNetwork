@@ -43,6 +43,12 @@ export interface IStorage {
   updateIncident(id: number, incident: Partial<Incident>): Promise<Incident>;
   deleteIncident(id: number): Promise<boolean>;
   
+  // Incident reactions methods
+  getIncidentReactions(incidentId: number): Promise<IncidentReaction[]>;
+  getUserIncidentReaction(incidentId: number, userId: number, emoji: string): Promise<IncidentReaction | undefined>;
+  createIncidentReaction(reaction: InsertIncidentReaction): Promise<IncidentReaction>;
+  deleteIncidentReaction(id: number): Promise<boolean>;
+  
   // Alert methods
   getAlerts(): Promise<Alert[]>;
   getActiveAlerts(): Promise<Alert[]>;
@@ -258,6 +264,44 @@ export class DatabaseStorage implements IStorage {
     const result = await db
       .delete(incidents)
       .where(eq(incidents.id, id))
+      .returning();
+    return result.length > 0;
+  }
+  
+  // Incident reactions methods
+  async getIncidentReactions(incidentId: number): Promise<IncidentReaction[]> {
+    return db
+      .select()
+      .from(incidentReactions)
+      .where(eq(incidentReactions.incidentId, incidentId));
+  }
+  
+  async getUserIncidentReaction(incidentId: number, userId: number, emoji: string): Promise<IncidentReaction | undefined> {
+    const [reaction] = await db
+      .select()
+      .from(incidentReactions)
+      .where(
+        and(
+          eq(incidentReactions.incidentId, incidentId),
+          eq(incidentReactions.userId, userId),
+          eq(incidentReactions.emoji, emoji)
+        )
+      );
+    return reaction;
+  }
+  
+  async createIncidentReaction(reaction: InsertIncidentReaction): Promise<IncidentReaction> {
+    const [newReaction] = await db
+      .insert(incidentReactions)
+      .values([reaction])
+      .returning();
+    return newReaction;
+  }
+  
+  async deleteIncidentReaction(id: number): Promise<boolean> {
+    const result = await db
+      .delete(incidentReactions)
+      .where(eq(incidentReactions.id, id))
       .returning();
     return result.length > 0;
   }

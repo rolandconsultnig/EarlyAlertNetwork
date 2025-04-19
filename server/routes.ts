@@ -168,6 +168,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to update incident" });
     }
   });
+  
+  // Incident reactions endpoints
+  app.get("/api/incidents/:id/reactions", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const incidentId = parseInt(req.params.id);
+      
+      // Check if incident exists
+      const incident = await storage.getIncident(incidentId);
+      if (!incident) {
+        return res.status(404).json({ error: "Incident not found" });
+      }
+      
+      // For initial testing, return mock data
+      // In production, this would be fetched from the database
+      const mockReactions = [
+        { emoji: "👍", count: 12, users: [2, 3, 5] },
+        { emoji: "😢", count: 8, users: [1, 4] },
+        { emoji: "🙏", count: 5, users: [] },
+      ];
+      
+      res.json(mockReactions);
+    } catch (error) {
+      console.error("Error fetching incident reactions:", error);
+      res.status(500).json({ error: "Failed to fetch reactions" });
+    }
+  });
+  
+  app.post("/api/incidents/:id/reactions", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const incidentId = parseInt(req.params.id);
+      const { emoji } = req.body;
+      const userId = req.user.id;
+      
+      if (!emoji) {
+        return res.status(400).json({ error: "Emoji is required" });
+      }
+      
+      // Check if incident exists
+      const incident = await storage.getIncident(incidentId);
+      if (!incident) {
+        return res.status(404).json({ error: "Incident not found" });
+      }
+      
+      // In production, this would check if user already reacted with this emoji
+      // and toggle it appropriately
+      
+      // Mock successful response
+      res.status(201).json({ 
+        message: "Reaction added",
+        action: "added", 
+        reaction: {
+          incidentId,
+          userId,
+          emoji
+        }
+      });
+    } catch (error) {
+      console.error("Error updating incident reaction:", error);
+      res.status(500).json({ error: "Failed to update reaction" });
+    }
+  });
 
   // Public incident reporting endpoint - does not require authentication
   app.post("/api/public/incidents", async (req, res) => {
