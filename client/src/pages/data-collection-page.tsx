@@ -845,25 +845,104 @@ export default function DataCollectionPage() {
           </TabsContent>
           
           <TabsContent value="upload">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload Data Files</CardTitle>
-                <CardDescription>
-                  Import structured data from files (CSV, JSON, Excel)
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="flex flex-col items-center justify-center p-12">
-                <div className="border-2 border-dashed border-neutral-200 rounded-lg p-12 text-center w-full max-w-xl">
-                  <Upload className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Drag & Drop Files Here</h3>
-                  <p className="text-neutral-500 text-sm mb-6">or</p>
-                  <Button>Browse Files</Button>
-                  <p className="text-neutral-400 text-xs mt-4">
-                    Supported formats: CSV, JSON, Excel, XML
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Upload Data Files</CardTitle>
+                  <CardDescription>
+                    Import structured data from files (CSV, JSON, Excel)
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex flex-col items-center justify-center p-8">
+                  <div className="border-2 border-dashed border-neutral-200 rounded-lg p-8 text-center w-full">
+                    <Upload className="h-12 w-12 text-neutral-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Drag & Drop Files Here</h3>
+                    <p className="text-neutral-500 text-sm mb-6">or</p>
+                    <Button>Browse Files</Button>
+                    <p className="text-neutral-400 text-xs mt-4">
+                      Supported formats: CSV, JSON, Excel, XML
+                    </p>
+                  </div>
+                  
+                  <div className="w-full mt-6">
+                    <h4 className="text-sm font-medium mb-2">Recent Uploads</h4>
+                    <div className="border rounded p-4 text-sm text-neutral-500">
+                      No recent uploads found
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle>Structured Surveys</CardTitle>
+                  <CardDescription>
+                    Create and manage structured data collection forms
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-medium mb-3">Available Survey Templates</h3>
+                      <div className="space-y-3">
+                        <div className="flex items-center p-3 border rounded-md">
+                          <div className="h-8 w-8 flex items-center justify-center bg-primary/10 text-primary rounded-full mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium">Community Situation Awareness</h4>
+                            <p className="text-xs text-neutral-500">General conflict indicators and observations</p>
+                          </div>
+                          <Button variant="outline" size="sm">Use</Button>
+                        </div>
+                        
+                        <div className="flex items-center p-3 border rounded-md">
+                          <div className="h-8 w-8 flex items-center justify-center bg-amber-100 text-amber-700 rounded-full mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h2"></path><path d="M8 2h10a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2h-3"></path><path d="M18 10a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"></path><path d="M10 2v4"></path><path d="M2 10h4"></path><path d="M5 18l2-2"></path></svg>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium">Displacement Assessment</h4>
+                            <p className="text-xs text-neutral-500">Survey for displaced populations and camp conditions</p>
+                          </div>
+                          <Button variant="outline" size="sm">Use</Button>
+                        </div>
+                        
+                        <div className="flex items-center p-3 border rounded-md">
+                          <div className="h-8 w-8 flex items-center justify-center bg-blue-100 text-blue-700 rounded-full mr-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m3 18 6-6"></path><path d="m21 6-6 6"></path><path d="M3 6h.01"></path><path d="M15 6h.01"></path><path d="M9 6h.01"></path><path d="M21 18h.01"></path><path d="M15 18h.01"></path><path d="M9 18h.01"></path><path d="M21 12h.01"></path><path d="M3 12h.01"></path></svg>
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-medium">Conflict Incident Report</h4>
+                            <p className="text-xs text-neutral-500">Detailed form for conflict incident documentation</p>
+                          </div>
+                          <Button variant="outline" size="sm">Use</Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="pt-4 border-t">
+                      <h3 className="text-sm font-medium mb-2">Active Data Collection Campaigns</h3>
+                      <div className="border rounded-md p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium">Monthly Security Assessment</span>
+                          <Badge variant="outline" className="bg-green-50 text-green-700">Active</Badge>
+                        </div>
+                        <div className="text-xs text-neutral-500 mb-3">
+                          <p>Started: April 10, 2025</p>
+                          <p>Responses: 24</p>
+                        </div>
+                        <div className="flex space-x-2">
+                          <Button size="sm" variant="outline" className="text-xs">View Data</Button>
+                          <Button size="sm" variant="outline" className="text-xs">Edit Form</Button>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <Button className="w-full">Create New Survey</Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
           </TabsContent>
           
           <TabsContent value="external">
@@ -924,6 +1003,66 @@ export default function DataCollectionPage() {
                             apiEndpoint: "https://api.social-monitor.com/stream",
                             region: "Nigeria",
                             frequency: "real-time",
+                            dataFormat: "json"
+                          });
+                          setConfigureDialogOpen(true);
+                        }}
+                      >
+                        Configure
+                      </Button>
+                    </div>
+                    
+                    {/* Government Reports */}
+                    <div className="flex items-center p-3 rounded-md border border-neutral-200 bg-neutral-50">
+                      <div className="h-8 w-8 bg-green-100 text-green-700 rounded-full flex items-center justify-center mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Government Reports</h3>
+                        <p className="text-sm text-neutral-500">Official situation reports and assessments</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="ml-auto"
+                        onClick={() => {
+                          setCurrentSource({
+                            id: 0,
+                            name: "Government Reports",
+                            type: "government_report",
+                            description: "Automated collection of official reports from government agencies",
+                            apiEndpoint: "https://api.reports-portal.gov.ng",
+                            region: "Nigeria",
+                            frequency: "daily",
+                            dataFormat: "json"
+                          });
+                          setConfigureDialogOpen(true);
+                        }}
+                      >
+                        Configure
+                      </Button>
+                    </div>
+                    
+                    {/* NGO Reports */}
+                    <div className="flex items-center p-3 rounded-md border border-neutral-200 bg-neutral-50">
+                      <div className="h-8 w-8 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" x2="12" y1="19" y2="22"></line></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">NGO Reports</h3>
+                        <p className="text-sm text-neutral-500">Reports from humanitarian organizations</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="ml-auto"
+                        onClick={() => {
+                          setCurrentSource({
+                            id: 0,
+                            name: "NGO Reports",
+                            type: "ngo_report",
+                            description: "Collection of situation reports from NGOs operating in Nigeria",
+                            apiEndpoint: "https://api.ngo-portal.org/feeds",
+                            region: "Nigeria",
+                            frequency: "daily",
                             dataFormat: "json"
                           });
                           setConfigureDialogOpen(true);
@@ -1468,138 +1607,219 @@ export default function DataCollectionPage() {
           </TabsContent>
           
           <TabsContent value="community">
-            <Card>
-              <CardHeader>
-                <CardTitle>Community Engagement</CardTitle>
-                <CardDescription>
-                  Collect reports and observations from community members
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid md:grid-cols-2 gap-8">
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">SMS Data Collection</h3>
-                    <p className="text-sm text-neutral-600 mb-4">
-                      Configure SMS-based reporting for community members without internet access.
-                    </p>
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Community Engagement Channels</CardTitle>
+                  <CardDescription>
+                    Configure communication channels for community data collection
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">SMS Data Collection</h3>
+                      <p className="text-sm text-neutral-600 mb-4">
+                        Configure SMS-based reporting for community members without internet access.
+                      </p>
+                      
+                      <div className="space-y-4">
+                        <div className="flex items-center">
+                          <Radio className="h-5 w-5 text-primary mr-2" />
+                          <span className="text-sm font-medium">SMS Number:</span>
+                          <span className="text-sm ml-2">+2348123456789</span>
+                          <Button variant="ghost" size="sm" className="ml-auto">Edit</Button>
+                        </div>
+                        
+                        <div>
+                          <p className="text-sm font-medium mb-2">SMS Format Template:</p>
+                          <div className="bg-neutral-50 border border-neutral-200 rounded-md p-3 text-sm font-mono">
+                            REPORT [Location] [Type] [Description]
+                          </div>
+                        </div>
+                        
+                        <div className="border rounded-md p-3">
+                          <h4 className="font-medium mb-2">SMS Gateway Configuration</h4>
+                          <div className="space-y-3">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="text-sm font-medium">Gateway Type:</p>
+                                <p className="text-sm text-muted-foreground">Twilio SMS</p>
+                              </div>
+                              <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                Active
+                              </Badge>
+                            </div>
+                            
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <p className="text-sm font-medium">Fallback Gateway:</p>
+                                <p className="text-sm text-muted-foreground">Clickatell</p>
+                              </div>
+                              <Badge variant="outline" className="bg-neutral-50 text-neutral-700 border-neutral-200">
+                                Standby
+                              </Badge>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <Button variant="outline" className="mt-4 w-full">Test SMS Gateway</Button>
+                    </div>
                     
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">USSD Service</h3>
+                      <p className="text-sm text-neutral-600 mb-4">
+                        Configure USSD service for feature phone users in remote areas.
+                      </p>
+                      
+                      <div className="space-y-4">
+                        <div className="flex items-center">
+                          <div className="h-5 w-5 flex items-center justify-center bg-blue-100 text-blue-700 rounded-full mr-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                          </div>
+                          <span className="text-sm font-medium">USSD Code:</span>
+                          <span className="text-sm ml-2">*347*1#</span>
+                          <Button variant="ghost" size="sm" className="ml-auto">Edit</Button>
+                        </div>
+                        
+                        <div className="border rounded-md p-3">
+                          <h4 className="font-medium mb-2">USSD Menu Structure</h4>
+                          <div className="space-y-2 text-sm">
+                            <p>1. Report Incident</p>
+                            <p>2. Check Alert Status</p>
+                            <p>3. Request Assistance</p>
+                            <p>4. Register as Informant</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex justify-between items-center p-2 bg-blue-50 rounded-md text-sm">
+                          <div className="flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-500 mr-2"><circle cx="12" cy="12" r="10"></circle><path d="M12 16v-4"></path><path d="M12 8h.01"></path></svg>
+                            <span>USSD service is available on all major Nigerian carriers</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Community Informants</CardTitle>
+                    <CardDescription>
+                      Manage network of verified community reporters
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
                     <div className="space-y-4">
-                      <div className="flex items-center">
-                        <Radio className="h-5 w-5 text-primary mr-2" />
-                        <span className="text-sm font-medium">SMS Number:</span>
-                        <span className="text-sm ml-2">+2348123456789</span>
-                        <Button variant="ghost" size="sm" className="ml-auto">Edit</Button>
-                      </div>
-                      
-                      <div>
-                        <p className="text-sm font-medium mb-2">SMS Format Template:</p>
-                        <div className="bg-neutral-50 border border-neutral-200 rounded-md p-3 text-sm font-mono">
-                          REPORT [Location] [Type] [Description]
+                      <div className="border rounded-md p-3 mb-4">
+                        <div className="flex justify-between items-center mb-3">
+                          <h4 className="font-medium">Registered Informants</h4>
+                          <Badge className="bg-blue-50 text-blue-700 border-blue-200">47 Active</Badge>
                         </div>
-                      </div>
-                      
-                      <div className="mb-4 border rounded-md p-3">
-                        <h4 className="font-medium mb-2">SMS Gateway Configuration</h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="text-sm font-medium">Gateway Type:</p>
-                              <p className="text-sm text-muted-foreground">Twilio SMS</p>
-                            </div>
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              Active
-                            </Badge>
+                        
+                        <div className="grid grid-cols-3 gap-2 mb-3">
+                          <div className="border rounded p-2 text-center">
+                            <p className="text-xl font-bold">12</p>
+                            <p className="text-xs text-neutral-500">North Central</p>
                           </div>
-                          
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <p className="text-sm font-medium">Fallback Gateway:</p>
-                              <p className="text-sm text-muted-foreground">Clickatell</p>
-                            </div>
-                            <Badge variant="outline" className="bg-neutral-50 text-neutral-700 border-neutral-200">
-                              Standby
-                            </Badge>
+                          <div className="border rounded p-2 text-center">
+                            <p className="text-xl font-bold">9</p>
+                            <p className="text-xs text-neutral-500">North East</p>
                           </div>
-                          
-                          <div className="pt-2">
-                            <Button variant="outline" size="sm" className="w-full">
-                              Configure SMS Gateway
-                            </Button>
+                          <div className="border rounded p-2 text-center">
+                            <p className="text-xl font-bold">7</p>
+                            <p className="text-xs text-neutral-500">North West</p>
                           </div>
+                          <div className="border rounded p-2 text-center">
+                            <p className="text-xl font-bold">6</p>
+                            <p className="text-xs text-neutral-500">South East</p>
+                          </div>
+                          <div className="border rounded p-2 text-center">
+                            <p className="text-xl font-bold">8</p>
+                            <p className="text-xs text-neutral-500">South South</p>
+                          </div>
+                          <div className="border rounded p-2 text-center">
+                            <p className="text-xl font-bold">5</p>
+                            <p className="text-xs text-neutral-500">South West</p>
+                          </div>
+                        </div>
+                        
+                        <div className="flex space-x-2">
+                          <Button size="sm" variant="outline" className="flex-1">Manage Informants</Button>
+                          <Button size="sm" className="flex-1">Add New</Button>
                         </div>
                       </div>
                     </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-lg font-medium mb-4">Community Informants</h3>
-                    <p className="text-sm text-neutral-600 mb-4">
-                      Manage your network of trusted community informants.
-                    </p>
-                    
-                    <div className="border border-neutral-200 rounded-md divide-y mb-4">
-                      <div className="flex items-center p-3">
-                        <Users className="h-5 w-5 text-primary mr-2" />
-                        <span className="text-sm font-medium">Total Informants:</span>
-                        <span className="text-sm ml-2">32</span>
-                      </div>
-                      
-                      <div className="flex items-center p-3">
-                        <Users className="h-5 w-5 text-primary mr-2" />
-                        <span className="text-sm font-medium">Active in Last 30 Days:</span>
-                        <span className="text-sm ml-2">24</span>
-                      </div>
-                      
-                      <div className="flex items-center p-3">
-                        <Users className="h-5 w-5 text-primary mr-2" />
-                        <span className="text-sm font-medium">Geographic Coverage:</span>
-                        <span className="text-sm ml-2">12 regions</span>
-                      </div>
-                    </div>
-                    
-                    <div className="border rounded-md p-3 mb-4">
-                      <h4 className="font-medium mb-2">Recent Informant Activities</h4>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Community Report Verification</CardTitle>
+                    <CardDescription>
+                      Validate and process community-sourced information
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div>
+                      <h4 className="font-medium mb-2">Recent Reports</h4>
                       <div className="space-y-2">
-                        <div className="flex items-center p-2 bg-neutral-50 rounded">
-                          <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center text-primary mr-3">
-                            <MessageCircle className="h-4 w-4" />
+                        <div className="border rounded-md p-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-sm font-medium">Armed Group Movement</p>
+                            <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">High</Badge>
                           </div>
-                          <div>
-                            <p className="text-sm font-medium">New Report Submitted</p>
-                            <p className="text-xs text-neutral-500">Abuja North - 2 hours ago</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center p-2 bg-neutral-50 rounded">
-                          <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center text-primary mr-3">
-                            <UserCheck className="h-4 w-4" />
-                          </div>
-                          <div>
-                            <p className="text-sm font-medium">New Informant Registration</p>
-                            <p className="text-xs text-neutral-500">Lagos Area - 5 hours ago</p>
+                          <p className="text-xs text-neutral-600 mb-1">Gwoza, Borno State - 2 hours ago</p>
+                          <p className="text-xs text-neutral-500">Submitted by: Field Informant #23</p>
+                          <div className="flex justify-end mt-2">
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">Reject</Button>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-amber-600">Flag</Button>
+                            <Button size="sm" className="h-7 px-2 text-xs">Verify</Button>
                           </div>
                         </div>
                         
-                        <div className="flex items-center p-2 bg-neutral-50 rounded">
-                          <div className="h-8 w-8 bg-primary/10 rounded-full flex items-center justify-center text-primary mr-3">
-                            <BadgeCheck className="h-4 w-4" />
+                        <div className="border rounded-md p-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-sm font-medium">Market Disruption</p>
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Medium</Badge>
                           </div>
-                          <div>
-                            <p className="text-sm font-medium">Informant Verification Complete</p>
-                            <p className="text-xs text-neutral-500">Port Harcourt - 1 day ago</p>
+                          <p className="text-xs text-neutral-600 mb-1">Kano Municipal - 6 hours ago</p>
+                          <p className="text-xs text-neutral-500">Submitted by: Field Informant #08</p>
+                          <div className="flex justify-end mt-2">
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">Reject</Button>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-amber-600">Flag</Button>
+                            <Button size="sm" className="h-7 px-2 text-xs">Verify</Button>
+                          </div>
+                        </div>
+                        
+                        <div className="border rounded-md p-2">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="text-sm font-medium">Road Blockage</p>
+                            <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Medium</Badge>
+                          </div>
+                          <p className="text-xs text-neutral-600 mb-1">Ife-Ibadan Highway - 8 hours ago</p>
+                          <p className="text-xs text-neutral-500">Submitted by: Field Informant #35</p>
+                          <div className="flex justify-end mt-2">
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs">Reject</Button>
+                            <Button size="sm" variant="ghost" className="h-7 px-2 text-xs text-amber-600">Flag</Button>
+                            <Button size="sm" className="h-7 px-2 text-xs">Verify</Button>
                           </div>
                         </div>
                       </div>
+                      
+                      <div className="flex justify-between mt-4">
+                        <Button variant="link" className="px-0">View all reports</Button>
+                        <Badge variant="outline">85% Verification Rate</Badge>
+                      </div>
                     </div>
-                    
-                    <div className="flex space-x-3">
-                      <Button className="flex-1">Manage Informant Network</Button>
-                      <Button variant="outline" className="flex-1">Add New Informant</Button>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </div>
