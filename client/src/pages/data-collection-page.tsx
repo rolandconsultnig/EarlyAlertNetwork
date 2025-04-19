@@ -15,7 +15,7 @@ import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { FileText, Upload, Database, Radio, Users, RefreshCw, Shield, AlertTriangle, MessageCircle, UserCheck, BadgeCheck } from "lucide-react";
+import { FileText, Upload, Database, Radio, Users, RefreshCw, Shield, AlertTriangle, MessageCircle, UserCheck, BadgeCheck, BarChart3, MapIcon, Table, Plus, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
@@ -652,13 +652,14 @@ export default function DataCollectionPage() {
       
       <div className="max-w-6xl mx-auto">
         <Tabs defaultValue="manual" className="w-full">
-          <TabsList className="grid grid-cols-6 mb-8">
+          <TabsList className="grid grid-cols-7 mb-8">
             <TabsTrigger value="manual">Manual Entry</TabsTrigger>
             <TabsTrigger value="upload">File Upload</TabsTrigger>
             <TabsTrigger value="external">External Sources</TabsTrigger>
             <TabsTrigger value="satellite">Satellite Imagery</TabsTrigger>
             <TabsTrigger value="sensors">Sensor Networks</TabsTrigger>
             <TabsTrigger value="community">Community Reports</TabsTrigger>
+            <TabsTrigger value="surveys">Structured Surveys</TabsTrigger>
           </TabsList>
           
           <TabsContent value="manual">
@@ -1816,6 +1817,250 @@ export default function DataCollectionPage() {
                         <Badge variant="outline">85% Verification Rate</Badge>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="surveys">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Structured Survey Management</CardTitle>
+                  <CardDescription>
+                    Design and distribute standardized surveys to collect structured data
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Available Surveys</h3>
+                      <p className="text-sm text-neutral-600 mb-4">
+                        Manage your existing survey templates and standardized forms.
+                      </p>
+                      
+                      <div className="border rounded-md p-4 mb-6">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">Post-Conflict Assessment</p>
+                              <p className="text-sm text-neutral-500">24 questions • Last updated 3 days ago</p>
+                            </div>
+                            <Badge className="bg-green-50 text-green-700 border-green-200">Active</Badge>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">Community Security Perception</p>
+                              <p className="text-sm text-neutral-500">18 questions • Last updated 1 week ago</p>
+                            </div>
+                            <Badge className="bg-green-50 text-green-700 border-green-200">Active</Badge>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium">Farmer-Herder Relations</p>
+                              <p className="text-sm text-neutral-500">15 questions • Last updated 2 weeks ago</p>
+                            </div>
+                            <Badge variant="outline" className="bg-neutral-50 text-neutral-700">Draft</Badge>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <Button variant="outline" className="w-full">
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create New Survey
+                      </Button>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">Survey Templates</h3>
+                      <p className="text-sm text-neutral-600 mb-4">
+                        Create standardized templates for consistent data collection
+                      </p>
+                      
+                      <div className="border rounded-md p-4 mb-4">
+                        <h4 className="font-medium mb-2">Available Templates</h4>
+                        <div className="space-y-3">
+                          <div className="flex justify-between items-center px-3 py-2 bg-slate-50 rounded">
+                            <div>
+                              <p className="font-medium">Conflict Risk Assessment</p>
+                              <p className="text-xs text-slate-500">ISO 31000 compliant</p>
+                            </div>
+                            <Button size="sm" variant="ghost">Use</Button>
+                          </div>
+                          
+                          <div className="flex justify-between items-center px-3 py-2 bg-slate-50 rounded">
+                            <div>
+                              <p className="font-medium">Community Security Index</p>
+                              <p className="text-xs text-slate-500">UN Standards based</p>
+                            </div>
+                            <Button size="sm" variant="ghost">Use</Button>
+                          </div>
+                          
+                          <div className="flex justify-between items-center px-3 py-2 bg-slate-50 rounded">
+                            <div>
+                              <p className="font-medium">Post-Crisis Recovery</p>
+                              <p className="text-xs text-slate-500">Adaptive framework</p>
+                            </div>
+                            <Button size="sm" variant="ghost">Use</Button>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      <Button variant="outline" className="w-full">
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Create Template
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Survey Distribution & Responses</CardTitle>
+                    <CardDescription>
+                      Track and analyze responses from distributed surveys
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-4">
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-medium">Post-Conflict Assessment</p>
+                          <Badge className="bg-blue-50 text-blue-700 border-blue-200">128 Responses</Badge>
+                        </div>
+                        <div className="h-2 bg-blue-100 rounded-full mt-2">
+                          <div className="h-2 bg-blue-500 rounded-full w-3/4"></div>
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <p className="text-xs text-neutral-500">Target: 150 responses</p>
+                          <p className="text-xs font-medium">85%</p>
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <p className="font-medium">Community Security Perception</p>
+                          <Badge className="bg-blue-50 text-blue-700 border-blue-200">76 Responses</Badge>
+                        </div>
+                        <div className="h-2 bg-blue-100 rounded-full mt-2">
+                          <div className="h-2 bg-blue-500 rounded-full w-1/2"></div>
+                        </div>
+                        <div className="flex justify-between mt-1">
+                          <p className="text-xs text-neutral-500">Target: 150 responses</p>
+                          <p className="text-xs font-medium">51%</p>
+                        </div>
+                      </div>
+                      
+                      <div className="border-t pt-4 mt-4">
+                        <h4 className="font-medium mb-2">Distribution Channels</h4>
+                        <div className="space-y-2">
+                          <div className="flex items-center p-2 bg-slate-50 rounded">
+                            <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 mr-3">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">SMS Survey Distribution</p>
+                              <p className="text-xs">32 surveys sent today</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center p-2 bg-slate-50 rounded">
+                            <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center text-green-600 mr-3">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">WhatsApp Distribution</p>
+                              <p className="text-xs">18 surveys sent today</p>
+                            </div>
+                          </div>
+                          
+                          <div className="flex items-center p-2 bg-slate-50 rounded">
+                            <div className="h-8 w-8 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 mr-3">
+                              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium">USSD Survey Distribution</p>
+                              <p className="text-xs">45 surveys sent today</p>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Survey Analytics</CardTitle>
+                    <CardDescription>
+                      Analyze and visualize standardized survey data
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="border rounded-md p-4 mb-4">
+                      <h4 className="font-medium mb-2">Recent Submissions</h4>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center text-sm">
+                          <p>Post-Conflict Assessment</p>
+                          <p className="text-neutral-500">5 minutes ago</p>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <p>Community Security Perception</p>
+                          <p className="text-neutral-500">25 minutes ago</p>
+                        </div>
+                        <div className="flex justify-between items-center text-sm">
+                          <p>Post-Conflict Assessment</p>
+                          <p className="text-neutral-500">42 minutes ago</p>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-4">
+                      <h4 className="font-medium">Data Visualization Options</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        <Button variant="outline" className="h-auto py-2 justify-start">
+                          <BarChart3 className="h-5 w-5 mr-2" />
+                          <div className="text-left">
+                            <p className="text-sm">Charts</p>
+                            <p className="text-xs text-muted-foreground">Bar, line, pie charts</p>
+                          </div>
+                        </Button>
+                        
+                        <Button variant="outline" className="h-auto py-2 justify-start">
+                          <MapIcon className="h-5 w-5 mr-2" />
+                          <div className="text-left">
+                            <p className="text-sm">Maps</p>
+                            <p className="text-xs text-muted-foreground">Geospatial analysis</p>
+                          </div>
+                        </Button>
+                        
+                        <Button variant="outline" className="h-auto py-2 justify-start">
+                          <Table className="h-5 w-5 mr-2" />
+                          <div className="text-left">
+                            <p className="text-sm">Tables</p>
+                            <p className="text-xs text-muted-foreground">Tabular data format</p>
+                          </div>
+                        </Button>
+                        
+                        <Button variant="outline" className="h-auto py-2 justify-start">
+                          <FileText className="h-5 w-5 mr-2" />
+                          <div className="text-left">
+                            <p className="text-sm">Reports</p>
+                            <p className="text-xs text-muted-foreground">PDF/Excel exports</p>
+                          </div>
+                        </Button>
+                      </div>
+                    </div>
+                    
+                    <Button className="w-full mt-4">
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Analyze Survey Data
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
