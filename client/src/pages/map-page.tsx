@@ -266,6 +266,11 @@ export default function MapPage() {
             Click on any marker to view detailed information about the incident, including severity, 
             status, location, population affected, and incident category.
           </p>
+          
+          <div className="mt-6 pt-4 border-t text-center text-gray-400 text-sm">
+            <p>© {new Date().getFullYear()} Institute for Peace and Conflict Resolution. All rights reserved.</p>
+            <p className="mt-1">Designed by <a href="https://afrinict.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:text-blue-300">afrinict.com</a></p>
+          </div>
         </div>
       </div>
     </MainLayout>
