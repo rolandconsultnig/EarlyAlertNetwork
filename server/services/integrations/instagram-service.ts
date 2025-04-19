@@ -236,10 +236,22 @@ class InstagramService {
       // Search for hashtags
       const hashtagResults = await this.ig.feed.tags(query).items();
       
+      // Process user results safely
+      let processedUserResults: any[] = [];
+      if (userResults && Array.isArray(userResults)) {
+        processedUserResults = userResults.map((user: any) => ({ type: 'user', ...user }));
+      }
+      
+      // Process hashtag results safely
+      let processedHashtagResults: any[] = [];
+      if (hashtagResults && Array.isArray(hashtagResults)) {
+        processedHashtagResults = hashtagResults.map((post: any) => ({ type: 'post', ...post }));
+      }
+      
       // Combine and limit results
       const combinedResults = [
-        ...userResults.map(user => ({ type: 'user', ...user })),
-        ...hashtagResults.map(post => ({ type: 'post', ...post }))
+        ...processedUserResults,
+        ...processedHashtagResults
       ].slice(0, maxResults);
       
       return {

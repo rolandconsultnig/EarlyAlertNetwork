@@ -66,7 +66,7 @@ function Router() {
       
       {/* Administration */}
       <ProtectedRoute path="/user-management" component={UserManagementPage} />
-      <ProtectedRoute path="/integrations" component={IntegrationsPage} />
+      <ProtectedRoute path="/integrations" component={IntegrationsPage} allowPublicAccess={true} />
       <ProtectedRoute path="/reporting" component={ReportingPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
       
