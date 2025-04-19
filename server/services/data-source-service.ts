@@ -103,7 +103,7 @@ export class DataSourceService {
       
       // Update source lastFetchedAt
       await db.update(dataSources)
-        .set({ lastFetchedAt: new Date().toISOString() })
+        .set({ lastFetchedAt: new Date() })
         .where(eq(dataSources.id, dataSource.id));
       
     } catch (error) {
@@ -251,13 +251,14 @@ export class DataSourceService {
       const dataToInsert = {
         sourceId: dataSource.id,
         content: data.content || '',
-        metadata: data.metadata || {},
-        collectedAt: new Date().toISOString(),
+        region: data.metadata?.region || 'Nigeria',
+        location: data.metadata?.location || null,
+        coordinates: data.metadata?.coordinates || null,
         status: 'unprocessed'
       };
       
       // Insert data
-      const result = await db.insert(collectedData).values(dataToInsert).returning();
+      const result = await db.insert(collectedData).values([dataToInsert]).returning();
       
       return result[0];
     } catch (error) {
@@ -311,7 +312,9 @@ export class DataSourceService {
           status: 'active',
           region: metadata.region || 'Unknown',
           location: metadata.location,
-          reportedAt: metadata.date || new Date().toISOString(),
+          reportedBy: 1, // Default to admin user
+          category: 'conflict',
+          reportedAt: new Date(),
           sourceId: data.sourceId
         };
         
@@ -330,7 +333,7 @@ export class DataSourceService {
       
       // Mark data as processed
       await db.update(collectedData)
-        .set({ status: 'processed', processedAt: new Date().toISOString() })
+        .set({ status: 'processed', processedAt: new Date() })
         .where(eq(collectedData.id, data.id));
       
     } catch (error) {

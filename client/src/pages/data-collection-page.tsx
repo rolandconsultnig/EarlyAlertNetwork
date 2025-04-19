@@ -219,6 +219,50 @@ export default function DataCollectionPage() {
     });
   };
   
+  // State for fetch data loading
+  const [fetchingData, setFetchingData] = useState(false);
+  
+  // Function to fetch data from active sources
+  const fetchFromAllSources = async () => {
+    try {
+      setFetchingData(true);
+      const res = await apiRequest("POST", "/api/data-sources/fetch-all", {});
+      const result = await res.json();
+      
+      toast({
+        title: "Data Collection Initiated",
+        description: `Collection started from ${result.sourcesCount} active data sources.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Data Collection Failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    } finally {
+      setFetchingData(false);
+    }
+  };
+  
+  // Function to fetch data from a specific source
+  const fetchFromSource = async (sourceId: number) => {
+    try {
+      const res = await apiRequest("POST", `/api/data-sources/${sourceId}/fetch`, {});
+      const result = await res.json();
+      
+      toast({
+        title: "Data Collection Initiated",
+        description: `Started collecting data from source #${sourceId}.`,
+      });
+    } catch (error) {
+      toast({
+        title: "Data Collection Failed",
+        description: error instanceof Error ? error.message : "Unknown error occurred",
+        variant: "destructive",
+      });
+    }
+  };
+  
   return (
     <MainLayout title="Data Collection">
       {/* Data Source Configuration Dialog */}
