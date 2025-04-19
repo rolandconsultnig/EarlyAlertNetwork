@@ -5,8 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Info, AlertCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { AlertTriangle, Info, AlertCircle, MapPin, Users } from 'lucide-react';
 
 // Fix Leaflet marker icon issues
 const defaultIcon = L.icon({
@@ -101,6 +101,7 @@ interface MockIncident {
   severity: string;
   status: string;
   region: string;
+  location?: string; // Add location property
 }
 
 // Mock incidents data for testing if no incidents are provided
@@ -113,7 +114,8 @@ const mockIncidents: MockIncident[] = [
     longitude: 8.5391,
     severity: "high",
     status: "active",
-    region: "North Central"
+    region: "North Central",
+    location: "Makurdi, Benue State"
   },
   {
     id: 2,
@@ -123,7 +125,8 @@ const mockIncidents: MockIncident[] = [
     longitude: 3.3792,
     severity: "medium",
     status: "active",
-    region: "South West"
+    region: "South West",
+    location: "Victoria Island, Lagos State"
   },
   {
     id: 3,
@@ -133,7 +136,8 @@ const mockIncidents: MockIncident[] = [
     longitude: 8.5920,
     severity: "low",
     status: "resolved",
-    region: "North West"
+    region: "North West",
+    location: "Kano City, Kano State"
   }
 ];
 
@@ -255,23 +259,68 @@ export default function NigeriaMap({
               position={[lat, lng]}
               icon={getIncidentIcon(incident.severity)}
             >
-              <Popup className="custom-popup">
-                <div className="p-1">
-                  <div className="font-bold mb-1">{incident.title}</div>
-                  <p className="text-sm mb-2">{incident.description}</p>
-                  <div className="flex items-center text-xs mb-1">
-                    <AlertTriangle className="h-3 w-3 mr-1" />
-                    <span>Severity: {incident.severity}</span>
+              <Popup className="custom-popup" maxWidth={300}>
+                <div className="p-2">
+                  <div className="font-bold text-lg text-red-600 mb-2">{incident.title}</div>
+                  <p className="text-sm mb-3">{incident.description}</p>
+                  
+                  <div className="grid grid-cols-2 gap-2 mb-3">
+                    <div className="flex items-center text-xs p-1 bg-amber-50 rounded">
+                      <AlertTriangle className="h-3 w-3 mr-1 text-amber-600" />
+                      <span className="font-semibold">Severity:</span> 
+                      <Badge variant={incident.severity === 'high' ? 'destructive' : (incident.severity === 'medium' ? 'secondary' : 'default')} 
+                        className="ml-1">
+                        {incident.severity}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center text-xs p-1 bg-slate-50 rounded">
+                      <Info className="h-3 w-3 mr-1 text-slate-600" />
+                      <span className="font-semibold">Status:</span> 
+                      <Badge variant={incident.status === 'active' ? 'outline' : 'secondary'} 
+                        className="ml-1">
+                        {incident.status}
+                      </Badge>
+                    </div>
                   </div>
-                  <div className="flex items-center text-xs mb-1">
-                    <Info className="h-3 w-3 mr-1" />
-                    <span>Status: {incident.status}</span>
+                  
+                  <div className="space-y-1 mb-3">
+                    <div className="flex items-center text-xs">
+                      <MapPin className="h-3 w-3 mr-1 text-blue-600" />
+                      <span className="font-semibold">Location:</span> 
+                      <span className="ml-1">
+                        {('location' in incident) ? incident.location : 
+                         ('latitude' in incident) ? `${incident.latitude.toFixed(4)}, ${incident.longitude.toFixed(4)}` : 'Unknown'}
+                      </span>
+                    </div>
+                    <div className="flex items-center text-xs">
+                      <AlertCircle className="h-3 w-3 mr-1 text-green-600" />
+                      <span className="font-semibold">Region:</span>
+                      <span className="ml-1">{incident.region}</span>
+                    </div>
+                    {'impactedPopulation' in incident && (
+                      <div className="flex items-center text-xs">
+                        <AlertCircle className="h-3 w-3 mr-1 text-purple-600" />
+                        <span className="font-semibold">Population Affected:</span>
+                        <span className="ml-1">{(incident as any).impactedPopulation?.toLocaleString() || 'Unknown'}</span>
+                      </div>
+                    )}
+                    {'category' in incident && (
+                      <div className="flex items-center text-xs">
+                        <AlertCircle className="h-3 w-3 mr-1 text-orange-600" />
+                        <span className="font-semibold">Category:</span>
+                        <span className="ml-1 capitalize">{(incident as any).category?.replace('_', ' ') || 'Unclassified'}</span>
+                      </div>
+                    )}
                   </div>
-                  <div className="flex items-center text-xs">
-                    <AlertCircle className="h-3 w-3 mr-1" />
-                    <span>Region: {incident.region}</span>
+                  
+                  <div className="flex gap-2">
+                    <Button className="flex-1 text-xs h-7" variant="default">
+                      View Details
+                    </Button>
+                    <Button className="flex-1 text-xs h-7" variant="outline">
+                      Response Plan
+                    </Button>
                   </div>
-                  <Button className="w-full mt-2 text-xs h-7">View Details</Button>
                 </div>
               </Popup>
             </Marker>
