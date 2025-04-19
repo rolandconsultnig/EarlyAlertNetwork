@@ -652,10 +652,12 @@ export default function DataCollectionPage() {
       
       <div className="max-w-6xl mx-auto">
         <Tabs defaultValue="manual" className="w-full">
-          <TabsList className="grid grid-cols-4 mb-8">
+          <TabsList className="grid grid-cols-6 mb-8">
             <TabsTrigger value="manual">Manual Entry</TabsTrigger>
             <TabsTrigger value="upload">File Upload</TabsTrigger>
             <TabsTrigger value="external">External Sources</TabsTrigger>
+            <TabsTrigger value="satellite">Satellite Imagery</TabsTrigger>
+            <TabsTrigger value="sensors">Sensor Networks</TabsTrigger>
             <TabsTrigger value="community">Community Reports</TabsTrigger>
           </TabsList>
           
@@ -1122,6 +1124,344 @@ export default function DataCollectionPage() {
                       </>
                     ) : "Refresh Data Sources"}
                   </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="sensors">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sensor Networks</CardTitle>
+                  <CardDescription>
+                    Configure IoT and sensor network data sources
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Weather Sensors */}
+                    <div className="flex items-center p-3 rounded-md border border-neutral-200 bg-neutral-50">
+                      <div className="h-8 w-8 flex items-center justify-center bg-amber-100 text-amber-700 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 13.7A4 4 0 1 0 12 8V4a2 2 0 0 0-4 0v8.7"/><line x1="8" y1="9" x2="8" y2="9"/><line x1="8" y1="13" x2="8" y2="13"/><line x1="16" y1="13" x2="16" y2="13"/><line x1="16" y1="17" x2="16" y2="17"/><line x1="12" y1="17" x2="12" y2="17"/></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Weather Sensor Network</h3>
+                        <p className="text-sm text-neutral-500">Precipitation, temperature, and humidity sensors</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="ml-auto"
+                        onClick={() => {
+                          setCurrentSource({
+                            id: 0,
+                            name: "Weather Sensor Network",
+                            type: "sensor_network",
+                            description: "Network of weather sensors in high-risk regions",
+                            apiEndpoint: "https://api.weathersensors.ng/data",
+                            region: "Nigeria",
+                            frequency: "real-time",
+                            dataFormat: "json"
+                          });
+                          setConfigureDialogOpen(true);
+                        }}
+                      >
+                        Configure
+                      </Button>
+                    </div>
+
+                    {/* Seismic Sensors */}
+                    <div className="flex items-center p-3 rounded-md border border-neutral-200 bg-neutral-50">
+                      <div className="h-8 w-8 flex items-center justify-center bg-red-100 text-red-700 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Seismic Monitoring Network</h3>
+                        <p className="text-sm text-neutral-500">Ground movement and vibration detection</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="ml-auto"
+                        onClick={() => {
+                          setCurrentSource({
+                            id: 0,
+                            name: "Seismic Monitoring Network",
+                            type: "sensor_network",
+                            description: "Network of seismic sensors for ground movement detection",
+                            apiEndpoint: "https://api.seismic-monitor.org/nigeria",
+                            region: "Nigeria",
+                            frequency: "real-time",
+                            dataFormat: "json"
+                          });
+                          setConfigureDialogOpen(true);
+                        }}
+                      >
+                        Configure
+                      </Button>
+                    </div>
+
+                    {/* Water Level Sensors */}
+                    <div className="flex items-center p-3 rounded-md border border-neutral-200 bg-neutral-50">
+                      <div className="h-8 w-8 flex items-center justify-center bg-blue-100 text-blue-700 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a8 8 0 0 0 8-8c0-5-8-13-8-13S4 9 4 14a8 8 0 0 0 8 8"/></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Water Level Monitors</h3>
+                        <p className="text-sm text-neutral-500">River and flood detection sensors</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="ml-auto"
+                        onClick={() => {
+                          setCurrentSource({
+                            id: 0,
+                            name: "Water Level Monitors",
+                            type: "sensor_network",
+                            description: "Network of water level sensors in flood-prone areas",
+                            apiEndpoint: "https://api.water-monitor.ng/levels",
+                            region: "Nigeria",
+                            frequency: "real-time",
+                            dataFormat: "json"
+                          });
+                          setConfigureDialogOpen(true);
+                        }}
+                      >
+                        Configure
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Sensor Data Dashboard</CardTitle>
+                  <CardDescription>
+                    Real-time monitoring of sensor network data
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Network Status</h3>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="border rounded-md p-3">
+                          <div className="flex items-center mb-2">
+                            <div className="h-3 w-3 rounded-full bg-green-500 mr-2"></div>
+                            <span className="text-sm font-medium">Active Sensors</span>
+                          </div>
+                          <p className="text-2xl font-bold">42</p>
+                          <p className="text-xs text-neutral-500">Last update: 5 min ago</p>
+                        </div>
+                        
+                        <div className="border rounded-md p-3">
+                          <div className="flex items-center mb-2">
+                            <div className="h-3 w-3 rounded-full bg-red-500 mr-2"></div>
+                            <span className="text-sm font-medium">Offline Sensors</span>
+                          </div>
+                          <p className="text-2xl font-bold">3</p>
+                          <p className="text-xs text-neutral-500">4 in maintenance mode</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Recent Alerts</h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center p-2 rounded-md border border-amber-200 bg-amber-50">
+                          <div className="h-6 w-6 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+                          </div>
+                          <div className="text-sm">
+                            <p className="font-medium">Rising Water Levels</p>
+                            <p className="text-xs text-neutral-600">3 sensors in Lagos region - 2 hours ago</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Data Streams</h3>
+                      <div className="border rounded p-3">
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-sm">Real-time data processing</span>
+                          <Badge variant="outline" className="bg-green-50">Active</Badge>
+                        </div>
+                        <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
+                          <div className="h-full bg-blue-500 rounded-full" style={{width: '65%'}}></div>
+                        </div>
+                        <div className="flex justify-between text-xs text-neutral-500 mt-1">
+                          <span>Processing rate: 65%</span>
+                          <span>42 sensors</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-4">
+                      <Button variant="outline" className="w-full">View All Sensors</Button>
+                      <Button className="w-full">View Alerts</Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="satellite">
+            <div className="grid md:grid-cols-2 gap-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Satellite Imagery Sources</CardTitle>
+                  <CardDescription>
+                    Configure satellite and remote sensing data feeds
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {/* Sentinel-2 */}
+                    <div className="flex items-center p-3 rounded-md border border-neutral-200 bg-neutral-50">
+                      <div className="h-8 w-8 flex items-center justify-center bg-blue-100 text-blue-700 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="4"/><line x1="4.93" y1="4.93" x2="9.17" y2="9.17"/><line x1="14.83" y1="14.83" x2="19.07" y2="19.07"/><line x1="14.83" y1="9.17" x2="19.07" y2="4.93"/><line x1="9.17" y1="14.83" x2="4.93" y2="19.07"/></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Sentinel-2 Imagery</h3>
+                        <p className="text-sm text-neutral-500">10m resolution multispectral imagery</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="ml-auto"
+                        onClick={() => {
+                          setCurrentSource({
+                            id: 0,
+                            name: "Sentinel-2 Imagery",
+                            type: "satellite",
+                            description: "European Space Agency Sentinel-2 satellite imagery",
+                            apiEndpoint: "https://scihub.copernicus.eu/dhus",
+                            region: "Nigeria",
+                            frequency: "daily",
+                            dataFormat: "geojson"
+                          });
+                          setConfigureDialogOpen(true);
+                        }}
+                      >
+                        Configure
+                      </Button>
+                    </div>
+
+                    {/* Landsat */}
+                    <div className="flex items-center p-3 rounded-md border border-neutral-200 bg-neutral-50">
+                      <div className="h-8 w-8 flex items-center justify-center bg-green-100 text-green-700 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Landsat 8/9</h3>
+                        <p className="text-sm text-neutral-500">30m resolution multispectral imagery</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="ml-auto"
+                        onClick={() => {
+                          setCurrentSource({
+                            id: 0,
+                            name: "Landsat 8/9",
+                            type: "satellite",
+                            description: "USGS/NASA Landsat 8/9 satellite imagery",
+                            apiEndpoint: "https://earthexplorer.usgs.gov/",
+                            region: "Nigeria",
+                            frequency: "daily",
+                            dataFormat: "geojson"
+                          });
+                          setConfigureDialogOpen(true);
+                        }}
+                      >
+                        Configure
+                      </Button>
+                    </div>
+
+                    {/* Planet */}
+                    <div className="flex items-center p-3 rounded-md border border-neutral-200 bg-neutral-50">
+                      <div className="h-8 w-8 flex items-center justify-center bg-purple-100 text-purple-700 rounded-full mr-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg>
+                      </div>
+                      <div>
+                        <h3 className="font-medium">Planet Imagery</h3>
+                        <p className="text-sm text-neutral-500">3-5m resolution daily imagery</p>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        className="ml-auto"
+                        onClick={() => {
+                          setCurrentSource({
+                            id: 0,
+                            name: "Planet Imagery",
+                            type: "satellite",
+                            description: "Planet Labs high-resolution daily satellite imagery",
+                            apiEndpoint: "https://api.planet.com/",
+                            region: "Nigeria",
+                            frequency: "daily",
+                            dataFormat: "geojson"
+                          });
+                          setConfigureDialogOpen(true);
+                        }}
+                      >
+                        Configure
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Satellite Data Analysis</CardTitle>
+                  <CardDescription>
+                    Process and analyze satellite imagery for early warning indicators
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Available Analysis Tools</h3>
+                      <div className="space-y-2">
+                        <div className="flex items-center p-2 rounded-md border border-neutral-200">
+                          <div className="h-6 w-6 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/></svg>
+                          </div>
+                          <div className="text-sm">
+                            <p className="font-medium">Population Displacement Detection</p>
+                            <p className="text-xs text-neutral-500">Detects changes in settlement patterns using temporal analysis</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center p-2 rounded-md border border-neutral-200">
+                          <div className="h-6 w-6 bg-amber-100 text-amber-700 rounded-full flex items-center justify-center mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 2h8l4 10-4 10H8L4 12z"/></svg>
+                          </div>
+                          <div className="text-sm">
+                            <p className="font-medium">Infrastructure Damage Assessment</p>
+                            <p className="text-xs text-neutral-500">Identifies damaged infrastructure in conflict zones</p>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center p-2 rounded-md border border-neutral-200">
+                          <div className="h-6 w-6 bg-green-100 text-green-700 rounded-full flex items-center justify-center mr-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 16V7a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v9m16 0H4m16 0 1.28 2.55a1 1 0 0 1-.9 1.45H3.62a1 1 0 0 1-.9-1.45L4 16"/></svg>
+                          </div>
+                          <div className="text-sm">
+                            <p className="font-medium">Crop Health Monitoring</p>
+                            <p className="text-xs text-neutral-500">Monitors agricultural activity for food security indicators</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <h3 className="text-sm font-medium mb-2">Recent Processing Jobs</h3>
+                      <div className="text-xs text-neutral-500 italic">No recent processing jobs</div>
+                    </div>
+                    
+                    <Button className="w-full">Run Analysis</Button>
+                  </div>
                 </CardContent>
               </Card>
             </div>
