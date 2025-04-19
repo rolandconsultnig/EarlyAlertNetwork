@@ -163,6 +163,28 @@ export default function DataCollectionPage() {
     return string.charAt(0).toUpperCase() + string.slice(1);
   };
   
+  // Helper function to format source type for display
+  const formatSourceType = (type: string): string => {
+    switch (type) {
+      case 'news_media':
+        return 'News Media';
+      case 'social_media':
+        return 'Social Media';
+      case 'satellite':
+        return 'Satellite';
+      case 'government_report':
+        return 'Government';
+      case 'ngo_report':
+        return 'NGO';
+      case 'sensor_network':
+        return 'Sensor Network';
+      case 'field_report':
+        return 'Field Report';
+      default:
+        return capitalizeFirstLetter(type.replace('_', ' '));
+    }
+  };
+  
   // Incident form setup
   const form = useForm<IncidentFormValues>({
     resolver: zodResolver(incidentSchema),
@@ -266,20 +288,79 @@ export default function DataCollectionPage() {
   // Function to fetch data from a specific source
   const fetchFromSource = async (sourceId: number) => {
     try {
+      setFetchingData(true);
       const res = await apiRequest("POST", `/api/data-sources/${sourceId}/fetch`, {});
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to fetch data");
+      }
+      
       const result = await res.json();
       
       toast({
         title: "Data Collection Initiated",
         description: `Started collecting data from source #${sourceId}.`,
       });
+      
+      // Refetch the data sources to update their status
+      await queryClient.invalidateQueries({ queryKey: ["/api/data-sources"] });
+      
+      // Start polling for data processing status
+      pollDataProcessingStatus();
     } catch (error) {
       toast({
         title: "Data Collection Failed",
         description: error instanceof Error ? error.message : "Unknown error occurred",
         variant: "destructive",
       });
+    } finally {
+      setFetchingData(false);
     }
+  };
+  
+  // Function to poll data processing status
+  const pollDataProcessingStatus = async () => {
+    // Clear any existing polling interval
+    if (pollingInterval) {
+      clearInterval(pollingInterval);
+    }
+    
+    // Create a new polling interval
+    const interval = setInterval(async () => {
+      try {
+        const res = await apiRequest("GET", "/api/collected-data/status", null);
+        
+        if (!res.ok) {
+          throw new Error("Failed to fetch processing status");
+        }
+        
+        const data = await res.json();
+        
+        if (data.success && data.stats) {
+          setProcessingStats(data.stats);
+          
+          // If all data is processed or there are no unprocessed items, stop polling
+          if (data.stats.unprocessed === 0 || 
+              (data.stats.processed + data.stats.errors === data.stats.total)) {
+            clearInterval(interval);
+            setPollingInterval(null);
+            
+            // Show completion toast
+            toast({
+              title: "Data Processing Complete",
+              description: `Processed ${data.stats.processed} items with ${data.stats.errors} errors.`,
+            });
+          }
+        }
+      } catch (error) {
+        console.error("Error polling data status:", error);
+        clearInterval(interval);
+        setPollingInterval(null);
+      }
+    }, 3000); // Poll every 3 seconds
+    
+    setPollingInterval(interval);
   };
   
   return (
@@ -850,6 +931,51 @@ export default function DataCollectionPage() {
                   </Button>
                 </CardHeader>
                 <CardContent>
+                  {/* Data Processing Status */}
+                  {processingStats && (
+                    <div className="mb-6 p-4 border border-border rounded-md bg-card">
+                      <h4 className="text-md font-medium mb-2">Data Processing Status</h4>
+                      <div className="space-y-3">
+                        <div>
+                          <div className="flex justify-between mb-1">
+                            <span className="text-sm">Processed</span>
+                            <span className="text-sm">{processingStats.processed} / {processingStats.total}</span>
+                          </div>
+                          <div className="h-2 bg-muted rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-primary rounded-full" 
+                              style={{ 
+                                width: `${processingStats.total ? (processingStats.processed / processingStats.total) * 100 : 0}%` 
+                              }}
+                            ></div>
+                          </div>
+                        </div>
+                        
+                        {processingStats.errors > 0 && (
+                          <div>
+                            <div className="flex justify-between mb-1">
+                              <span className="text-sm">Errors</span>
+                              <span className="text-sm text-destructive">{processingStats.errors} / {processingStats.total}</span>
+                            </div>
+                            <div className="h-2 bg-muted rounded-full overflow-hidden">
+                              <div 
+                                className="h-full bg-destructive rounded-full" 
+                                style={{ 
+                                  width: `${processingStats.total ? (processingStats.errors / processingStats.total) * 100 : 0}%` 
+                                }}
+                              ></div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        <div className="flex justify-between text-xs text-muted-foreground">
+                          <span>{processingStats.unprocessed} items remaining</span>
+                          {pollingInterval && <span>Processing data...</span>}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="space-y-8">
                     {isLoadingSources ? (
                       <div className="flex justify-center py-8">
@@ -857,15 +983,30 @@ export default function DataCollectionPage() {
                       </div>
                     ) : sources && sources.length > 0 ? (
                       sources.map((source) => (
-                        <div key={source.id}>
+                        <div key={source.id} className="border rounded-md p-3 hover:bg-accent/5">
                           <div className="flex justify-between mb-2">
                             <span className="text-sm font-medium">{source.name}</span>
-                            <span className={`text-sm ${
-                              source.status === 'active' ? 'text-success' : 
-                              source.status === 'degraded' ? 'text-warning' : 'text-error'
-                            }`}>
-                              {capitalizeFirstLetter(source.status)}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-sm ${
+                                source.status === 'active' ? 'text-success' : 
+                                source.status === 'degraded' ? 'text-warning' : 'text-error'
+                              }`}>
+                                {capitalizeFirstLetter(source.status)}
+                              </span>
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                disabled={source.status !== 'active' || fetchingData}
+                                onClick={() => fetchFromSource(source.id)}
+                              >
+                                {fetchingData ? (
+                                  <span className="animate-spin">⊝</span>
+                                ) : (
+                                  <Database className="h-3 w-3" />
+                                )}
+                                <span className="ml-1 text-xs">Fetch</span>
+                              </Button>
+                            </div>
                           </div>
                           <div className="h-2 bg-neutral-100 rounded-full overflow-hidden">
                             <div className={`h-full rounded-full ${
@@ -873,9 +1014,14 @@ export default function DataCollectionPage() {
                               source.status === 'degraded' ? 'bg-warning w-1/2' : 'bg-error w-1/5'
                             }`}></div>
                           </div>
-                          <p className="text-xs text-neutral-500 mt-1">
-                            Last updated: {formatDate(source.lastUpdated)}
-                          </p>
+                          <div className="flex justify-between items-center mt-2">
+                            <p className="text-xs text-neutral-500">
+                              Last updated: {formatDate(source.lastUpdated)}
+                            </p>
+                            <p className="text-xs text-neutral-500">
+                              Type: {formatSourceType(source.type)}
+                            </p>
+                          </div>
                         </div>
                       ))
                     ) : (
