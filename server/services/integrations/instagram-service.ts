@@ -163,21 +163,25 @@ class InstagramService {
       // Download media to temporary file
       tempFilePath = await this.downloadImageToTemp(mediaUrl);
       
-      let mediaId;
+      let mediaId = '';
       
-      if (isStory) {
+      if (isStory || false) {
         // Post as a story
+        // Use Buffer to read from file
+        const fileBuffer = fs.readFileSync(tempFilePath);
         const publishResult = await this.ig.publish.story({
-          file: tempFilePath
+          file: fileBuffer
         });
-        mediaId = publishResult.media_id;
+        mediaId = publishResult.media.id || '';
       } else {
         // Post as a regular feed post
+        // Use Buffer to read from file
+        const fileBuffer = fs.readFileSync(tempFilePath);
         const publishResult = await this.ig.publish.photo({
-          file: tempFilePath,
+          file: fileBuffer,
           caption
         });
-        mediaId = publishResult.media_id;
+        mediaId = publishResult.media.id || '';
       }
       
       return {

@@ -1,5 +1,8 @@
-import { useState } from "react";
+import React, { useState } from "react";
+import MainLayout from "@/components/layout/MainLayout";
 import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Card, 
   CardContent, 
@@ -10,1082 +13,1079 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { 
+  Dialog, 
+  DialogContent, 
+  DialogDescription, 
+  DialogFooter, 
+  DialogHeader, 
+  DialogTitle 
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { toast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { formatDate } from "@/lib/utils";
-import { CheckCircle, XCircle, ChevronRight, Copy, Key, WebhookIcon, RefreshCw, AlertTriangle, ExternalLink } from "lucide-react";
+import { 
+  Form, 
+  FormControl, 
+  FormDescription, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
+import { 
+  RefreshCw,
+  MessageSquare,
+  Send,
+  PhoneCall,
+  Phone,
+  Twitter,
+  Facebook,
+  Instagram,
+  Globe,
+  Check,
+  X,
+  AlertCircle,
+  Settings,
+  RocketIcon,
+  Clock
+} from "lucide-react";
+import { SiTwilio, SiFacebook, SiInstagram, SiWhatsapp } from "react-icons/si";
+import { SiX } from "react-icons/si"; // Formerly Twitter, now X
 
-const permissionOptions = [
-  { id: "read", label: "Read Only" },
-  { id: "write", label: "Read & Write" },
-  { id: "*", label: "Full Access" },
-];
+// Integration form schema
+const integrationTestSchema = z.object({
+  service: z.enum(['twilio_sms', 'twilio_whatsapp', 'twitter', 'facebook', 'instagram']),
+  recipient: z.string().optional(),
+  message: z.string().min(1, 'Message is required'),
+  mediaUrl: z.string().url().optional(),
+});
 
-const webhookEventOptions = [
-  { id: "alert.created", label: "Alert Created" },
-  { id: "alert.updated", label: "Alert Updated" },
-  { id: "alert.resolved", label: "Alert Resolved" },
-  { id: "incident.created", label: "Incident Created" },
-  { id: "incident.updated", label: "Incident Updated" },
-  { id: "incident.resolved", label: "Incident Resolved" },
-  { id: "api.accessed", label: "API Accessed" },
-  { id: "api.incidents.accessed", label: "Incidents API Accessed" },
-  { id: "api.alerts.accessed", label: "Alerts API Accessed" },
-];
+type IntegrationTest = z.infer<typeof integrationTestSchema>;
 
-function ApiKeyDialog({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState("");
-  const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
-  const [expiryDays, setExpiryDays] = useState("30");
-
-  const createApiKeyMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/integration/api-keys", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/integration/api-keys"] });
-      toast({
-        title: "API Key Created",
-        description: "Your new API key has been created successfully.",
-      });
-      onClose();
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to Create API Key",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!name) {
-      toast({
-        title: "Missing Information",
-        description: "Please provide a name for your API key.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (selectedPermissions.length === 0) {
-      toast({
-        title: "Missing Information",
-        description: "Please select at least one permission.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    // Calculate expiry date
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + parseInt(expiryDays));
-    
-    createApiKeyMutation.mutate({
-      name,
-      permissions: selectedPermissions,
-      expiresAt: expiresAt.toISOString(),
-    });
-  };
-
-  const togglePermission = (permission: string) => {
-    setSelectedPermissions((prev) =>
-      prev.includes(permission)
-        ? prev.filter((p) => p !== permission)
-        : [...prev, permission]
-    );
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <div className="grid gap-4 py-4">
-        <div className="grid gap-2">
-          <Label htmlFor="name">API Key Name</Label>
-          <Input
-            id="name"
-            placeholder="My Application API Key"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-        
-        <div className="grid gap-2">
-          <Label>Permissions</Label>
-          <div className="grid gap-2">
-            {permissionOptions.map((permission) => (
-              <div key={permission.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`permission-${permission.id}`}
-                  checked={selectedPermissions.includes(permission.id)}
-                  onCheckedChange={() => togglePermission(permission.id)}
-                />
-                <Label htmlFor={`permission-${permission.id}`}>{permission.label}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="expiry">Expires After</Label>
-          <Select value={expiryDays} onValueChange={setExpiryDays}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select an expiry period" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="7">7 days</SelectItem>
-              <SelectItem value="30">30 days</SelectItem>
-              <SelectItem value="90">90 days</SelectItem>
-              <SelectItem value="365">1 year</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      
-      <DialogFooter>
-        <Button
-          type="submit"
-          disabled={createApiKeyMutation.isPending}
-          className="w-full"
-        >
-          {createApiKeyMutation.isPending ? (
-            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <Key className="mr-2 h-4 w-4" />
-          )}
-          Create API Key
-        </Button>
-      </DialogFooter>
-    </form>
-  );
+interface IntegrationStatus {
+  configured: boolean;
+  missingVars: string[];
 }
 
-function ApiKeysList() {
-  const [showNewKey, setShowNewKey] = useState(false);
-  const [selectedKey, setSelectedKey] = useState<any>(null);
-  
-  const { data: apiKeys, isPending, isError } = useQuery({
-    queryKey: ["/api/integration/api-keys"],
-    queryFn: async () => {
-      const res = await fetch("/api/integration/api-keys");
-      if (!res.ok) throw new Error("Failed to fetch API keys");
-      return res.json();
-    },
-  });
-  
-  const deleteApiKeyMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/integration/api-keys/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/integration/api-keys"] });
-      toast({
-        title: "API Key Deleted",
-        description: "The API key has been deleted successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to Delete API Key",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  const handleCopyKey = (key: string) => {
-    navigator.clipboard.writeText(key);
-    toast({
-      title: "API Key Copied",
-      description: "The API key has been copied to clipboard.",
-    });
-  };
-  
-  const handleDeleteKey = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this API key? This action cannot be undone.")) {
-      deleteApiKeyMutation.mutate(id);
-    }
-  };
-  
-  const isKeyExpired = (expiresAt: string) => {
-    return new Date(expiresAt) < new Date();
-  };
-  
-  if (isPending) {
-    return <div className="flex justify-center p-4">Loading API keys...</div>;
-  }
-  
-  if (isError) {
-    return (
-      <div className="flex justify-center p-4 text-red-500">
-        <AlertTriangle className="mr-2 h-5 w-5" />
-        Failed to load API keys
-      </div>
-    );
-  }
-  
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Your API Keys</h3>
-        <Dialog open={showNewKey} onOpenChange={setShowNewKey}>
-          <DialogTrigger asChild>
-            <Button>
-              <Key className="mr-2 h-4 w-4" />
-              Create New API Key
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Create New API Key</DialogTitle>
-              <DialogDescription>
-                Create a new API key to access the application programmatically.
-                Make sure to copy your API key, as it won't be shown again.
-              </DialogDescription>
-            </DialogHeader>
-            <ApiKeyDialog onClose={() => setShowNewKey(false)} />
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      {selectedKey && (
-        <div className="mb-4 p-4 border rounded-md bg-blue-50">
-          <div className="flex justify-between items-center mb-2">
-            <h4 className="font-medium">New API Key Created</h4>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setSelectedKey(null)}
-            >
-              <XCircle className="h-4 w-4" />
-            </Button>
-          </div>
-          <p className="mb-2 text-sm">
-            Please copy this API key now. You won't be able to see it again!
-          </p>
-          <div className="flex items-center mb-4">
-            <code className="flex-1 p-2 bg-white border rounded text-sm overflow-x-auto">
-              {selectedKey.key}
-            </code>
-            <Button
-              variant="outline"
-              size="sm"
-              className="ml-2"
-              onClick={() => handleCopyKey(selectedKey.key)}
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="text-sm text-muted-foreground">
-            <p>Add this header to your API requests:</p>
-            <code className="p-1 bg-white border rounded">
-              X-API-Key: {selectedKey.key}
-            </code>
-          </div>
-        </div>
-      )}
-      
-      {apiKeys?.length === 0 ? (
-        <div className="text-center p-8 border rounded-md">
-          <Key className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-medium mb-2">No API Keys Yet</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Create your first API key to enable programmatic access to the platform.
-          </p>
-          <Button
-            variant="outline"
-            onClick={() => setShowNewKey(true)}
-          >
-            Create API Key
-          </Button>
-        </div>
-      ) : (
-        <div className="border rounded-md overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Permissions</TableHead>
-                <TableHead>Created</TableHead>
-                <TableHead>Expires</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {apiKeys?.map((key: any) => (
-                <TableRow key={key.id}>
-                  <TableCell className="font-medium">{key.name}</TableCell>
-                  <TableCell>
-                    {Array.isArray(key.permissions) ? key.permissions.join(", ") : key.permissions}
-                  </TableCell>
-                  <TableCell>{formatDate(key.createdAt)}</TableCell>
-                  <TableCell>{formatDate(key.expiresAt)}</TableCell>
-                  <TableCell>
-                    {key.status === "active" && !isKeyExpired(key.expiresAt) ? (
-                      <span className="flex items-center text-green-600">
-                        <CheckCircle className="mr-1 h-4 w-4" /> Active
-                      </span>
-                    ) : (
-                      <span className="flex items-center text-red-600">
-                        <XCircle className="mr-1 h-4 w-4" /> 
-                        {isKeyExpired(key.expiresAt) ? "Expired" : key.status}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mr-2"
-                      onClick={() => handleCopyKey(key.key)}
-                    >
-                      Copy ID
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteKey(key.id)}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function WebhookDialog({ onClose }: { onClose: () => void }) {
-  const [name, setName] = useState("");
-  const [url, setUrl] = useState("");
-  const [selectedEvents, setSelectedEvents] = useState<string[]>([]);
-
-  const createWebhookMutation = useMutation({
-    mutationFn: async (data: any) => {
-      const res = await apiRequest("POST", "/api/integration/webhooks", data);
-      return res.json();
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/integration/webhooks"] });
-      toast({
-        title: "Webhook Created",
-        description: "Your new webhook has been created successfully.",
-      });
-      onClose();
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to Create Webhook",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!name || !url) {
-      toast({
-        title: "Missing Information",
-        description: "Please provide a name and URL for your webhook.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (selectedEvents.length === 0) {
-      toast({
-        title: "Missing Information",
-        description: "Please select at least one event.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    createWebhookMutation.mutate({
-      name,
-      url,
-      events: selectedEvents,
-    });
-  };
-
-  const toggleEvent = (event: string) => {
-    setSelectedEvents((prev) =>
-      prev.includes(event)
-        ? prev.filter((e) => e !== event)
-        : [...prev, event]
-    );
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <div className="grid gap-4 py-4">
-        <div className="grid gap-2">
-          <Label htmlFor="name">Webhook Name</Label>
-          <Input
-            id="name"
-            placeholder="My Application Webhook"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-          />
-        </div>
-        
-        <div className="grid gap-2">
-          <Label htmlFor="url">Webhook URL</Label>
-          <Input
-            id="url"
-            placeholder="https://example.com/webhooks/endpoint"
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-          />
-          <p className="text-sm text-muted-foreground">
-            The URL that will receive webhook events via HTTP POST.
-          </p>
-        </div>
-        
-        <div className="grid gap-2">
-          <Label>Events</Label>
-          <div className="grid gap-2 max-h-60 overflow-y-auto">
-            {webhookEventOptions.map((event) => (
-              <div key={event.id} className="flex items-center space-x-2">
-                <Checkbox
-                  id={`event-${event.id}`}
-                  checked={selectedEvents.includes(event.id)}
-                  onCheckedChange={() => toggleEvent(event.id)}
-                />
-                <Label htmlFor={`event-${event.id}`}>{event.label}</Label>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      
-      <DialogFooter>
-        <Button
-          type="submit"
-          disabled={createWebhookMutation.isPending}
-          className="w-full"
-        >
-          {createWebhookMutation.isPending ? (
-            <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-          ) : (
-            <WebhookIcon className="mr-2 h-4 w-4" />
-          )}
-          Create Webhook
-        </Button>
-      </DialogFooter>
-    </form>
-  );
-}
-
-function WebhooksList() {
-  const [showNewWebhook, setShowNewWebhook] = useState(false);
-  
-  const { data: webhooks, isPending, isError } = useQuery({
-    queryKey: ["/api/integration/webhooks"],
-    queryFn: async () => {
-      const res = await fetch("/api/integration/webhooks");
-      if (!res.ok) throw new Error("Failed to fetch webhooks");
-      return res.json();
-    },
-  });
-  
-  const deleteWebhookMutation = useMutation({
-    mutationFn: async (id: number) => {
-      await apiRequest("DELETE", `/api/integration/webhooks/${id}`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/integration/webhooks"] });
-      toast({
-        title: "Webhook Deleted",
-        description: "The webhook has been deleted successfully.",
-      });
-    },
-    onError: (error) => {
-      toast({
-        title: "Failed to Delete Webhook",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-  
-  const handleDeleteWebhook = (id: number) => {
-    if (window.confirm("Are you sure you want to delete this webhook? This action cannot be undone.")) {
-      deleteWebhookMutation.mutate(id);
-    }
-  };
-  
-  if (isPending) {
-    return <div className="flex justify-center p-4">Loading webhooks...</div>;
-  }
-  
-  if (isError) {
-    return (
-      <div className="flex justify-center p-4 text-red-500">
-        <AlertTriangle className="mr-2 h-5 w-5" />
-        Failed to load webhooks
-      </div>
-    );
-  }
-  
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Your Webhooks</h3>
-        <Dialog open={showNewWebhook} onOpenChange={setShowNewWebhook}>
-          <DialogTrigger asChild>
-            <Button>
-              <WebhookIcon className="mr-2 h-4 w-4" />
-              Create New Webhook
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Create New Webhook</DialogTitle>
-              <DialogDescription>
-                Create a new webhook to receive real-time notifications about events in the system.
-              </DialogDescription>
-            </DialogHeader>
-            <WebhookDialog onClose={() => setShowNewWebhook(false)} />
-          </DialogContent>
-        </Dialog>
-      </div>
-      
-      {webhooks?.length === 0 ? (
-        <div className="text-center p-8 border rounded-md">
-          <WebhookIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-          <h3 className="text-lg font-medium mb-2">No Webhooks Yet</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Set up webhooks to receive real-time notifications for events in the platform.
-          </p>
-          <Button
-            variant="outline"
-            onClick={() => setShowNewWebhook(true)}
-          >
-            Create Webhook
-          </Button>
-        </div>
-      ) : (
-        <div className="border rounded-md overflow-hidden">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>URL</TableHead>
-                <TableHead>Events</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Last Triggered</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {webhooks?.map((webhook: any) => (
-                <TableRow key={webhook.id}>
-                  <TableCell className="font-medium">{webhook.name}</TableCell>
-                  <TableCell className="max-w-[200px] truncate">
-                    <div className="flex items-center">
-                      {webhook.url}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="ml-1 h-5 w-5 p-0"
-                        onClick={() => window.open(webhook.url, '_blank')}
-                      >
-                        <ExternalLink className="h-3 w-3" />
-                      </Button>
-                    </div>
-                  </TableCell>
-                  <TableCell className="max-w-[200px]">
-                    <div className="max-h-12 overflow-y-auto text-xs">
-                      {Array.isArray(webhook.events) ? (
-                        webhook.events.map((event: string) => (
-                          <div key={event} className="mb-1 last:mb-0">
-                            <span className="inline-block px-2 py-1 bg-blue-100 rounded text-blue-800">
-                              {event}
-                            </span>
-                          </div>
-                        ))
-                      ) : (
-                        webhook.events
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    {webhook.status === "active" ? (
-                      <span className="flex items-center text-green-600">
-                        <CheckCircle className="mr-1 h-4 w-4" /> Active
-                      </span>
-                    ) : (
-                      <span className="flex items-center text-red-600">
-                        <XCircle className="mr-1 h-4 w-4" /> {webhook.status}
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {webhook.lastTriggered ? formatDate(webhook.lastTriggered) : "Never"}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() => handleDeleteWebhook(webhook.id)}
-                    >
-                      Delete
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DocumentationSection() {
-  return (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-lg font-medium mb-2">API Usage Guide</h3>
-        <div className="prose max-w-none">
-          <p>
-            This API allows you to programmatically access data from the Early Warning & Early Response System. 
-            Below are instructions on how to authenticate and use the available endpoints.
-          </p>
-          
-          <h4>Authentication</h4>
-          <p>
-            All API requests require an API key to be included in the request headers:
-          </p>
-          <pre className="bg-gray-100 p-3 rounded-md overflow-x-auto">
-            <code>X-API-Key: your_api_key_here</code>
-          </pre>
-          
-          <h4>Available Endpoints</h4>
-          <ul>
-            <li>
-              <strong>GET /api/external/incidents</strong> - Retrieve all incidents
-            </li>
-            <li>
-              <strong>GET /api/external/alerts</strong> - Retrieve all alerts
-            </li>
-          </ul>
-          
-          <h4>Response Format</h4>
-          <p>
-            All responses are returned in JSON format.
-          </p>
-          
-          <h4>Error Handling</h4>
-          <p>
-            The API uses standard HTTP status codes to indicate success or failure:
-          </p>
-          <ul>
-            <li><strong>200 OK</strong> - Request succeeded</li>
-            <li><strong>400 Bad Request</strong> - Invalid request</li>
-            <li><strong>401 Unauthorized</strong> - Missing or invalid API key</li>
-            <li><strong>403 Forbidden</strong> - API key doesn't have required permissions</li>
-            <li><strong>404 Not Found</strong> - Resource not found</li>
-            <li><strong>500 Server Error</strong> - Server-side error</li>
-          </ul>
-        </div>
-      </div>
-      
-      <div>
-        <h3 className="text-lg font-medium mb-2">Webhook Guide</h3>
-        <div className="prose max-w-none">
-          <p>
-            Webhooks allow you to receive real-time notifications when events occur in the system.
-          </p>
-          
-          <h4>Webhook Format</h4>
-          <p>
-            When an event occurs that matches your webhook configuration, our system will send an HTTP POST request to your webhook URL with a JSON payload.
-          </p>
-          
-          <p>Example payload:</p>
-          <pre className="bg-gray-100 p-3 rounded-md overflow-x-auto">
-{`{
-  "event": "alert.created",
-  "timestamp": "2025-04-14T12:34:56Z",
-  "data": {
-    "id": 123,
-    "title": "New Crisis Alert",
-    "severity": "high",
-    "location": "Maiduguri, Borno State",
-    "description": "Civil unrest reported..."
-  }
-}`}
-          </pre>
-          
-          <h4>Webhook Headers</h4>
-          <p>
-            Each webhook request includes the following headers:
-          </p>
-          <ul>
-            <li><strong>X-EWERS-Webhook-Event</strong> - The event type that triggered the webhook</li>
-            <li><strong>X-EWERS-Webhook-Signature</strong> - A HMAC SHA-256 signature of the request body</li>
-            <li><strong>X-EWERS-Webhook-Timestamp</strong> - The timestamp when the event was triggered</li>
-          </ul>
-          
-          <h4>Verifying Webhook Signatures</h4>
-          <p>
-            To verify that a webhook request came from our system, you should compute an HMAC SHA-256 signature using your webhook secret and compare it with the X-EWERS-Webhook-Signature header.
-          </p>
-          
-          <h4>Best Practices</h4>
-          <ul>
-            <li>Respond to webhook requests quickly (under 5 seconds)</li>
-            <li>Implement retry logic in case of failures</li>
-            <li>Verify webhook signatures to ensure security</li>
-            <li>Process webhook events asynchronously</li>
-          </ul>
-        </div>
-      </div>
-    </div>
-  );
+interface AllIntegrationsStatus {
+  twilio: IntegrationStatus;
+  twitter: IntegrationStatus;
+  facebook: IntegrationStatus;
+  instagram: IntegrationStatus;
 }
 
 export default function IntegrationsPage() {
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState("twilio");
+  const [testDialogOpen, setTestDialogOpen] = useState(false);
+  const [currentService, setCurrentService] = useState<string | null>(null);
+
+  // Fetch integration status
+  const { 
+    data: integrationStatus,
+    isLoading: isLoadingStatus,
+    error: statusError,
+    refetch: refetchStatus
+  } = useQuery<AllIntegrationsStatus>({
+    queryKey: ['/api/integration/status'],
+  });
+  
+  // Form for testing integrations
+  const form = useForm<IntegrationTest>({
+    resolver: zodResolver(integrationTestSchema),
+    defaultValues: {
+      service: 'twilio_sms',
+      recipient: '',
+      message: '',
+      mediaUrl: '',
+    },
+  });
+
+  // Create test message mutation
+  const testIntegrationMutation = useMutation({
+    mutationFn: async (data: IntegrationTest) => {
+      let endpoint: string;
+      
+      switch (data.service) {
+        case 'twilio_sms':
+          endpoint = '/api/integration/sms/send';
+          break;
+        case 'twilio_whatsapp':
+          endpoint = '/api/integration/whatsapp/send';
+          break;
+        case 'twitter':
+          endpoint = '/api/integration/twitter/tweet';
+          
+          // Format data for Twitter API
+          return apiRequest('POST', endpoint, { 
+            text: data.message,
+            mediaIds: data.mediaUrl ? [data.mediaUrl] : undefined
+          });
+          
+        case 'facebook':
+          endpoint = '/api/integration/facebook/post';
+          
+          // Format data for Facebook API
+          return apiRequest('POST', endpoint, { 
+            message: data.message,
+            link: data.mediaUrl,
+          });
+          
+        case 'instagram':
+          endpoint = '/api/integration/instagram/post';
+          
+          // Format data for Instagram API
+          return apiRequest('POST', endpoint, { 
+            caption: data.message,
+            mediaUrl: data.mediaUrl || 'https://via.placeholder.com/800x800.png',
+          });
+          
+        default:
+          throw new Error('Invalid service selected');
+      }
+      
+      // Format for Twilio services
+      if (data.service.startsWith('twilio_')) {
+        return apiRequest('POST', endpoint, {
+          to: data.recipient,
+          body: data.message,
+          mediaUrl: data.mediaUrl
+        });
+      }
+    },
+    onSuccess: () => {
+      toast({
+        title: "Integration Test Successful",
+        description: "The message was sent successfully.",
+      });
+      form.reset();
+      setTestDialogOpen(false);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Integration Test Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Handle form submission
+  function onSubmit(data: IntegrationTest) {
+    testIntegrationMutation.mutate(data);
+  }
+  
+  // Open dialog for testing a specific service
+  const openTestDialog = (service: string) => {
+    form.reset({
+      service: service as any,
+      recipient: '',
+      message: `Test message from EWERS @ ${new Date().toLocaleString()}`,
+      mediaUrl: '',
+    });
+    setCurrentService(service);
+    setTestDialogOpen(true);
+  };
+  
+  // Helper to format the missing vars for display
+  const formatMissingVars = (service: keyof AllIntegrationsStatus) => {
+    if (!integrationStatus) return '';
+    
+    const status = integrationStatus[service];
+    return status.missingVars.join(', ');
+  };
+
   return (
-    <div className="container mx-auto py-6 space-y-8">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">API Access & Webhooks</h1>
-          <p className="text-muted-foreground mt-2">
-            Manage API keys and configure webhooks for system integration
-          </p>
-        </div>
+    <MainLayout title="Integrations">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold">Communication Channels & Social Media</h1>
+        <Button 
+          variant="outline" 
+          size="sm"
+          onClick={() => refetchStatus()}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh Status
+        </Button>
       </div>
       
-      <Tabs defaultValue="api-keys" className="space-y-6">
-        <TabsList className="grid w-full md:w-auto grid-cols-5">
-          <TabsTrigger value="api-keys">API Keys</TabsTrigger>
-          <TabsTrigger value="webhooks">Webhooks</TabsTrigger>
-          <TabsTrigger value="security">Security</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-          <TabsTrigger value="documentation">Documentation</TabsTrigger>
+      <Tabs defaultValue="twilio" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="twilio">
+            <SiTwilio className="h-4 w-4 mr-2" />
+            Twilio (SMS/WhatsApp)
+          </TabsTrigger>
+          <TabsTrigger value="twitter">
+            <SiX className="h-4 w-4 mr-2" />
+            Twitter/X
+          </TabsTrigger>
+          <TabsTrigger value="facebook">
+            <SiFacebook className="h-4 w-4 mr-2" />
+            Facebook
+          </TabsTrigger>
+          <TabsTrigger value="instagram">
+            <SiInstagram className="h-4 w-4 mr-2" />
+            Instagram
+          </TabsTrigger>
+          <TabsTrigger value="webhooks">
+            <Globe className="h-4 w-4 mr-2" />
+            Webhooks
+          </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="api-keys" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>API Keys</CardTitle>
-              <CardDescription>
-                Create and manage API keys for programmatic access to the system
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <ApiKeysList />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="webhooks" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Webhooks</CardTitle>
-              <CardDescription>
-                Configure webhooks to receive real-time notifications about system events
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <WebhooksList />
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        <TabsContent value="security" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>API Security & Rate Limiting</CardTitle>
-              <CardDescription>
-                Configure API security settings and rate limiting for optimal performance
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-6">
+        {/* Twilio Tab */}
+        <TabsContent value="twilio">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <SiTwilio className="h-5 w-5 mr-2 text-blue-500" />
+                    <CardTitle>SMS Messaging</CardTitle>
+                  </div>
+                  {isLoadingStatus ? (
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-2 text-gray-400 animate-pulse" />
+                      <span className="text-sm text-gray-400">Checking...</span>
+                    </div>
+                  ) : integrationStatus?.twilio.configured ? (
+                    <div className="flex items-center">
+                      <Check className="h-4 w-4 mr-2 text-green-500" />
+                      <span className="text-sm text-green-500">Configured</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <X className="h-4 w-4 mr-2 text-red-500" />
+                      <span className="text-sm text-red-500">Not Configured</span>
+                    </div>
+                  )}
+                </div>
+                <CardDescription>
+                  Send SMS messages to citizens and field agents
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Rate Limiting</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Control how frequently your API can be accessed to prevent abuse and ensure fair usage.
-                    </p>
-                    
-                    <div className="space-y-4">
-                      <div className="grid gap-2">
-                        <Label>Requests per minute</Label>
-                        <div className="flex items-center space-x-2">
-                          <Input type="number" min="10" max="1000" defaultValue="60" />
-                          <Button className="shrink-0">Update</Button>
+                    <Label>Status</Label>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md border border-gray-200">
+                      {isLoadingStatus ? (
+                        <p className="text-gray-500">Checking configuration...</p>
+                      ) : statusError ? (
+                        <p className="text-red-500">Error checking configuration</p>
+                      ) : integrationStatus?.twilio.configured ? (
+                        <p className="text-green-700">SMS messaging is configured and ready to use</p>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-orange-700">SMS messaging is not configured</p>
+                          <p className="text-gray-500 text-sm">
+                            Missing environment variables: {formatMissingVars('twilio')}
+                          </p>
                         </div>
-                      </div>
-                      
-                      <div className="grid gap-2">
-                        <Label>Maximum burst size</Label>
-                        <div className="flex items-center space-x-2">
-                          <Input type="number" min="1" max="100" defaultValue="10" />
-                          <Button className="shrink-0">Update</Button>
-                        </div>
-                      </div>
-                      
-                      <div className="p-4 border rounded-md bg-blue-50">
-                        <h4 className="font-semibold mb-2">Current Settings</h4>
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>Request limit:</div>
-                          <div className="font-semibold">60 per minute</div>
-                          <div>Burst capacity:</div>
-                          <div className="font-semibold">10 requests</div>
-                          <div>Throttling:</div>
-                          <div className="font-semibold text-green-600">Enabled</div>
-                        </div>
-                      </div>
+                      )}
                     </div>
                   </div>
                 </div>
-                
-                <div className="space-y-6">
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button 
+                  variant="outline"
+                  onClick={() => window.open('https://www.twilio.com/docs/sms', '_blank')}
+                >
+                  Documentation
+                </Button>
+                <Button 
+                  onClick={() => openTestDialog('twilio_sms')}
+                  disabled={!integrationStatus?.twilio.configured}
+                >
+                  Test SMS
+                </Button>
+              </CardFooter>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center">
+                    <SiWhatsapp className="h-5 w-5 mr-2 text-green-500" />
+                    <CardTitle>WhatsApp Messaging</CardTitle>
+                  </div>
+                  {isLoadingStatus ? (
+                    <div className="flex items-center">
+                      <Clock className="h-4 w-4 mr-2 text-gray-400 animate-pulse" />
+                      <span className="text-sm text-gray-400">Checking...</span>
+                    </div>
+                  ) : integrationStatus?.twilio.configured ? (
+                    <div className="flex items-center">
+                      <Check className="h-4 w-4 mr-2 text-green-500" />
+                      <span className="text-sm text-green-500">Available</span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center">
+                      <X className="h-4 w-4 mr-2 text-red-500" />
+                      <span className="text-sm text-red-500">Not Available</span>
+                    </div>
+                  )}
+                </div>
+                <CardDescription>
+                  Send WhatsApp messages via Twilio
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
                   <div>
-                    <h3 className="text-lg font-medium mb-2">Authentication Methods</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Configure authentication methods for your API access points.
-                    </p>
-                    
-                    <div className="space-y-4">
-                      <div className="flex items-start space-x-2">
-                        <Checkbox id="api-key-auth" defaultChecked />
-                        <div className="grid gap-1.5">
-                          <Label htmlFor="api-key-auth" className="font-medium">API Key Authentication</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Require API keys in request headers (X-API-Key)
+                    <Label>Status</Label>
+                    <div className="mt-1 p-3 bg-gray-50 rounded-md border border-gray-200">
+                      {isLoadingStatus ? (
+                        <p className="text-gray-500">Checking configuration...</p>
+                      ) : statusError ? (
+                        <p className="text-red-500">Error checking configuration</p>
+                      ) : integrationStatus?.twilio.configured ? (
+                        <p className="text-green-700">WhatsApp messaging is available through Twilio</p>
+                      ) : (
+                        <div className="space-y-2">
+                          <p className="text-orange-700">WhatsApp messaging is not configured</p>
+                          <p className="text-gray-500 text-sm">
+                            Missing environment variables: {formatMissingVars('twilio')}
                           </p>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <Checkbox id="jwt-auth" />
-                        <div className="grid gap-1.5">
-                          <Label htmlFor="jwt-auth" className="font-medium">JWT Authentication</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Use JSON Web Tokens for authentication (Authorization: Bearer)
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-start space-x-2">
-                        <Checkbox id="ip-whitelist" />
-                        <div className="grid gap-1.5">
-                          <Label htmlFor="ip-whitelist" className="font-medium">IP Whitelisting</Label>
-                          <p className="text-sm text-muted-foreground">
-                            Restrict API access to specific IP addresses
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <Button className="mt-2">Save Authentication Settings</Button>
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button 
+                  variant="outline"
+                  onClick={() => window.open('https://www.twilio.com/docs/whatsapp', '_blank')}
+                >
+                  Documentation
+                </Button>
+                <Button 
+                  onClick={() => openTestDialog('twilio_whatsapp')}
+                  disabled={!integrationStatus?.twilio.configured}
+                >
+                  Test WhatsApp
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
+          
+          <div className="mt-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>SMS/WhatsApp Configuration</CardTitle>
+                <CardDescription>
+                  Configure Twilio for SMS and WhatsApp messaging
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div>
+                      <h3 className="font-medium mb-2">Required Environment Variables</h3>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex items-start">
+                          <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                            <Check className="h-3 w-3" />
+                          </div>
+                          <div>
+                            <span className="font-medium">TWILIO_ACCOUNT_SID</span>
+                            <p className="text-gray-500">Your Twilio account identifier</p>
+                          </div>
+                        </li>
+                        <li className="flex items-start">
+                          <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                            <Check className="h-3 w-3" />
+                          </div>
+                          <div>
+                            <span className="font-medium">TWILIO_AUTH_TOKEN</span>
+                            <p className="text-gray-500">Authentication token for your Twilio account</p>
+                          </div>
+                        </li>
+                        <li className="flex items-start">
+                          <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                            <Check className="h-3 w-3" />
+                          </div>
+                          <div>
+                            <span className="font-medium">TWILIO_PHONE_NUMBER</span>
+                            <p className="text-gray-500">Twilio phone number for sending messages</p>
+                          </div>
+                        </li>
+                        <li className="flex items-start">
+                          <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                            <Settings className="h-3 w-3" />
+                          </div>
+                          <div>
+                            <span className="font-medium">TWILIO_WHATSAPP_NUMBER (Optional)</span>
+                            <p className="text-gray-500">WhatsApp-enabled phone number for WhatsApp messaging</p>
+                          </div>
+                        </li>
+                      </ul>
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-medium mb-2">Implementation Guide</h3>
+                      <ol className="space-y-3 text-sm list-decimal list-inside">
+                        <li>Create a Twilio account at <a href="https://www.twilio.com" target="_blank" rel="noreferrer" className="text-blue-500 hover:underline">www.twilio.com</a></li>
+                        <li>Purchase a phone number with SMS capabilities</li>
+                        <li>Find your Account SID and Auth Token in the Twilio Console</li>
+                        <li>Add the environment variables to your project</li>
+                        <li>For WhatsApp, activate the WhatsApp Business API through Twilio</li>
+                      </ol>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+              <CardFooter>
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => window.open('https://www.twilio.com/try-twilio', '_blank')}
+                >
+                  Sign Up for Twilio
+                </Button>
+              </CardFooter>
+            </Card>
+          </div>
         </TabsContent>
         
-        <TabsContent value="analytics" className="space-y-6">
+        {/* Twitter Tab */}
+        <TabsContent value="twitter">
           <Card>
             <CardHeader>
-              <CardTitle>API Usage Analytics</CardTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <SiX className="h-5 w-5 mr-2 text-blue-400" />
+                  <CardTitle>Twitter/X Integration</CardTitle>
+                </div>
+                {isLoadingStatus ? (
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-gray-400 animate-pulse" />
+                    <span className="text-sm text-gray-400">Checking...</span>
+                  </div>
+                ) : integrationStatus?.twitter.configured ? (
+                  <div className="flex items-center">
+                    <Check className="h-4 w-4 mr-2 text-green-500" />
+                    <span className="text-sm text-green-500">Configured</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <X className="h-4 w-4 mr-2 text-red-500" />
+                    <span className="text-sm text-red-500">Not Configured</span>
+                  </div>
+                )}
+              </div>
               <CardDescription>
-                Monitor API consumption and analyze usage patterns
+                Post updates and monitor Twitter/X for early warnings
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold">2,453</div>
-                    <p className="text-xs text-muted-foreground">Total API calls today</p>
-                    <div className="text-xs text-green-600 mt-2">↑ 12% from yesterday</div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold">18.2 ms</div>
-                    <p className="text-xs text-muted-foreground">Average response time</p>
-                    <div className="text-xs text-green-600 mt-2">↓ 3% from yesterday</div>
-                  </CardContent>
-                </Card>
-                
-                <Card>
-                  <CardContent className="pt-6">
-                    <div className="text-2xl font-bold">99.98%</div>
-                    <p className="text-xs text-muted-foreground">API availability</p>
-                    <div className="text-xs text-green-600 mt-2">↑ 0.01% from yesterday</div>
-                  </CardContent>
-                </Card>
-              </div>
-              
-              <div className="space-y-6">
+              <div className="space-y-4">
                 <div>
-                  <h3 className="text-lg font-medium mb-4">API Requests by Endpoint (Last 24 hours)</h3>
-                  <div className="border rounded-md overflow-hidden">
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead className="w-[250px]">Endpoint</TableHead>
-                          <TableHead>Requests</TableHead>
-                          <TableHead>Avg. Response Time</TableHead>
-                          <TableHead>Success Rate</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        <TableRow>
-                          <TableCell className="font-medium">/api/external/incidents</TableCell>
-                          <TableCell>1,245</TableCell>
-                          <TableCell>15.3 ms</TableCell>
-                          <TableCell>99.9%</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">/api/external/alerts</TableCell>
-                          <TableCell>842</TableCell>
-                          <TableCell>18.7 ms</TableCell>
-                          <TableCell>100%</TableCell>
-                        </TableRow>
-                        <TableRow>
-                          <TableCell className="font-medium">/api/external/risk-indicators</TableCell>
-                          <TableCell>366</TableCell>
-                          <TableCell>22.1 ms</TableCell>
-                          <TableCell>99.7%</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
+                  <Label>Status</Label>
+                  <div className="mt-1 p-3 bg-gray-50 rounded-md border border-gray-200">
+                    {isLoadingStatus ? (
+                      <p className="text-gray-500">Checking configuration...</p>
+                    ) : statusError ? (
+                      <p className="text-red-500">Error checking configuration</p>
+                    ) : integrationStatus?.twitter.configured ? (
+                      <p className="text-green-700">Twitter/X API is configured and ready to use</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-orange-700">Twitter/X API is not configured</p>
+                        <p className="text-gray-500 text-sm">
+                          Missing environment variables: {formatMissingVars('twitter')}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-2 gap-6">
                   <div>
-                    <h3 className="text-lg font-medium mb-4">Top API Consumers</h3>
-                    <div className="border rounded-md overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>API Key</TableHead>
-                            <TableHead>Requests</TableHead>
-                            <TableHead>Usage</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell className="font-medium">NEMA Integration</TableCell>
-                            <TableCell>845</TableCell>
-                            <TableCell>34.4%</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium">Ministry Dashboard</TableCell>
-                            <TableCell>621</TableCell>
-                            <TableCell>25.3%</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium">Mobile App</TableCell>
-                            <TableCell>487</TableCell>
-                            <TableCell>19.9%</TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </div>
+                    <h3 className="font-medium mb-2">Required Environment Variables</h3>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start">
+                        <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">TWITTER_API_KEY</span>
+                          <p className="text-gray-500">API Key from Twitter/X Developer Portal</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">TWITTER_API_SECRET</span>
+                          <p className="text-gray-500">API Secret from Twitter/X Developer Portal</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">TWITTER_ACCESS_TOKEN</span>
+                          <p className="text-gray-500">Access token for your Twitter/X account</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">TWITTER_ACCESS_SECRET</span>
+                          <p className="text-gray-500">Access token secret for your Twitter/X account</p>
+                        </div>
+                      </li>
+                    </ul>
                   </div>
                   
                   <div>
-                    <h3 className="text-lg font-medium mb-4">Error Distribution</h3>
-                    <div className="border rounded-md overflow-hidden">
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>Status Code</TableHead>
-                            <TableHead>Description</TableHead>
-                            <TableHead>Count</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          <TableRow>
-                            <TableCell className="font-medium">401</TableCell>
-                            <TableCell>Unauthorized</TableCell>
-                            <TableCell>12</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium">403</TableCell>
-                            <TableCell>Forbidden</TableCell>
-                            <TableCell>5</TableCell>
-                          </TableRow>
-                          <TableRow>
-                            <TableCell className="font-medium">429</TableCell>
-                            <TableCell>Too Many Requests</TableCell>
-                            <TableCell>3</TableCell>
-                          </TableRow>
-                        </TableBody>
-                      </Table>
-                    </div>
+                    <h3 className="font-medium mb-2">Features</h3>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start">
+                        <div className="bg-green-100 text-green-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Post Alerts & Updates</span>
+                          <p className="text-gray-500">Share alerts and updates on Twitter/X</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-green-100 text-green-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Monitor Keywords</span>
+                          <p className="text-gray-500">Track relevant keywords for early warning</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-green-100 text-green-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Geolocation Monitoring</span>
+                          <p className="text-gray-500">Monitor Twitter/X activity in specific regions</p>
+                        </div>
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>
             </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button 
+                onClick={() => openTestDialog('twitter')}
+                disabled={!integrationStatus?.twitter.configured}
+              >
+                Test Twitter/X API
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
         
-        <TabsContent value="documentation" className="space-y-6">
+        {/* Facebook Tab */}
+        <TabsContent value="facebook">
           <Card>
             <CardHeader>
-              <CardTitle>API & Webhook Documentation</CardTitle>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <SiFacebook className="h-5 w-5 mr-2 text-blue-600" />
+                  <CardTitle>Facebook Integration</CardTitle>
+                </div>
+                {isLoadingStatus ? (
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-gray-400 animate-pulse" />
+                    <span className="text-sm text-gray-400">Checking...</span>
+                  </div>
+                ) : integrationStatus?.facebook.configured ? (
+                  <div className="flex items-center">
+                    <Check className="h-4 w-4 mr-2 text-green-500" />
+                    <span className="text-sm text-green-500">Configured</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <X className="h-4 w-4 mr-2 text-red-500" />
+                    <span className="text-sm text-red-500">Not Configured</span>
+                  </div>
+                )}
+              </div>
               <CardDescription>
-                Learn how to integrate with our system using APIs and webhooks
+                Post alerts and community outreach on Facebook
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <DocumentationSection />
+              <div className="space-y-4">
+                <div>
+                  <Label>Status</Label>
+                  <div className="mt-1 p-3 bg-gray-50 rounded-md border border-gray-200">
+                    {isLoadingStatus ? (
+                      <p className="text-gray-500">Checking configuration...</p>
+                    ) : statusError ? (
+                      <p className="text-red-500">Error checking configuration</p>
+                    ) : integrationStatus?.facebook.configured ? (
+                      <p className="text-green-700">Facebook API is configured and ready to use</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-orange-700">Facebook API is not configured</p>
+                        <p className="text-gray-500 text-sm">
+                          Missing environment variables: {formatMissingVars('facebook')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-medium mb-2">Required Environment Variables</h3>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start">
+                        <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">FACEBOOK_APP_ID</span>
+                          <p className="text-gray-500">App ID from Facebook Developer Portal</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">FACEBOOK_APP_SECRET</span>
+                          <p className="text-gray-500">App Secret from Facebook Developer Portal</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">FACEBOOK_ACCESS_TOKEN</span>
+                          <p className="text-gray-500">Page or User access token with appropriate permissions</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">Features</h3>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start">
+                        <div className="bg-green-100 text-green-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Post to Pages</span>
+                          <p className="text-gray-500">Share alerts and updates on Facebook Pages</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-green-100 text-green-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Post Photos</span>
+                          <p className="text-gray-500">Share images related to alerts and incidents</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-green-100 text-green-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Search Posts</span>
+                          <p className="text-gray-500">Search for relevant posts for monitoring</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button 
+                onClick={() => openTestDialog('facebook')}
+                disabled={!integrationStatus?.facebook.configured}
+              >
+                Test Facebook API
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        {/* Instagram Tab */}
+        <TabsContent value="instagram">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center">
+                  <SiInstagram className="h-5 w-5 mr-2 text-pink-600" />
+                  <CardTitle>Instagram Integration</CardTitle>
+                </div>
+                {isLoadingStatus ? (
+                  <div className="flex items-center">
+                    <Clock className="h-4 w-4 mr-2 text-gray-400 animate-pulse" />
+                    <span className="text-sm text-gray-400">Checking...</span>
+                  </div>
+                ) : integrationStatus?.instagram.configured ? (
+                  <div className="flex items-center">
+                    <Check className="h-4 w-4 mr-2 text-green-500" />
+                    <span className="text-sm text-green-500">Configured</span>
+                  </div>
+                ) : (
+                  <div className="flex items-center">
+                    <X className="h-4 w-4 mr-2 text-red-500" />
+                    <span className="text-sm text-red-500">Not Configured</span>
+                  </div>
+                )}
+              </div>
+              <CardDescription>
+                Share visual alerts and monitor Instagram for early warnings
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div>
+                  <Label>Status</Label>
+                  <div className="mt-1 p-3 bg-gray-50 rounded-md border border-gray-200">
+                    {isLoadingStatus ? (
+                      <p className="text-gray-500">Checking configuration...</p>
+                    ) : statusError ? (
+                      <p className="text-red-500">Error checking configuration</p>
+                    ) : integrationStatus?.instagram.configured ? (
+                      <p className="text-green-700">Instagram API is configured and ready to use</p>
+                    ) : (
+                      <div className="space-y-2">
+                        <p className="text-orange-700">Instagram API is not configured</p>
+                        <p className="text-gray-500 text-sm">
+                          Missing environment variables: {formatMissingVars('instagram')}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div>
+                    <h3 className="font-medium mb-2">Required Environment Variables</h3>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start">
+                        <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">INSTAGRAM_USERNAME</span>
+                          <p className="text-gray-500">Instagram account username</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-blue-100 text-blue-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">INSTAGRAM_PASSWORD</span>
+                          <p className="text-gray-500">Instagram account password</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">Features</h3>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start">
+                        <div className="bg-green-100 text-green-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Post Photos</span>
+                          <p className="text-gray-500">Share images for alerts and incidents</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-green-100 text-green-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Post Stories</span>
+                          <p className="text-gray-500">Share temporary stories for immediate alerts</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-green-100 text-green-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Check className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Location Search</span>
+                          <p className="text-gray-500">Find posts from specific locations</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter className="flex justify-end">
+              <Button 
+                onClick={() => openTestDialog('instagram')}
+                disabled={!integrationStatus?.instagram.configured}
+              >
+                Test Instagram API
+              </Button>
+            </CardFooter>
+          </Card>
+        </TabsContent>
+        
+        {/* Webhooks Tab */}
+        <TabsContent value="webhooks">
+          <Card>
+            <CardHeader>
+              <div className="flex items-center">
+                <Globe className="h-5 w-5 mr-2 text-primary" />
+                <CardTitle>Webhooks & API Integration</CardTitle>
+              </div>
+              <CardDescription>
+                Set up webhooks to notify external systems
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Configure webhooks to automatically notify external systems when alerts are triggered.
+                  This allows you to integrate with other emergency response systems, government portals,
+                  and partner organizations.
+                </p>
+                
+                <div className="p-4 bg-gray-50 rounded-md border border-gray-200">
+                  <h3 className="font-medium mb-2">Coming Soon</h3>
+                  <p className="text-sm text-gray-600">
+                    Webhook configuration is currently under development. Check back soon for this feature.
+                  </p>
+                </div>
+                
+                <div className="grid md:grid-cols-2 gap-6 mt-4">
+                  <div>
+                    <h3 className="font-medium mb-2">Webhook Triggers</h3>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start">
+                        <div className="bg-orange-100 text-orange-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Clock className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Alert Created</span>
+                          <p className="text-gray-500">Trigger when a new alert is created</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-orange-100 text-orange-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Clock className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Incident Reported</span>
+                          <p className="text-gray-500">Trigger when a new incident is reported</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-orange-100 text-orange-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Clock className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Response Plan Activated</span>
+                          <p className="text-gray-500">Trigger when a response plan is activated</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                  
+                  <div>
+                    <h3 className="font-medium mb-2">API Integration</h3>
+                    <ul className="space-y-2 text-sm">
+                      <li className="flex items-start">
+                        <div className="bg-orange-100 text-orange-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Clock className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">API Keys</span>
+                          <p className="text-gray-500">Generate API keys for secure access</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-orange-100 text-orange-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Clock className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Rate Limiting</span>
+                          <p className="text-gray-500">Control API usage with rate limits</p>
+                        </div>
+                      </li>
+                      <li className="flex items-start">
+                        <div className="bg-orange-100 text-orange-800 rounded-full p-1 mr-2 mt-0.5">
+                          <Clock className="h-3 w-3" />
+                        </div>
+                        <div>
+                          <span className="font-medium">Access Control</span>
+                          <p className="text-gray-500">Manage permissions for API endpoints</p>
+                        </div>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Button 
+                variant="outline" 
+                className="w-full"
+                disabled={true}
+              >
+                <RocketIcon className="h-4 w-4 mr-2" />
+                Coming Soon
+              </Button>
+            </CardFooter>
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      
+      {/* Test Dialog */}
+      <Dialog open={testDialogOpen} onOpenChange={setTestDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>
+              {currentService === 'twilio_sms' && 'Test SMS Message'}
+              {currentService === 'twilio_whatsapp' && 'Test WhatsApp Message'}
+              {currentService === 'twitter' && 'Test Twitter Post'}
+              {currentService === 'facebook' && 'Test Facebook Post'}
+              {currentService === 'instagram' && 'Test Instagram Post'}
+            </DialogTitle>
+            <DialogDescription>
+              {currentService === 'twilio_sms' && 'Send a test SMS message to verify Twilio integration.'}
+              {currentService === 'twilio_whatsapp' && 'Send a test WhatsApp message via Twilio.'}
+              {currentService === 'twitter' && 'Create a test post on Twitter/X to verify the integration.'}
+              {currentService === 'facebook' && 'Create a test post on Facebook to verify the integration.'}
+              {currentService === 'instagram' && 'Create a test post on Instagram to verify the integration.'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Recipient field for Twilio services */}
+              {(currentService === 'twilio_sms' || currentService === 'twilio_whatsapp') && (
+                <FormField
+                  control={form.control}
+                  name="recipient"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Recipient Phone Number</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="+234xxxxxxxxxx" 
+                          {...field} 
+                          required
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Enter the phone number in international format (+234...)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
+              
+              {/* Message field for all services */}
+              <FormField
+                control={form.control}
+                name="message"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {(currentService === 'instagram') ? 'Caption' : 'Message'}
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea 
+                        placeholder="Enter your message here..." 
+                        {...field} 
+                        rows={3}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {/* Media URL field */}
+              <FormField
+                control={form.control}
+                name="mediaUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {currentService === 'instagram' ? 'Image URL (Required)' : 
+                       currentService === 'facebook' ? 'Link URL (Optional)' : 
+                       'Media URL (Optional)'}
+                    </FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="https://example.com/image.jpg" 
+                        {...field} 
+                        required={currentService === 'instagram'}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {currentService === 'instagram' ? 
+                        'URL to an image to post on Instagram' : 
+                        currentService === 'facebook' ? 
+                        'URL to include in the Facebook post' : 
+                        'URL to media to include with the message'}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <DialogFooter>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => setTestDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  type="submit"
+                  disabled={testIntegrationMutation.isPending}
+                >
+                  {testIntegrationMutation.isPending ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      Send
+                    </>
+                  )}
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
+    </MainLayout>
   );
 }

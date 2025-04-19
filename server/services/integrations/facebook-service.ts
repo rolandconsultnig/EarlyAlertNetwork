@@ -122,7 +122,7 @@ class FacebookService {
       // Prepare post data
       const postData: any = {
         message,
-        published: published ? 'true' : 'false'
+        published: (published === undefined ? true : published) ? 'true' : 'false'
       };
       
       // Add link data if present

@@ -16,8 +16,14 @@ export function registerIntegrationRoutes(app: Express): void {
     next();
   };
 
-  // Integration status endpoint
+  // Integration status endpoint (requires auth)
   app.get('/api/integration/status', requireAuth, (req, res) => {
+    const status = integrationServices.checkStatus();
+    res.json(status);
+  });
+  
+  // Public integration status endpoint (for debugging)
+  app.get('/api/integration/status/public', (req, res) => {
     const status = integrationServices.checkStatus();
     res.json(status);
   });
@@ -164,7 +170,7 @@ export function registerIntegrationRoutes(app: Express): void {
       name: z.string().optional(),
       caption: z.string().optional(),
       description: z.string().optional(),
-      published: z.boolean().optional(),
+      published: z.boolean().optional().default(true),
       targetPageId: z.string().optional()
     });
     
@@ -220,7 +226,7 @@ export function registerIntegrationRoutes(app: Express): void {
     const postSchema = z.object({
       caption: z.string().min(1, "Post caption is required"),
       mediaUrl: z.string().url().min(1, "Media URL is required"),
-      isStory: z.boolean().optional()
+      isStory: z.boolean().optional().default(false)
     });
     
     try {

@@ -33,6 +33,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // HTTP Server and WebSocket setup
   const httpServer = createServer(app);
   const wss = new WebSocketServer({ server: httpServer, path: '/ws' });
+  
+  // Register integration routes (Twilio, Twitter, Facebook, Instagram)
+  registerIntegrationRoutes(app);
 
   // WebSocket connection
   wss.on('connection', (ws) => {
