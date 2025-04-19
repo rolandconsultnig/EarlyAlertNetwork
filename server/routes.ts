@@ -21,6 +21,8 @@ import { analysisService } from "./services/analysis-service";
 import { nlpService } from "./services/nlp-service";
 import { apiIntegrationService } from "./services/api-integration-service";
 import { dataSourceService } from "./services/data-source-service";
+import { registerIntegrationRoutes } from "./services/integrations/integration-routes";
+import { integrationServices } from "./services/integrations";
 import { db } from "./db";
 import { desc, eq, count } from "drizzle-orm";
 
