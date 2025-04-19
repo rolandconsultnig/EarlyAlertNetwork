@@ -1,0 +1,41 @@
+version: 0.0
+os: linux
+
+files:
+  - source: /
+    destination: /var/app/current
+
+permissions:
+  - object: /var/app/current
+    owner: webapp
+    group: webapp
+    mode: 755
+    type:
+      - directory
+  - object: /var/app/current/*
+    owner: webapp
+    group: webapp
+    mode: 755
+    type:
+      - file
+
+hooks:
+  BeforeInstall:
+    - location: scripts/before_install.sh
+      timeout: 300
+      runas: root
+
+  AfterInstall:
+    - location: scripts/after_install.sh
+      timeout: 300
+      runas: webapp
+
+  ApplicationStart:
+    - location: scripts/application_start.sh
+      timeout: 300
+      runas: webapp
+
+  ApplicationStop:
+    - location: scripts/application_stop.sh
+      timeout: 300
+      runas: webapp
