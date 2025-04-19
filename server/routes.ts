@@ -29,6 +29,16 @@ import { desc, eq, count } from "drizzle-orm";
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
+  
+  // Health check endpoint for AWS deployment
+  app.get("/api/health", (req, res) => {
+    res.status(200).json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      environment: process.env.NODE_ENV || "development",
+      version: "1.0.0"
+    });
+  });
 
   // HTTP Server and WebSocket setup
   const httpServer = createServer(app);
