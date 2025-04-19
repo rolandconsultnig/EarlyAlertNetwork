@@ -9,15 +9,17 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Info, AlertCircle, MapPin, Users } from 'lucide-react';
 
 // Fix Leaflet marker icon issues
+// Using CDNs that are more reliable
 const defaultIcon = L.icon({
-  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
-  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [25, 41],
   iconAnchor: [12, 41],
   popupAnchor: [1, -34],
   shadowSize: [41, 41]
 });
 
+// Set default icon globally
 L.Marker.prototype.options.icon = defaultIcon;
 
 // Custom icons for different incident types
@@ -279,12 +281,44 @@ export default function NigeriaMap({
   
   // Ensure map stability by tracking when it's fully loaded
   useEffect(() => {
-    // Set a flag once component is mounted to prevent markers from disappearing
-    const timer = setTimeout(() => {
-      setMapReady(true);
-    }, 500);
+    // Load map resources first
+    const preloadMapResources = async () => {
+      try {
+        // Preload tile imagery
+        const tilePromise = new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve(true);
+          img.onerror = () => resolve(false);
+          img.src = "https://a.tile.openstreetmap.org/6/32/32.png"; // Sample tile
+        });
+        
+        // Preload marker icons
+        const iconPromise = new Promise((resolve) => {
+          const img = new Image();
+          img.onload = () => resolve(true);
+          img.onerror = () => resolve(false);
+          img.src = "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png";
+        });
+        
+        await Promise.all([tilePromise, iconPromise]);
+        
+        // Set map ready with a slight delay to ensure proper rendering
+        setTimeout(() => {
+          setMapReady(true);
+        }, 800);
+      } catch (error) {
+        // Even if preloading fails, we still want to show the map
+        console.log("Map resource preloading failed, continuing anyway");
+        setMapReady(true);
+      }
+    };
     
-    return () => clearTimeout(timer);
+    preloadMapResources();
+    
+    return () => {
+      // Cleanup function
+      setMapReady(false);
+    };
   }, []);
   
   // Fetch incidents from API if none provided as props
@@ -329,39 +363,107 @@ export default function NigeriaMap({
     setShowConfirmation(false);
   };
   
-  // Get coordinates from an incident
+  // Get coordinates from an incident with improved parsing logic
   const getCoordinates = (incident: Incident | MockIncident): [number, number] => {
     // For mock incidents with predefined coordinates
     if ('latitude' in incident && 'longitude' in incident) {
       return [incident.latitude, incident.longitude];
     }
     
+    // For real incidents, use region-based default coordinates if parsing fails
+    const regionDefaultCoords: Record<string, [number, number]> = {
+      'North Central': [9.0765, 7.3986], // Abuja area
+      'North East': [11.8311, 13.1510], // Maiduguri area
+      'North West': [12.0022, 8.5920], // Kano area
+      'South East': [6.4402, 7.4994], // Enugu area
+      'South South': [5.0149, 6.9830], // Port Harcourt area
+      'South West': [6.5244, 3.3792], // Lagos area
+      'Federal Capital Territory': [9.0765, 7.3986] // Abuja
+    };
+    
     // For regular incidents, try to extract coordinates from coordinates JSON string
     if ('coordinates' in incident && incident.coordinates) {
       try {
-        const coords = JSON.parse(incident.coordinates as string);
-        if (coords.lat && coords.lng) {
-          return [coords.lat, coords.lng];
+        let coords;
+        if (typeof incident.coordinates === 'string') {
+          coords = JSON.parse(incident.coordinates);
+        } else if (typeof incident.coordinates === 'object') {
+          coords = incident.coordinates;
+        }
+        
+        if (coords && (typeof coords === 'object')) {
+          // If coords has lat/lng properties
+          if (coords.lat !== undefined && coords.lng !== undefined) {
+            return [parseFloat(coords.lat), parseFloat(coords.lng)];
+          }
+          // If coords has latitude/longitude properties
+          else if (coords.latitude !== undefined && coords.longitude !== undefined) {
+            return [parseFloat(coords.latitude), parseFloat(coords.longitude)];
+          }
+          // If coords is an array [lat, lng]
+          else if (Array.isArray(coords) && coords.length >= 2) {
+            const lat = parseFloat(coords[0]);
+            const lng = parseFloat(coords[1]);
+            if (!isNaN(lat) && !isNaN(lng)) {
+              return [lat, lng];
+            }
+          }
         }
       } catch (e) {
-        console.error("Failed to parse JSON coordinates", e);
+        // Silently handle error and continue to next method
       }
     }
     
     // For regular incidents, try to extract coordinates from location string as fallback
-    if ('location' in incident && incident.location && typeof incident.location === 'string' && incident.location.includes(',')) {
-      try {
-        const [lat, lng] = incident.location.split(',').map(coord => parseFloat(coord.trim()));
-        if (!isNaN(lat) && !isNaN(lng)) {
-          return [lat, lng];
+    if ('location' in incident && incident.location && typeof incident.location === 'string') {
+      if (incident.location.includes(',')) {
+        try {
+          const parts = incident.location.split(',');
+          if (parts.length >= 2) {
+            const lat = parseFloat(parts[0].trim());
+            const lng = parseFloat(parts[1].trim());
+            if (!isNaN(lat) && !isNaN(lng)) {
+              return [lat, lng];
+            }
+          }
+        } catch (e) {
+          // Silently handle error and continue to next method
         }
-      } catch (e) {
-        console.error("Failed to parse location coordinates", e);
       }
     }
     
-    console.log("Using default coordinates for incident:", incident.title);
-    // Default to center of Nigeria if no valid coordinates found
+    // Use region-based coordinates if region is available
+    if ('region' in incident && incident.region && incident.region in regionDefaultCoords) {
+      return regionDefaultCoords[incident.region];
+    }
+    
+    // If all else fails, return default coordinates based on incident type
+    const locationFromTitle = incident.title
+      .split(' ').filter(word => word.length > 3)  // Filter out short words
+      .find(word => 
+        ['Lagos', 'Abuja', 'Kano', 'Kaduna', 'Maiduguri', 'Enugu', 'Borno', 'Ibadan', 'Sokoto', 'Jos', 'Benue'].includes(word)
+      );
+    
+    // If we recognized a place in the title, use its coordinates
+    if (locationFromTitle) {
+      const locationCoords: Record<string, [number, number]> = {
+        'Lagos': [6.5244, 3.3792],
+        'Abuja': [9.0765, 7.3986],
+        'Kano': [12.0022, 8.5920],
+        'Kaduna': [10.5167, 7.4333],
+        'Maiduguri': [11.8311, 13.1510],
+        'Enugu': [6.4402, 7.4994],
+        'Borno': [11.8311, 13.1510],
+        'Ibadan': [7.3775, 3.9470],
+        'Sokoto': [13.0622, 5.2339],
+        'Jos': [9.8965, 8.8583],
+        'Benue': [7.7322, 8.5391]
+      };
+      
+      return locationCoords[locationFromTitle];
+    }
+    
+    // Default to center of Nigeria if no other valid coordinates found
     return [9.0765, 7.3986];
   };
   
@@ -373,6 +475,13 @@ export default function NigeriaMap({
         style={{ height: "100%", width: "100%", zIndex: 1 }}
         maxBoundsViscosity={1.0}
         className="leaflet-container"
+        minZoom={6}
+        maxZoom={13}
+        scrollWheelZoom={true}
+        attributionControl={true}
+        zoomControl={true}
+        doubleClickZoom={true}
+        whenReady={() => console.log("Map is ready")}
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
