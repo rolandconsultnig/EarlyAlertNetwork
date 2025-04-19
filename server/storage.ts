@@ -36,8 +36,12 @@ export interface IStorage {
   // Incident methods
   getIncidents(): Promise<Incident[]>;
   getIncident(id: number): Promise<Incident | undefined>;
+  getIncidentsByTitle(title: string): Promise<Incident[]>;
+  getIncidentsByRegion(region: string): Promise<Incident[]>;
+  getIncidentsByLocation(lat: number, lng: number, radiusKm?: number): Promise<Incident[]>;
   createIncident(incident: InsertIncident): Promise<Incident>;
   updateIncident(id: number, incident: Partial<Incident>): Promise<Incident>;
+  deleteIncident(id: number): Promise<boolean>;
   
   // Alert methods
   getAlerts(): Promise<Alert[]>;
@@ -183,6 +187,54 @@ export class DatabaseStorage implements IStorage {
     return incident;
   }
 
+  async getIncidentsByTitle(title: string): Promise<Incident[]> {
+    const matchingIncidents = await db.select().from(incidents).where(eq(incidents.title, title));
+    return matchingIncidents;
+  }
+  
+  async getIncidentsByRegion(region: string): Promise<Incident[]> {
+    const regionIncidents = await db.select().from(incidents).where(eq(incidents.region, region));
+    return regionIncidents;
+  }
+  
+  async getIncidentsByLocation(lat: number, lng: number, radiusKm: number = 5): Promise<Incident[]> {
+    // Get all incidents
+    const allIncidents = await db.select().from(incidents);
+    
+    // Filter incidents within the radius
+    const nearbyIncidents = allIncidents.filter(incident => {
+      if (!incident.location) return false;
+      
+      try {
+        const [incLat, incLng] = incident.location.split(',').map(coord => parseFloat(coord.trim()));
+        if (isNaN(incLat) || isNaN(incLng)) return false;
+        
+        // Calculate distance using haversine formula
+        const earthRadiusKm = 6371;
+        const dLat = this.degreesToRadians(incLat - lat);
+        const dLng = this.degreesToRadians(incLng - lng);
+        
+        const a = 
+          Math.sin(dLat/2) * Math.sin(dLat/2) +
+          Math.cos(this.degreesToRadians(lat)) * Math.cos(this.degreesToRadians(incLat)) * 
+          Math.sin(dLng/2) * Math.sin(dLng/2);
+        
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        const distance = earthRadiusKm * c;
+        
+        return distance <= radiusKm;
+      } catch (e) {
+        return false;
+      }
+    });
+    
+    return nearbyIncidents;
+  }
+  
+  private degreesToRadians(degrees: number): number {
+    return degrees * Math.PI / 180;
+  }
+
   async createIncident(incident: InsertIncident): Promise<Incident> {
     const [newIncident] = await db.insert(incidents).values([incident]).returning();
     return newIncident;
@@ -200,6 +252,14 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedIncident;
+  }
+  
+  async deleteIncident(id: number): Promise<boolean> {
+    const result = await db
+      .delete(incidents)
+      .where(eq(incidents.id, id))
+      .returning();
+    return result.length > 0;
   }
 
   // Alert methods

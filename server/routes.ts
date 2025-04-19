@@ -20,6 +20,7 @@ import {
 import { analysisService } from "./services/analysis-service";
 import { nlpService } from "./services/nlp-service";
 import { apiIntegrationService } from "./services/api-integration-service";
+import { dataSourceService } from "./services/data-source-service";
 import { db } from "./db";
 import { desc } from "drizzle-orm";
 
