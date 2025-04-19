@@ -1,20 +1,68 @@
-import React, { useState } from "react";
-import MainLayout from "@/components/layout/MainLayout";
-import { useQuery, useMutation } from "@tanstack/react-query";
-import { Alert, Incident } from "@shared/schema";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
+import React, { useState } from 'react';
+import MainLayout from '@/components/layout/MainLayout';
+import { useQuery } from '@tanstack/react-query';
+import { Alert } from '@shared/schema';
+import { useToast } from '@/hooks/use-toast';
+import { 
+  Card, 
+  CardContent, 
+  CardHeader, 
+  CardTitle, 
   CardDescription,
-  CardFooter
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  CardFooter 
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { 
+  AlertTriangle, 
+  Bell, 
+  Search, 
+  Filter, 
+  Clock, 
+  MessageSquare,
+  MapPin, 
+  RefreshCw, 
+  Loader2, 
+  AlertCircle,
+  Smartphone,
+  Radio,
+  Info,
+  CheckCircle,
+  X,
+  Megaphone,
+  CalendarCheck,
+  Phone,
+  UserCircle2,
+  Send
+} from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -23,625 +71,835 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import {
-  Bell,
-  Search,
-  Plus,
-  AlertTriangle,
-  CheckCircle,
-  Clock,
-  Filter,
-  Mail,
-  Smartphone,
-  RefreshCw,
-  Eye,
-  Twitter,
-  Facebook,
-  Instagram,
-  MessageCircle,
-  MessageSquare,
-  PhoneCall,
-  Info,
-  Loader2,
-  BarChart3,
-  PieChart,
-  MapPin,
-  Zap,
-  AlertOctagon
-} from "lucide-react";
-import { Progress } from "@/components/ui/progress";
+import { Progress } from '@/components/ui/progress';
 
 export default function AlertsPage() {
   const { toast } = useToast();
-  const [alertFilter, setAlertFilter] = useState("all");
-  const [sourceFilter, setSourceFilter] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sosExpanded, setSosExpanded] = useState(false);
+  const [selectedTab, setSelectedTab] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [sourceFilter, setSourceFilter] = useState<string | null>(null);
+  const [severityFilter, setSeverityFilter] = useState<string | null>(null);
+  const [selectedAlert, setSelectedAlert] = useState<Alert | null>(null);
+  const [respondDialogOpen, setRespondDialogOpen] = useState(false);
   
-  // Fetch alerts from API
+  // Fetch alerts data
   const { 
     data: alerts, 
-    isLoading: isLoadingAlerts, 
+    isLoading: isLoadingAlerts,
     error: alertsError,
     refetch: refetchAlerts 
   } = useQuery<Alert[]>({
-    queryKey: ["/api/alerts"]
+    queryKey: ['/api/alerts'],
   });
   
-  // Fetch incidents for the SOS panel
-  const { 
-    data: incidents 
-  } = useQuery<Incident[]>({
-    queryKey: ["/api/incidents"],
+  const { data: activeAlerts } = useQuery<Alert[]>({
+    queryKey: ['/api/alerts/active'],
   });
-  
-  // Handle error display
-  React.useEffect(() => {
-    if (alertsError) {
-      console.error("Error fetching alerts:", alertsError);
-      toast({
-        title: "Failed to load alerts",
-        description: alertsError instanceof Error ? alertsError.message : "An unknown error occurred",
-        variant: "destructive",
-      });
-    }
-  }, [alertsError, toast]);
-  
+
   // Format date for display
   const formatDate = (dateString: Date | string | null) => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString();
   };
   
-  // Filter alerts based on the selected filter
+  // Filter alerts based on selected criteria
   const filteredAlerts = alerts?.filter(alert => {
     // Apply status filter
-    const statusMatch = alertFilter === "all" || 
-      (alertFilter === "active" && alert.status === "active") ||
-      (alertFilter === "resolved" && alert.status === "resolved");
-    
-    // Apply source filter
-    const sourceMatch = sourceFilter === "all" || 
-      (sourceFilter === "twitter" && alert.channels?.includes("twitter")) ||
-      (sourceFilter === "facebook" && alert.channels?.includes("facebook")) ||
-      (sourceFilter === "instagram" && alert.channels?.includes("instagram")) ||
-      (sourceFilter === "tiktok" && alert.channels?.includes("tiktok")) ||
-      (sourceFilter === "sms" && alert.channels?.includes("sms")) ||
-      (sourceFilter === "email" && alert.channels?.includes("email")) ||
-      (sourceFilter === "dashboard" && alert.channels?.includes("dashboard")) ||
-      (sourceFilter === "phone" && alert.channels?.includes("phone")) ||
-      (sourceFilter === "system" && (!alert.channels || alert.channels.length === 0));
+    const statusMatch = 
+      (selectedTab === 'active' && alert.status === 'active') ||
+      (selectedTab === 'resolved' && alert.status === 'resolved') ||
+      (selectedTab === 'pending' && alert.status === 'pending') ||
+      selectedTab === 'all';
     
     // Apply search filter if search query exists
     const searchMatch = !searchQuery || 
       alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      alert.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (alert.description && alert.description.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    return statusMatch && sourceMatch && searchMatch;
+    // Apply source filter if selected
+    const sourceMatch = !sourceFilter || alert.source === sourceFilter;
+    
+    // Apply severity filter if selected
+    const severityMatch = !severityFilter || alert.severity === severityFilter;
+    
+    return statusMatch && searchMatch && sourceMatch && severityMatch;
   });
   
-  // Get the badge color based on severity
-  const getSeverityBadge = (severity: string) => {
-    switch (severity.toLowerCase()) {
-      case "high":
+  // Get alert badge color based on severity
+  const getAlertBadge = (severity: string) => {
+    switch (severity) {
+      case 'high':
         return <Badge className="bg-red-100 text-red-800">High</Badge>;
-      case "medium":
+      case 'medium':
         return <Badge className="bg-amber-100 text-amber-800">Medium</Badge>;
-      case "low":
+      case 'low':
         return <Badge className="bg-blue-100 text-blue-800">Low</Badge>;
       default:
         return <Badge>Unknown</Badge>;
     }
   };
   
-  // Get the status badge
-  const getStatusBadge = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "active":
-        return <Badge className="bg-green-100 text-green-800">Active</Badge>;
-      case "resolved":
-        return <Badge className="bg-neutral-100 text-neutral-800">Resolved</Badge>;
+  // Get source icon based on alert source
+  const getSourceIcon = (source: string) => {
+    switch (source) {
+      case 'sms':
+        return <MessageSquare className="h-4 w-4 text-blue-500" />;
+      case 'social_media':
+        return <Megaphone className="h-4 w-4 text-purple-500" />;
+      case 'phone':
+        return <Phone className="h-4 w-4 text-green-500" />;
+      case 'app':
+        return <Smartphone className="h-4 w-4 text-indigo-500" />;
+      case 'sos':
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
       default:
-        return <Badge>Unknown</Badge>;
+        return <Bell className="h-4 w-4 text-gray-500" />;
     }
   };
   
-  // Mock SOS messages for the demo
-  const sosMockData = [
-    {
-      id: 1,
-      sender: "+2347012345678",
-      imei: "352099001761481",
-      message: "SOS: Armed conflict in progress at Wuse market. Multiple casualties reported.",
-      location: "9.0765,7.4915",
-      timestamp: new Date().getTime() - 1200000, // 20 minutes ago
-      priority: "critical"
-    },
-    {
-      id: 2,
-      sender: "+2348023456789",
-      imei: "356938035643809",
-      message: "HELP: Flooding in Makurdi area, water levels rising quickly. Need immediate evacuation assistance.",
-      location: "7.7322,8.5391",
-      timestamp: new Date().getTime() - 3600000, // 1 hour ago
-      priority: "high"
-    },
-    {
-      id: 3,
-      sender: "+2349034567890",
-      imei: "490154203237518",
-      message: "URGENT: Suspected terrorist activity in Kano central area. Suspicious individuals with weapons sighted.",
-      location: "12.0022,8.5920",
-      timestamp: new Date().getTime() - 7200000, // 2 hours ago
-      priority: "critical"
-    }
-  ];
+  // Handle alert response submission
+  const handleAlertResponse = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!selectedAlert) return;
+    
+    // In a real app this would be an API call
+    toast({
+      title: "Response Logged",
+      description: `Response to alert "${selectedAlert.title}" has been recorded.`,
+    });
+    
+    setRespondDialogOpen(false);
+    setSelectedAlert(null);
+  };
+  
+  // Get status count by severity
+  const getStatusCounts = () => {
+    if (!alerts) return { high: 0, medium: 0, low: 0, active: 0, resolved: 0, pending: 0 };
+    
+    return {
+      high: alerts.filter(a => a.severity === 'high').length,
+      medium: alerts.filter(a => a.severity === 'medium').length,
+      low: alerts.filter(a => a.severity === 'low').length,
+      active: alerts.filter(a => a.status === 'active').length,
+      resolved: alerts.filter(a => a.status === 'resolved').length,
+      pending: alerts.filter(a => a.status === 'pending').length
+    };
+  };
+  
+  const statusCounts = getStatusCounts();
+  
+  // Check if an alert is an SOS
+  const isSOS = (alert: Alert) => {
+    return alert.source === 'sos' || alert.severity === 'high';
+  };
+  
+  // Mock IMEI data for SOS alerts
+  const getIMEIInfo = (alert: Alert) => {
+    if (!isSOS(alert)) return null;
+    
+    // In a real app, this would come from the database
+    return {
+      imei: '352099001761481',
+      lastLocation: '7.3890, 3.8923',
+      signalStrength: '78%',
+      batteryLevel: '42%',
+      deviceModel: 'Nokia 3310',
+      networkProvider: 'MTN Nigeria'
+    };
+  };
 
   return (
     <MainLayout title="Alerts & Notifications">
-      <div className="grid grid-cols-12 gap-6">
-        {/* Main Alerts Panel - 8 columns on large screens */}
-        <div className="col-span-12 lg:col-span-8 space-y-6">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
-            <div className="flex flex-wrap items-center gap-3">
-              {/* Status Filter */}
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">Status</label>
-                <TabsList>
-                  <TabsTrigger 
-                    value="all" 
-                    onClick={() => setAlertFilter("all")}
-                    className={alertFilter === "all" ? "bg-primary text-primary-foreground" : ""}
-                  >
-                    All Alerts
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="active" 
-                    onClick={() => setAlertFilter("active")}
-                    className={alertFilter === "active" ? "bg-primary text-primary-foreground" : ""}
-                  >
-                    Active
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="resolved" 
-                    onClick={() => setAlertFilter("resolved")}
-                    className={alertFilter === "resolved" ? "bg-primary text-primary-foreground" : ""}
-                  >
-                    Resolved
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-              
-              {/* Source Filter */}
-              <div>
-                <label className="text-sm font-medium text-gray-700 mb-1 block">Source</label>
-                <TabsList>
-                  <TabsTrigger 
-                    value="all" 
-                    onClick={() => setSourceFilter("all")}
-                    className={sourceFilter === "all" ? "bg-primary text-primary-foreground" : ""}
-                  >
-                    All Sources
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="social" 
-                    onClick={() => setSourceFilter("twitter")}
-                    className={sourceFilter === "twitter" ? "bg-primary text-primary-foreground" : ""}
-                  >
-                    <Twitter className="h-4 w-4 mr-1" />
-                    Twitter
-                  </TabsTrigger>
-                  <TabsTrigger 
-                    value="sms" 
-                    onClick={() => setSourceFilter("sms")}
-                    className={sourceFilter === "sms" ? "bg-primary text-primary-foreground" : ""}
-                  >
-                    <MessageSquare className="h-4 w-4 mr-1" />
-                    SMS
-                  </TabsTrigger>
-                </TabsList>
-              </div>
-              
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-neutral-400" />
-                <Input
-                  placeholder="Search alerts..."
-                  className="pl-9 w-[250px]"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-            </div>
-          </div>
-        
-          <Card>
-            <CardHeader className="p-6 pb-2">
-              <CardTitle>Alert Management Dashboard</CardTitle>
-              <CardDescription>
-                Monitor and manage system alerts and notifications from all sources
-              </CardDescription>
-            </CardHeader>
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Status Overview - full width on mobile, 12 columns on large screens */}
+        <div className="col-span-1 lg:col-span-12 grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-red-50 to-white">
             <CardContent className="p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">High Priority</p>
+                  <p className="text-3xl font-bold">{statusCounts.high}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {(alerts?.filter(a => a.severity === 'high' && a.status === 'active').length || 0)} active
+                  </p>
+                </div>
+                <div className="bg-red-100 p-3 rounded-full">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-amber-50 to-white">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Medium Priority</p>
+                  <p className="text-3xl font-bold">{statusCounts.medium}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {(alerts?.filter(a => a.severity === 'medium' && a.status === 'active').length || 0)} active
+                  </p>
+                </div>
+                <div className="bg-amber-100 p-3 rounded-full">
+                  <Bell className="h-6 w-6 text-amber-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-green-50 to-white">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Resolved Alerts</p>
+                  <p className="text-3xl font-bold">{statusCounts.resolved}</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Past 7 days
+                  </p>
+                </div>
+                <div className="bg-green-100 p-3 rounded-full">
+                  <CheckCircle className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-blue-50 to-white">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-500 mb-1">Alert Sources</p>
+                  <p className="text-3xl font-bold">{alerts?.length || 0}</p>
+                  <p className="text-sm text-gray-500 mt-1">Across all channels</p>
+                </div>
+                <div className="bg-blue-100 p-3 rounded-full">
+                  <Radio className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* SOS & Emergency Alerts Section - 4 columns on large screens */}
+        <div className="col-span-1 lg:col-span-4 space-y-6">
+          <Card className="border-red-200">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <div>
+                  <CardTitle className="flex items-center">
+                    <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+                    SOS Emergency Alerts
+                  </CardTitle>
+                  <CardDescription>
+                    Highest priority messages requiring immediate action
+                  </CardDescription>
+                </div>
+                <Badge className="bg-red-600 hover:bg-red-700">
+                  {alerts?.filter(a => isSOS(a) && a.status === 'active').length || 0} Active
+                </Badge>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-3">
               {isLoadingAlerts ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : !alerts || alerts.filter(a => isSOS(a)).length === 0 ? (
                 <div className="text-center py-8">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-primary" />
-                  <p className="text-neutral-500">Loading alerts...</p>
+                  <CheckCircle className="h-8 w-8 mx-auto mb-4 text-green-500" />
+                  <p>No SOS alerts currently active</p>
+                </div>
+              ) : (
+                <ScrollArea className="h-[400px] pr-4">
+                  <div className="space-y-4">
+                    {alerts
+                      .filter(a => isSOS(a))
+                      .sort((a, b) => {
+                        // Sort by status (active first) then by severity
+                        if (a.status === 'active' && b.status !== 'active') return -1;
+                        if (a.status !== 'active' && b.status === 'active') return 1;
+                        if (a.severity === 'high' && b.severity !== 'high') return -1;
+                        if (a.severity !== 'high' && b.severity === 'high') return 1;
+                        return 0;
+                      })
+                      .map((alert) => {
+                        const imeiInfo = getIMEIInfo(alert);
+                        return (
+                          <Card key={alert.id} className={`
+                            p-4 border-l-4 
+                            ${alert.status === 'active' ? 'border-l-red-500' : 'border-l-gray-300'}
+                          `}>
+                            <div className="space-y-4">
+                              <div className="flex items-start justify-between">
+                                <div className="space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-medium">{alert.title}</h4>
+                                    {getAlertBadge(alert.severity)}
+                                    {alert.status === 'active' && (
+                                      <span className="relative flex h-2 w-2">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                      </span>
+                                    )}
+                                  </div>
+                                  <p className="text-sm text-muted-foreground">{alert.description}</p>
+                                </div>
+                                <Button 
+                                  variant="outline" 
+                                  size="sm" 
+                                  className="text-red-600 border-red-200 hover:bg-red-50"
+                                  onClick={() => {
+                                    setSelectedAlert(alert);
+                                    setRespondDialogOpen(true);
+                                  }}
+                                >
+                                  Respond
+                                </Button>
+                              </div>
+                              
+                              {imeiInfo && (
+                                <div className="bg-red-50 rounded-md p-3 text-sm">
+                                  <div className="font-medium mb-2 flex items-center">
+                                    <Smartphone className="h-4 w-4 mr-1 text-red-600" />
+                                    <span>Device Information</span>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-y-1 gap-x-4">
+                                    <div className="flex items-center text-xs text-gray-700">
+                                      <span className="font-medium w-24">IMEI:</span>
+                                      <span>{imeiInfo.imei}</span>
+                                    </div>
+                                    <div className="flex items-center text-xs text-gray-700">
+                                      <span className="font-medium w-24">Location:</span>
+                                      <span>{imeiInfo.lastLocation}</span>
+                                    </div>
+                                    <div className="flex items-center text-xs text-gray-700">
+                                      <span className="font-medium w-24">Signal:</span>
+                                      <span>{imeiInfo.signalStrength}</span>
+                                    </div>
+                                    <div className="flex items-center text-xs text-gray-700">
+                                      <span className="font-medium w-24">Battery:</span>
+                                      <span>{imeiInfo.batteryLevel}</span>
+                                    </div>
+                                    <div className="flex items-center text-xs text-gray-700">
+                                      <span className="font-medium w-24">Model:</span>
+                                      <span>{imeiInfo.deviceModel}</span>
+                                    </div>
+                                    <div className="flex items-center text-xs text-gray-700">
+                                      <span className="font-medium w-24">Network:</span>
+                                      <span>{imeiInfo.networkProvider}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              <div className="flex flex-wrap justify-between text-xs text-muted-foreground">
+                                <div className="flex items-center space-x-4">
+                                  <div className="flex items-center">
+                                    {getSourceIcon(alert.source)}
+                                    <span className="ml-1 capitalize">{alert.source}</span>
+                                  </div>
+                                  <div className="flex items-center">
+                                    <MapPin className="h-3 w-3 mr-1" />
+                                    <span>{alert.region || 'Nigeria'}</span>
+                                  </div>
+                                </div>
+                                <div className="flex items-center">
+                                  <Clock className="h-3 w-3 mr-1" />
+                                  <span>{formatDate(alert.generatedAt)}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </Card>
+                        );
+                      })}
+                  </div>
+                </ScrollArea>
+              )}
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-lg">Alert Source Distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-3">
+              <div className="space-y-5">
+                <div>
+                  <div className="flex justify-between items-center text-sm mb-1">
+                    <div className="flex items-center">
+                      <AlertTriangle className="h-4 w-4 text-red-500 mr-2" />
+                      <span>SOS Emergency</span>
+                    </div>
+                    <span className="font-medium">
+                      {alerts?.filter(a => a.source === 'sos').length || 0}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={alerts && alerts.length > 0 ? 
+                      (alerts.filter(a => a.source === 'sos').length / alerts.length) * 100 : 0} 
+                    className="h-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center text-sm mb-1">
+                    <div className="flex items-center">
+                      <MessageSquare className="h-4 w-4 text-blue-500 mr-2" />
+                      <span>SMS Alerts</span>
+                    </div>
+                    <span className="font-medium">
+                      {alerts?.filter(a => a.source === 'sms').length || 0}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={alerts && alerts.length > 0 ? 
+                      (alerts.filter(a => a.source === 'sms').length / alerts.length) * 100 : 0} 
+                    className="h-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center text-sm mb-1">
+                    <div className="flex items-center">
+                      <Megaphone className="h-4 w-4 text-purple-500 mr-2" />
+                      <span>Social Media</span>
+                    </div>
+                    <span className="font-medium">
+                      {alerts?.filter(a => a.source === 'social_media').length || 0}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={alerts && alerts.length > 0 ? 
+                      (alerts.filter(a => a.source === 'social_media').length / alerts.length) * 100 : 0} 
+                    className="h-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center text-sm mb-1">
+                    <div className="flex items-center">
+                      <Phone className="h-4 w-4 text-green-500 mr-2" />
+                      <span>Phone Reports</span>
+                    </div>
+                    <span className="font-medium">
+                      {alerts?.filter(a => a.source === 'phone').length || 0}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={alerts && alerts.length > 0 ? 
+                      (alerts.filter(a => a.source === 'phone').length / alerts.length) * 100 : 0} 
+                    className="h-2" 
+                  />
+                </div>
+                
+                <div>
+                  <div className="flex justify-between items-center text-sm mb-1">
+                    <div className="flex items-center">
+                      <Smartphone className="h-4 w-4 text-indigo-500 mr-2" />
+                      <span>Mobile App</span>
+                    </div>
+                    <span className="font-medium">
+                      {alerts?.filter(a => a.source === 'app').length || 0}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={alerts && alerts.length > 0 ? 
+                      (alerts.filter(a => a.source === 'app').length / alerts.length) * 100 : 0} 
+                    className="h-2" 
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        {/* Main Alerts Table - 8 columns on large screens */}
+        <div className="col-span-1 lg:col-span-8 space-y-6">
+          <Card>
+            <CardHeader className="pb-2">
+              <div className="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                <div>
+                  <CardTitle>Alerts & Notifications Dashboard</CardTitle>
+                  <CardDescription>
+                    Monitor and manage all alerts from various sources
+                  </CardDescription>
+                </div>
+                
+                <div className="flex flex-wrap gap-2">
+                  <div className="relative w-[250px]">
+                    <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search alerts..."
+                      className="pl-9"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  
+                  <Button variant="outline" size="sm" onClick={() => refetchAlerts()}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh
+                  </Button>
+                  
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Filter className="h-4 w-4 mr-2" />
+                        Filter
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-[200px]">
+                      <div className="p-2 text-sm">
+                        <div className="mb-4">
+                          <p className="mb-2 font-medium">Source:</p>
+                          <div className="grid grid-cols-2 gap-1">
+                            <Button 
+                              size="sm"
+                              variant={sourceFilter === null ? "secondary" : "outline"}
+                              className="h-8 text-xs"
+                              onClick={() => setSourceFilter(null)}
+                            >
+                              All
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant={sourceFilter === 'sms' ? "secondary" : "outline"}
+                              className="h-8 text-xs"
+                              onClick={() => setSourceFilter('sms')}
+                            >
+                              SMS
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant={sourceFilter === 'social_media' ? "secondary" : "outline"}
+                              className="h-8 text-xs"
+                              onClick={() => setSourceFilter('social_media')}
+                            >
+                              Social
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant={sourceFilter === 'phone' ? "secondary" : "outline"}
+                              className="h-8 text-xs"
+                              onClick={() => setSourceFilter('phone')}
+                            >
+                              Phone
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant={sourceFilter === 'app' ? "secondary" : "outline"}
+                              className="h-8 text-xs"
+                              onClick={() => setSourceFilter('app')}
+                            >
+                              App
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant={sourceFilter === 'sos' ? "secondary" : "outline"}
+                              className="h-8 text-xs"
+                              onClick={() => setSourceFilter('sos')}
+                            >
+                              SOS
+                            </Button>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <p className="mb-2 font-medium">Severity:</p>
+                          <div className="grid grid-cols-3 gap-1">
+                            <Button 
+                              size="sm"
+                              variant={severityFilter === null ? "secondary" : "outline"}
+                              className="h-8 text-xs"
+                              onClick={() => setSeverityFilter(null)}
+                            >
+                              All
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant={severityFilter === 'high' ? "secondary" : "outline"}
+                              className="h-8 text-xs"
+                              onClick={() => setSeverityFilter('high')}
+                            >
+                              High
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant={severityFilter === 'medium' ? "secondary" : "outline"}
+                              className="h-8 text-xs"
+                              onClick={() => setSeverityFilter('medium')}
+                            >
+                              Medium
+                            </Button>
+                            <Button 
+                              size="sm"
+                              variant={severityFilter === 'low' ? "secondary" : "outline"}
+                              className="h-8 text-xs"
+                              onClick={() => setSeverityFilter('low')}
+                            >
+                              Low
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+              
+              <Tabs className="mt-4" value={selectedTab} onValueChange={setSelectedTab}>
+                <TabsList className="grid grid-cols-4 mb-2">
+                  <TabsTrigger value="all">
+                    All Alerts
+                    <Badge className="ml-2 bg-gray-100 text-gray-800 hover:bg-gray-100">
+                      {alerts?.length || 0}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="active">
+                    Active
+                    <Badge className="ml-2 bg-blue-100 text-blue-800 hover:bg-blue-100">
+                      {statusCounts.active}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="pending">
+                    Pending
+                    <Badge className="ml-2 bg-amber-100 text-amber-800 hover:bg-amber-100">
+                      {statusCounts.pending}
+                    </Badge>
+                  </TabsTrigger>
+                  <TabsTrigger value="resolved">
+                    Resolved
+                    <Badge className="ml-2 bg-green-100 text-green-800 hover:bg-green-100">
+                      {statusCounts.resolved}
+                    </Badge>
+                  </TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </CardHeader>
+            <CardContent>
+              {isLoadingAlerts ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : alertsError ? (
-                <div className="flex flex-col items-center justify-center py-8 text-center">
-                  <AlertTriangle className="h-12 w-12 text-amber-500 mb-4" />
-                  <h3 className="text-lg font-semibold mb-2">Failed to load alerts</h3>
-                  <p className="text-muted-foreground mb-4">
-                    We encountered a problem while retrieving alert data.
+                <div className="text-center py-8">
+                  <AlertCircle className="h-8 w-8 mx-auto mb-4 text-red-500" />
+                  <p className="font-medium">Failed to load alerts</p>
+                  <p className="text-sm text-muted-foreground mt-1 mb-4">
+                    An error occurred while fetching alert data.
                   </p>
-                  <div className="text-sm text-left max-w-md mx-auto mb-6">
-                    <p className="font-medium mb-1">Troubleshooting tips:</p>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Check your internet connection and try again.</li>
-                      <li>The data source might be temporarily unavailable.</li>
-                      <li>If the problem persists, contact technical support.</li>
-                    </ul>
-                  </div>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={() => refetchAlerts()}
-                  >
+                  <Button variant="outline" size="sm" onClick={() => refetchAlerts()}>
                     <RefreshCw className="h-4 w-4 mr-2" />
                     Try Again
                   </Button>
                 </div>
-              ) : filteredAlerts && filteredAlerts.length > 0 ? (
-                <ScrollArea className="h-[500px]">
+              ) : !filteredAlerts || filteredAlerts.length === 0 ? (
+                <div className="text-center py-8">
+                  <Bell className="h-8 w-8 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground">
+                    No {selectedTab !== 'all' ? selectedTab : ''} alerts found
+                    {sourceFilter ? ` from ${sourceFilter} source` : ''}
+                    {severityFilter ? ` with ${severityFilter} severity` : ''}
+                  </p>
+                </div>
+              ) : (
+                <div className="rounded-md border">
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Title</TableHead>
+                        <TableHead className="w-[350px]">Alert Details</TableHead>
                         <TableHead>Source</TableHead>
-                        <TableHead>Severity</TableHead>
+                        <TableHead>Location</TableHead>
+                        <TableHead>Timestamp</TableHead>
                         <TableHead>Status</TableHead>
-                        <TableHead>Generated At</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {filteredAlerts.map((alert) => (
-                        <TableRow key={alert.id}>
-                          <TableCell className="font-medium">{alert.title}</TableCell>
+                      {filteredAlerts.slice(0, 10).map((alert) => (
+                        <TableRow key={alert.id} className={
+                          isSOS(alert) && alert.status === 'active' ? 'bg-red-50' : ''
+                        }>
                           <TableCell>
-                            <div className="flex space-x-1">
-                              {alert.channels?.includes("twitter") && <Twitter className="h-4 w-4 text-blue-500" />}
-                              {alert.channels?.includes("facebook") && <Facebook className="h-4 w-4 text-blue-600" />}
-                              {alert.channels?.includes("instagram") && <Instagram className="h-4 w-4 text-pink-500" />}
-                              {alert.channels?.includes("sms") && <MessageSquare className="h-4 w-4 text-green-500" />}
-                              {alert.channels?.includes("phone") && <PhoneCall className="h-4 w-4 text-red-500" />}
-                              {alert.channels?.includes("email") && <Mail className="h-4 w-4 text-gray-500" />}
-                              {(!alert.channels || alert.channels.length === 0) && <Info className="h-4 w-4 text-gray-400" />}
+                            <div>
+                              <div className="font-medium flex items-center gap-2">
+                                {alert.title}
+                                {isSOS(alert) && alert.status === 'active' && (
+                                  <span className="relative flex h-2 w-2">
+                                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center mt-1 gap-2">
+                                {getAlertBadge(alert.severity)}
+                                {alert.category && (
+                                  <Badge variant="outline" className="font-normal text-xs">
+                                    {alert.category}
+                                  </Badge>
+                                )}
+                              </div>
                             </div>
                           </TableCell>
-                          <TableCell>{getSeverityBadge(alert.severity)}</TableCell>
-                          <TableCell>{getStatusBadge(alert.status)}</TableCell>
-                          <TableCell>{formatDate(alert.generatedAt)}</TableCell>
-                          <TableCell className="flex justify-end gap-2">
+                          <TableCell>
+                            <div className="flex items-center">
+                              {getSourceIcon(alert.source)}
+                              <span className="ml-2 capitalize">{alert.source}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <MapPin className="h-4 w-4 mr-1 text-muted-foreground" />
+                              <span>{alert.region || 'Nigeria'}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <Clock className="h-4 w-4 mr-1 text-muted-foreground" />
+                              <span>{formatDate(alert.generatedAt)}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={
+                              alert.status === 'active' ? 'bg-blue-100 text-blue-800' : 
+                              alert.status === 'resolved' ? 'bg-green-100 text-green-800' : 
+                              'bg-amber-100 text-amber-800'
+                            }>
+                              {alert.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell className="text-right">
                             <Button 
-                              variant="ghost" 
-                              size="sm" 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => {
+                                setSelectedAlert(alert);
+                                setRespondDialogOpen(true);
+                              }}
                             >
-                              <Eye className="h-4 w-4" />
+                              Respond
                             </Button>
-                            {alert.status === "active" ? (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                              >
-                                <CheckCircle className="h-4 w-4 text-green-600" />
-                              </Button>
-                            ) : (
-                              <Button 
-                                variant="ghost" 
-                                size="sm"
-                              >
-                                <Clock className="h-4 w-4 text-amber-600" />
-                              </Button>
-                            )}
                           </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
                   </Table>
-                </ScrollArea>
-              ) : (
-                <div className="text-center py-8">
-                  <Bell className="h-8 w-8 mx-auto mb-4 text-neutral-400" />
-                  <p className="text-neutral-500">No alerts found</p>
-                  <p className="text-neutral-400 text-sm mt-1">
-                    {searchQuery ? "Try adjusting your search or filters" : "Create alerts to monitor potential risks"}
-                  </p>
                 </div>
               )}
             </CardContent>
-          </Card>
-          
-          {/* Graphical Dashboard */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader className="p-4">
-                <CardTitle className="text-lg">Alert Severity Distribution</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="h-[200px] flex items-center">
-                  <div className="w-full space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-red-500 mr-2"></div>
-                          <span className="text-sm">High</span>
-                        </div>
-                        <span className="text-sm font-medium">
-                          {alerts?.filter(a => a.severity === "high").length || 0}
-                        </span>
-                      </div>
-                      <Progress 
-                        value={alerts ? 
-                          (alerts.filter(a => a.severity === "high").length / alerts.length) * 100 : 0} 
-                        className="h-2 bg-red-100" 
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-amber-500 mr-2"></div>
-                          <span className="text-sm">Medium</span>
-                        </div>
-                        <span className="text-sm font-medium">
-                          {alerts?.filter(a => a.severity === "medium").length || 0}
-                        </span>
-                      </div>
-                      <Progress 
-                        value={alerts ? 
-                          (alerts.filter(a => a.severity === "medium").length / alerts.length) * 100 : 0} 
-                        className="h-2 bg-amber-100" 
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <div className="w-3 h-3 rounded-full bg-blue-500 mr-2"></div>
-                          <span className="text-sm">Low</span>
-                        </div>
-                        <span className="text-sm font-medium">
-                          {alerts?.filter(a => a.severity === "low").length || 0}
-                        </span>
-                      </div>
-                      <Progress 
-                        value={alerts ? 
-                          (alerts.filter(a => a.severity === "low").length / alerts.length) * 100 : 0}
-                        className="h-2 bg-blue-100" 
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader className="p-4">
-                <CardTitle className="text-lg">Alerts by Source</CardTitle>
-              </CardHeader>
-              <CardContent className="p-4 pt-0">
-                <div className="h-[200px] flex items-center">
-                  <div className="w-full space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Twitter className="h-4 w-4 text-blue-500 mr-2" />
-                          <span className="text-sm">X (Twitter)</span>
-                        </div>
-                        <span className="text-sm font-medium">
-                          {alerts?.filter(a => a.channels?.includes("twitter")).length || 0}
-                        </span>
-                      </div>
-                      <Progress 
-                        value={alerts ? 
-                          (alerts.filter(a => a.channels?.includes("twitter")).length / alerts.length) * 100 : 0}
-                        className="h-2 bg-blue-100" 
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Facebook className="h-4 w-4 text-blue-600 mr-2" />
-                          <span className="text-sm">Facebook</span>
-                        </div>
-                        <span className="text-sm font-medium">
-                          {alerts?.filter(a => a.channels?.includes("facebook")).length || 0}
-                        </span>
-                      </div>
-                      <Progress 
-                        value={alerts ? 
-                          (alerts.filter(a => a.channels?.includes("facebook")).length / alerts.length) * 100 : 0}
-                        className="h-2 bg-blue-200" 
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <MessageSquare className="h-4 w-4 text-green-500 mr-2" />
-                          <span className="text-sm">SMS</span>
-                        </div>
-                        <span className="text-sm font-medium">
-                          {alerts?.filter(a => a.channels?.includes("sms")).length || 0}
-                        </span>
-                      </div>
-                      <Progress 
-                        value={alerts ? 
-                          (alerts.filter(a => a.channels?.includes("sms")).length / alerts.length) * 100 : 0}
-                        className="h-2 bg-green-100" 
-                      />
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Mail className="h-4 w-4 text-gray-600 mr-2" />
-                          <span className="text-sm">Email</span>
-                        </div>
-                        <span className="text-sm font-medium">
-                          {alerts?.filter(a => a.channels?.includes("email")).length || 0}
-                        </span>
-                      </div>
-                      <Progress 
-                        value={alerts ? 
-                          (alerts.filter(a => a.channels?.includes("email")).length / alerts.length) * 100 : 0}
-                        className="h-2 bg-gray-100" 
-                      />
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-        
-        {/* SOS Emergency Panel - 4 columns on large screens */}
-        <div className="col-span-12 lg:col-span-4 space-y-6">
-          <Card className="border-red-200 bg-red-50">
-            <CardHeader className="p-4 pb-0">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center">
-                  <AlertOctagon className="h-5 w-5 text-red-600 mr-2" />
-                  <CardTitle className="text-lg text-red-800">SOS Emergency Alerts</CardTitle>
-                </div>
-                <Badge className="bg-red-600">LIVE</Badge>
+            <CardFooter className="flex justify-between">
+              <p className="text-sm text-muted-foreground">
+                Showing {filteredAlerts?.slice(0, 10).length || 0} of {filteredAlerts?.length || 0} alerts
+              </p>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled>Previous</Button>
+                <Button variant="outline" size="sm" disabled={!filteredAlerts || filteredAlerts.length <= 10}>Next</Button>
               </div>
-              <CardDescription className="text-red-700">
-                Priority messages requiring immediate attention
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                {sosMockData.map((sos) => (
-                  <Card key={sos.id} className={`border-l-4 ${sos.priority === 'critical' ? 'border-l-red-600' : 'border-l-amber-500'}`}>
-                    <CardHeader className="p-3 pb-0">
-                      <div className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <Zap className={`h-4 w-4 ${sos.priority === 'critical' ? 'text-red-600' : 'text-amber-500'} mr-2`} />
-                          <p className="text-sm font-medium">{sos.sender}</p>
-                        </div>
-                        <Badge className={sos.priority === 'critical' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'}>
-                          {sos.priority === 'critical' ? 'CRITICAL' : 'HIGH'}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        IMEI: {sos.imei} • {new Date(sos.timestamp).toLocaleString()}
-                      </p>
-                    </CardHeader>
-                    <CardContent className="p-3 pt-2">
-                      <p className="text-sm">{sos.message}</p>
-                      <div className="flex items-center mt-2 text-xs text-muted-foreground">
-                        <MapPin className="h-3 w-3 mr-1" />
-                        <span>GPS: {sos.location}</span>
-                      </div>
-                    </CardContent>
-                    <CardFooter className="p-3 pt-0 flex justify-between">
-                      <Button variant="outline" size="sm" className="text-xs h-7">
-                        View on Map
-                      </Button>
-                      <Button size="sm" className="text-xs h-7">
-                        Respond
-                      </Button>
-                    </CardFooter>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-            <CardFooter className="p-4 pt-0">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full border-red-200 text-red-800 hover:bg-red-100"
-                onClick={() => setSosExpanded(!sosExpanded)}
-              >
-                {sosExpanded ? "Show Less" : "View All SOS Messages"}
-              </Button>
             </CardFooter>
-          </Card>
-          
-          <Card>
-            <CardHeader className="p-4">
-              <CardTitle className="text-lg">Sources Overview</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4 pt-0">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                      <Twitter className="h-5 w-5 text-blue-500" />
-                    </div>
-                    <div>
-                      <p className="font-medium">X (Twitter)</p>
-                      <p className="text-xs text-muted-foreground">Monitoring Nigerian topics</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">Active</Badge>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                      <Facebook className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Facebook</p>
-                      <p className="text-xs text-muted-foreground">Public posts in Nigeria</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">Active</Badge>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center mr-3">
-                      <MessageSquare className="h-5 w-5 text-green-500" />
-                    </div>
-                    <div>
-                      <p className="font-medium">SMS Gateway</p>
-                      <p className="text-xs text-muted-foreground">Emergency text messages</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">Active</Badge>
-                </div>
-                
-                <Separator />
-                
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center">
-                    <div className="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center mr-3">
-                      <PhoneCall className="h-5 w-5 text-red-500" />
-                    </div>
-                    <div>
-                      <p className="font-medium">Emergency Calls</p>
-                      <p className="text-xs text-muted-foreground">Call center integration</p>
-                    </div>
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">Active</Badge>
-                </div>
-              </div>
-            </CardContent>
           </Card>
         </div>
       </div>
+      
+      {/* Response Dialog */}
+      <Dialog open={respondDialogOpen} onOpenChange={setRespondDialogOpen}>
+        <DialogContent className="sm:max-w-[550px]">
+          <DialogHeader>
+            <DialogTitle>Respond to Alert</DialogTitle>
+            <DialogDescription>
+              {selectedAlert && `Alert ID: ${selectedAlert.id} - ${selectedAlert.title}`}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <form onSubmit={handleAlertResponse}>
+            <div className="grid gap-4 py-4">
+              {selectedAlert && (
+                <div className="grid gap-2">
+                  <div className="rounded-md bg-amber-50 p-4 text-sm">
+                    <div className="flex mb-2">
+                      <Info className="h-5 w-5 text-amber-600 mr-2 flex-shrink-0" />
+                      <div>
+                        <p className="font-medium text-amber-800">Alert Information</p>
+                        <p className="mt-1 text-amber-700">{selectedAlert.description}</p>
+                        <div className="mt-2 flex flex-wrap gap-3 text-xs">
+                          <Badge variant="outline" className="border-amber-200">
+                            Severity: {selectedAlert.severity}
+                          </Badge>
+                          <Badge variant="outline" className="border-amber-200">
+                            Source: {selectedAlert.source}
+                          </Badge>
+                          <Badge variant="outline" className="border-amber-200">
+                            Region: {selectedAlert.region || 'Nigeria'}
+                          </Badge>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              <div className="grid gap-2">
+                <label htmlFor="response-type" className="text-sm font-medium">
+                  Response Type
+                </label>
+                <Select defaultValue="acknowledge">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a response type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="acknowledge">Acknowledge</SelectItem>
+                    <SelectItem value="assign">Assign to Team</SelectItem>
+                    <SelectItem value="escalate">Escalate</SelectItem>
+                    <SelectItem value="resolve">Resolve</SelectItem>
+                    <SelectItem value="dismiss">Dismiss</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="assigned-to" className="text-sm font-medium">
+                  Assign To
+                </label>
+                <Select defaultValue="emergency-team">
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select team" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectLabel>Response Teams</SelectLabel>
+                      <SelectItem value="emergency-team">Emergency Response Team</SelectItem>
+                      <SelectItem value="security-team">Security Team</SelectItem>
+                      <SelectItem value="medical-team">Medical Team</SelectItem>
+                      <SelectItem value="monitoring-team">Monitoring Team</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="grid gap-2">
+                <label htmlFor="response-notes" className="text-sm font-medium">
+                  Response Notes
+                </label>
+                <Textarea
+                  id="response-notes"
+                  placeholder="Add details about your response..."
+                  rows={4}
+                />
+              </div>
+              
+              <div className="flex items-center space-x-2 mt-2">
+                <Button type="submit" className="flex items-center">
+                  <Send className="h-4 w-4 mr-2" />
+                  Submit Response
+                </Button>
+                <Button type="button" variant="outline" onClick={() => setRespondDialogOpen(false)}>
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </MainLayout>
   );
 }

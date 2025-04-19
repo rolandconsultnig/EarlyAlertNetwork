@@ -237,6 +237,8 @@ export const alerts = pgTable("alerts", {
   description: text("description").notNull(),
   severity: text("severity").notNull(), // low, medium, high, critical
   status: text("status").notNull().default("active"),
+  source: text("source").notNull().default("system"), // sms, social_media, phone, app, sos, system
+  category: text("category"), // security, health, environment, infrastructure, etc.
   generatedAt: timestamp("generated_at").notNull().defaultNow(),
   region: text("region").notNull().default("Nigeria"),
   location: text("location").notNull(),
@@ -255,6 +257,8 @@ export const insertAlertSchema = createInsertSchema(alerts).pick({
   description: true,
   severity: true,
   status: true,
+  source: true,
+  category: true,
   region: true,
   location: true,
   incidentId: true,
