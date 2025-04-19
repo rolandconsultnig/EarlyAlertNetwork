@@ -1,15 +1,203 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Loader2 } from "lucide-react";
 import NigeriaMap from "@/components/maps/NigeriaMap";
+import { Incident } from "@shared/schema";
+
+// Create our own mock incidents with custom properties for the map display
+// Each mock incident needs to have the required fields to match the NigeriaMap component's expectations
+// This is a separate interface just for our map page
+interface MapMockIncident {
+  id: number;
+  title: string;
+  description: string;
+  latitude: number;
+  longitude: number; 
+  severity: string;
+  status: string;
+  region: string;
+  location: string;
+  impactedPopulation?: number;
+  category?: string;
+  // Adding properties needed by the Incident type
+  reportedAt: Date;
+  reportedBy: number;
+  coordinates?: string;
+  state: string | null;
+  lga: string | null;
+  sourceId: number | null;
+  mediaUrls: string[] | null;
+  relatedIndicators: string[] | null;
+  verificationStatus: string;
+}
+
+// Define mock incidents that follow the structure required by the NigeriaMap component
+const mockIncidents: MapMockIncident[] = [
+  {
+    id: 1,
+    title: "Farmer-Herder Clash in Benue",
+    description: "Violent clash between farmers and herders in Makurdi area with multiple casualties reported",
+    latitude: 7.7322,
+    longitude: 8.5391,
+    severity: "high",
+    status: "active",
+    region: "North Central",
+    location: "Makurdi, Benue State",
+    state: "Benue",
+    lga: "Makurdi",
+    impactedPopulation: 12450,
+    category: "violence",
+    reportedAt: new Date(),
+    reportedBy: 1,
+    sourceId: null,
+    mediaUrls: null,
+    relatedIndicators: null,
+    verificationStatus: "verified"
+  },
+  {
+    id: 2,
+    title: "Flooding in Lagos",
+    description: "Severe flooding affecting multiple communities in Lagos State with residential areas submerged",
+    latitude: 6.5244,
+    longitude: 3.3792,
+    severity: "medium",
+    status: "active",
+    region: "South West",
+    location: "Victoria Island, Lagos State",
+    state: "Lagos",
+    lga: "Eti-Osa",
+    impactedPopulation: 35200,
+    category: "natural_disaster",
+    reportedAt: new Date(),
+    reportedBy: 1,
+    sourceId: null,
+    mediaUrls: null,
+    relatedIndicators: null,
+    verificationStatus: "verified"
+  },
+  {
+    id: 3,
+    title: "Protest in Kano",
+    description: "Civil unrest in Kano metropolitan area with demonstrations against government policies",
+    latitude: 12.0022,
+    longitude: 8.5920,
+    severity: "low",
+    status: "resolved", 
+    region: "North West",
+    location: "Kano City, Kano State",
+    state: "Kano",
+    lga: "Kano Municipal",
+    impactedPopulation: 15800,
+    category: "civil_unrest",
+    reportedAt: new Date(),
+    reportedBy: 1,
+    sourceId: null,
+    mediaUrls: null,
+    relatedIndicators: null,
+    verificationStatus: "verified"
+  },
+  {
+    id: 4,
+    title: "Terrorist Attack in Maiduguri",
+    description: "Multiple explosions reported in the city center with civilian casualties",
+    latitude: 11.8311,
+    longitude: 13.1510,
+    severity: "high",
+    status: "active",
+    region: "North East",
+    location: "Maiduguri, Borno State",
+    state: "Borno",
+    lga: "Maiduguri",
+    impactedPopulation: 28750,
+    category: "terrorism",
+    reportedAt: new Date(),
+    reportedBy: 1,
+    sourceId: null,
+    mediaUrls: null,
+    relatedIndicators: null,
+    verificationStatus: "verified"
+  },
+  {
+    id: 5,
+    title: "School Kidnapping in Kaduna",
+    description: "Armed group abducted students from a boarding school during night hours",
+    latitude: 10.5167,
+    longitude: 7.4333,
+    severity: "high",
+    status: "active",
+    region: "North West",
+    location: "Kaduna, Kaduna State",
+    state: "Kaduna",
+    lga: "Kaduna South",
+    impactedPopulation: 342,
+    category: "kidnapping",
+    reportedAt: new Date(),
+    reportedBy: 1,
+    sourceId: null,
+    mediaUrls: null,
+    relatedIndicators: null,
+    verificationStatus: "verified"
+  },
+  {
+    id: 6,
+    title: "Oil Pipeline Vandalism",
+    description: "Major oil pipeline damaged by suspected militants causing environmental damage",
+    latitude: 5.0149,
+    longitude: 6.9830,
+    severity: "medium",
+    status: "active",
+    region: "South South",
+    location: "Port Harcourt, Rivers State",
+    state: "Rivers",
+    lga: "Port Harcourt",
+    impactedPopulation: 8500,
+    category: "infrastructure",
+    reportedAt: new Date(),
+    reportedBy: 1,
+    sourceId: null,
+    mediaUrls: null,
+    relatedIndicators: null,
+    verificationStatus: "verified"
+  },
+  {
+    id: 7,
+    title: "Communal Clash in Enugu",
+    description: "Violent conflict between neighboring communities over land dispute",
+    latitude: 6.4402,
+    longitude: 7.4994,
+    severity: "medium",
+    status: "active",
+    region: "South East",
+    location: "Enugu, Enugu State",
+    state: "Enugu",
+    lga: "Enugu North",
+    impactedPopulation: 5750,
+    category: "violence",
+    reportedAt: new Date(),
+    reportedBy: 1,
+    sourceId: null,
+    mediaUrls: null,
+    relatedIndicators: null,
+    verificationStatus: "verified"
+  }
+];
 
 export default function MapPage() {
   const [mapHeight, setMapHeight] = useState("700px");
+  const [isMapReady, setIsMapReady] = useState(false);
   
-  // We're not setting 'incidents' prop, which forces the NigeriaMap component
-  // to use its mockIncidents data instead of fetching from the API
+  // Add stability to make sure the map doesn't disappear
+  useEffect(() => {
+    // Short delay to ensure the map is properly mounted
+    const timer = setTimeout(() => {
+      setIsMapReady(true);
+    }, 1000);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
   return (
     <MainLayout title="Crisis Map">
       <Card className="shadow-lg">
@@ -38,12 +226,21 @@ export default function MapPage() {
         </CardHeader>
         <CardContent className="p-6 pt-2">
           <div className="border rounded-md overflow-hidden">
-            <NigeriaMap 
-              height={mapHeight}
-              showIncidents={true}
-              // Force use of mock data by setting incidents to undefined
-              incidents={undefined}
-            />
+            {!isMapReady ? (
+              <div style={{ height: mapHeight }} className="flex items-center justify-center bg-gray-50">
+                <div className="text-center">
+                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
+                  <p className="text-sm text-gray-500">Loading map and incidents...</p>
+                </div>
+              </div>
+            ) : (
+              <NigeriaMap 
+                height={mapHeight}
+                showIncidents={true}
+                // Here we're providing our own mock incidents directly
+                incidents={mockIncidents}
+              />
+            )}
           </div>
         </CardContent>
       </Card>
