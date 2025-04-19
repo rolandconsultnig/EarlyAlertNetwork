@@ -275,15 +275,27 @@ export default function NigeriaMap({
 }: NigeriaMapProps) {
   const [clickedPosition, setClickedPosition] = useState<[number, number] | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [mapReady, setMapReady] = useState(false);
+  
+  // Ensure map stability by tracking when it's fully loaded
+  useEffect(() => {
+    // Set a flag once component is mounted to prevent markers from disappearing
+    const timer = setTimeout(() => {
+      setMapReady(true);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, []);
   
   // Fetch incidents from API if none provided as props
   const { data: fetchedIncidents } = useQuery<Incident[]>({
     queryKey: ["/api/incidents"],
-    enabled: showIncidents && !propIncidents,
+    enabled: showIncidents && !propIncidents && mapReady,
   });
   
   // Use provided incidents or fetched incidents or mock data
-  const incidents = propIncidents || fetchedIncidents || mockIncidents;
+  // Only use mock incidents after map is ready to ensure they don't disappear
+  const incidents = mapReady ? (propIncidents || fetchedIncidents || mockIncidents) : [];
   
   // Get icon based on severity
   const getIncidentIcon = (severity: string) => {

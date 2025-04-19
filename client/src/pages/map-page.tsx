@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import NigeriaMap from "@/components/maps/NigeriaMap";
-import { Incident } from "@shared/schema";
+import type { Incident } from "@shared/schema";
 
 // Create our own mock incidents with custom properties for the map display
 // Each mock incident needs to have the required fields to match the NigeriaMap component's expectations
@@ -237,8 +237,8 @@ export default function MapPage() {
               <NigeriaMap 
                 height={mapHeight}
                 showIncidents={true}
-                // Here we're providing our own mock incidents directly
-                incidents={mockIncidents}
+                // Force use of component's internal mock data
+                incidents={undefined}
               />
             )}
           </div>
