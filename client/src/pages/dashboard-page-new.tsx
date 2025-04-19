@@ -466,8 +466,8 @@ export default function DashboardPage() {
       </div>
       
       {/* Add Incident Dialog */}
-      <Dialog open={showAddIncidentDialog} onOpenChange={setShowAddIncidentDialog}>
-        <DialogContent>
+      <Dialog open={showAddIncidentDialog} onOpenChange={setShowAddIncidentDialog} modal={true}>
+        <DialogContent className="z-[999]" style={{ position: 'fixed', zIndex: 999 }}>
           <DialogHeader>
             <DialogTitle>Report New Incident</DialogTitle>
             <DialogDescription>
