@@ -41,7 +41,8 @@ export default function MapPage() {
             <NigeriaMap 
               height={mapHeight}
               showIncidents={true}
-              // Don't provide incidents prop, forcing the component to use mock data
+              // Force use of mock data by setting incidents to undefined
+              incidents={undefined}
             />
           </div>
         </CardContent>

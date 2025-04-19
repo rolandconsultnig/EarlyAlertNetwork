@@ -211,7 +211,7 @@ export default function HomePage() {
             <div>
               <h3 className="text-lg font-semibold mb-4">Resources</h3>
               <ul className="space-y-2 text-gray-300">
-                <li><a href="#" className="hover:text-blue-300">Conflict Map</a></li>
+                <li><Link href="/map" className="hover:text-blue-300">Nigeria Crisis Map</Link></li>
                 <li><a href="#" className="hover:text-blue-300">Peace Building Toolkit</a></li>
                 <li><a href="#" className="hover:text-blue-300">Policy Briefs</a></li>
                 <li><a href="#" className="hover:text-blue-300">Media Gallery</a></li>

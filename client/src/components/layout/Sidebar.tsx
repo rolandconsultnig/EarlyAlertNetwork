@@ -55,6 +55,7 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
       title: "Main Navigation",
       items: [
         { path: "/dashboard", label: "Dashboard", icon: <LayoutDashboard className="mr-3 h-5 w-5" /> },
+        { path: "/map", label: "Nigeria Crisis Map", icon: <Map className="mr-3 h-5 w-5" /> },
       ]
     },
     {
