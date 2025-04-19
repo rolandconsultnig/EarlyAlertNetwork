@@ -169,37 +169,51 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const incidentData = {
         title,
         description,
-        latitude: 0, // These will be updated by admins during verification
-        longitude: 0,
-        status: "pending",
-        category: "conflict",
-        reportedAt: new Date().toISOString(),
-        locationMetadata: JSON.stringify({
-          location,
-          region,
-          coordinates: "To be verified"
+        location, // Use the provided location
+        region,
+        severity: "medium", // Default severity for public reports
+        status: "pending", // Incidents from public start as pending
+        category: "conflict", // Default category
+        reportedBy: 1, // Default to admin user ID (1) for public reports
+        coordinates: JSON.stringify({
+          lat: 0, // These will be updated by admins during verification 
+          lng: 0,
+          address: location
         }),
-        actors: JSON.stringify({
-          type: actorType,
-          name: actorName
-        }),
-        reporterInfo: JSON.stringify({
-          name: contactName,
-          email: contactEmail || "",
-          phone: contactPhone
-        }),
-        verificationStatus: "unverified"
+        verificationStatus: "unverified",
+        // Add any other required fields with sensible defaults
+        impactedPopulation: 0,
+        // Store the reporter contact info and actor information in the metadata
+        mediaUrls: []
       };
 
-      // Create the incident
+      // Add the incident to the database
       const incident = await storage.createIncident(incidentData);
+      
+      // Update the incident with additional JSON metadata that doesn't fit the schema
+      await storage.updateIncident(incident.id, {
+        coordinates: JSON.stringify({
+          ...JSON.parse(incident.coordinates as string),
+          reporterInfo: {
+            name: contactName,
+            email: contactEmail || "",
+            phone: contactPhone
+          },
+          actors: {
+            type: actorType,
+            name: actorName
+          }
+        })
+      });
+
       res.status(201).json(incident);
     } catch (error) {
       console.error("Error creating public incident:", error);
       if (error instanceof z.ZodError) {
+        console.error("Validation error:", JSON.stringify(error.errors, null, 2));
         return res.status(400).json({ error: error.errors });
       }
-      res.status(400).json({ error: "Failed to create incident", details: error.message });
+      res.status(400).json({ error: "Failed to create incident", details: (error as Error).message });
     }
   });
 
