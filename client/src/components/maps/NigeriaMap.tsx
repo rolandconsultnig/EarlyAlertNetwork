@@ -195,8 +195,20 @@ export default function NigeriaMap({
       return [incident.latitude, incident.longitude];
     }
     
-    // For regular incidents, try to extract coordinates from location string
-    if ('location' in incident && incident.location && incident.location.includes(',')) {
+    // For regular incidents, try to extract coordinates from coordinates JSON string
+    if ('coordinates' in incident && incident.coordinates) {
+      try {
+        const coords = JSON.parse(incident.coordinates as string);
+        if (coords.lat && coords.lng) {
+          return [coords.lat, coords.lng];
+        }
+      } catch (e) {
+        console.error("Failed to parse JSON coordinates", e);
+      }
+    }
+    
+    // For regular incidents, try to extract coordinates from location string as fallback
+    if ('location' in incident && incident.location && typeof incident.location === 'string' && incident.location.includes(',')) {
       try {
         const [lat, lng] = incident.location.split(',').map(coord => parseFloat(coord.trim()));
         if (!isNaN(lat) && !isNaN(lng)) {
@@ -207,6 +219,7 @@ export default function NigeriaMap({
       }
     }
     
+    console.log("Using default coordinates for incident:", incident.title);
     // Default to center of Nigeria if no valid coordinates found
     return [9.0765, 7.3986];
   };
