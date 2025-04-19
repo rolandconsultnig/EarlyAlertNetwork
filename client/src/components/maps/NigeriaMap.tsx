@@ -101,7 +101,9 @@ interface MockIncident {
   severity: string;
   status: string;
   region: string;
-  location?: string; // Add location property
+  location?: string;
+  impactedPopulation?: number;
+  category?: string;
 }
 
 // Mock incidents data for testing if no incidents are provided
@@ -109,35 +111,158 @@ const mockIncidents: MockIncident[] = [
   {
     id: 1,
     title: "Farmer-Herder Clash in Benue",
-    description: "Violent clash between farmers and herders in Makurdi area",
+    description: "Violent clash between farmers and herders in Makurdi area with multiple casualties reported",
     latitude: 7.7322,
     longitude: 8.5391,
     severity: "high",
     status: "active",
     region: "North Central",
-    location: "Makurdi, Benue State"
+    location: "Makurdi, Benue State",
+    impactedPopulation: 12450,
+    category: "violence"
   },
   {
     id: 2,
     title: "Flooding in Lagos",
-    description: "Severe flooding affecting multiple communities in Lagos State",
+    description: "Severe flooding affecting multiple communities in Lagos State with residential areas submerged",
     latitude: 6.5244,
     longitude: 3.3792,
     severity: "medium",
     status: "active",
     region: "South West",
-    location: "Victoria Island, Lagos State"
+    location: "Victoria Island, Lagos State",
+    impactedPopulation: 35200,
+    category: "natural_disaster"
   },
   {
     id: 3,
     title: "Protest in Kano",
-    description: "Civil unrest in Kano metropolitan area",
+    description: "Civil unrest in Kano metropolitan area with demonstrations against government policies",
     latitude: 12.0022,
     longitude: 8.5920,
     severity: "low",
     status: "resolved",
     region: "North West",
-    location: "Kano City, Kano State"
+    location: "Kano City, Kano State",
+    impactedPopulation: 15800,
+    category: "civil_unrest"
+  },
+  {
+    id: 4,
+    title: "Terrorist Attack in Maiduguri",
+    description: "Multiple explosions reported in the city center with civilian casualties",
+    latitude: 11.8311,
+    longitude: 13.1510,
+    severity: "high",
+    status: "active",
+    region: "North East",
+    location: "Maiduguri, Borno State",
+    impactedPopulation: 28750,
+    category: "terrorism"
+  },
+  {
+    id: 5,
+    title: "School Kidnapping in Kaduna",
+    description: "Armed group abducted students from a boarding school during night hours",
+    latitude: 10.5167,
+    longitude: 7.4333,
+    severity: "high",
+    status: "active",
+    region: "North West",
+    location: "Kaduna, Kaduna State",
+    impactedPopulation: 342,
+    category: "kidnapping"
+  },
+  {
+    id: 6,
+    title: "Oil Pipeline Vandalism",
+    description: "Major oil pipeline damaged by suspected militants causing environmental damage",
+    latitude: 5.0149,
+    longitude: 6.9830,
+    severity: "medium",
+    status: "active",
+    region: "South South",
+    location: "Port Harcourt, Rivers State",
+    impactedPopulation: 8500,
+    category: "infrastructure"
+  },
+  {
+    id: 7,
+    title: "Communal Clash in Enugu",
+    description: "Violent conflict between neighboring communities over land dispute",
+    latitude: 6.4402,
+    longitude: 7.4994,
+    severity: "medium",
+    status: "active",
+    region: "South East",
+    location: "Enugu, Enugu State",
+    impactedPopulation: 5750,
+    category: "violence"
+  },
+  {
+    id: 8,
+    title: "Market Fire in Ibadan",
+    description: "Major fire outbreak in a crowded market destroyed dozens of shops and goods",
+    latitude: 7.3775,
+    longitude: 3.9470,
+    severity: "medium",
+    status: "resolved",
+    region: "South West",
+    location: "Ibadan, Oyo State",
+    impactedPopulation: 3200,
+    category: "fire"
+  },
+  {
+    id: 9,
+    title: "Cholera Outbreak in Sokoto",
+    description: "Health emergency declared due to rapidly spreading cholera cases in rural areas",
+    latitude: 13.0622,
+    longitude: 5.2339,
+    severity: "high",
+    status: "active",
+    region: "North West",
+    location: "Sokoto, Sokoto State",
+    impactedPopulation: 4562,
+    category: "health_crisis"
+  },
+  {
+    id: 10,
+    title: "Building Collapse in Abuja",
+    description: "Multi-story building under construction collapsed with workers trapped inside",
+    latitude: 9.0765,
+    longitude: 7.3986,
+    severity: "medium",
+    status: "active",
+    region: "Federal Capital Territory",
+    location: "Abuja, FCT",
+    impactedPopulation: 87,
+    category: "infrastructure"
+  },
+  {
+    id: 11,
+    title: "Armed Robbery in Aba",
+    description: "Coordinated bank robberies across the city resulted in security lockdown",
+    latitude: 5.1215,
+    longitude: 7.3698,
+    severity: "medium", 
+    status: "resolved",
+    region: "South East",
+    location: "Aba, Abia State",
+    impactedPopulation: 2850,
+    category: "crime"
+  },
+  {
+    id: 12,
+    title: "Prison Break in Jos",
+    description: "Mass escape of inmates from correctional facility following external attack",
+    latitude: 9.8965,
+    longitude: 8.8583, 
+    severity: "high",
+    status: "active",
+    region: "North Central",
+    location: "Jos, Plateau State",
+    impactedPopulation: 11250,
+    category: "security"
   }
 ];
 
