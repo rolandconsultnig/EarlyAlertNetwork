@@ -130,7 +130,8 @@ export default function UserManagementPage() {
     mutationFn: async (data: UserFormValues) => {
       const { confirmPassword, ...userData } = data;
       
-      const res = await apiRequest("POST", "/api/register", userData);
+      // Use the new endpoint for creating users when authenticated
+      const res = await apiRequest("POST", "/api/user/create", userData);
       return await res.json();
     },
     onSuccess: () => {
