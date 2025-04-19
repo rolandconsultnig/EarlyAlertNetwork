@@ -32,6 +32,10 @@ const incidentSchema = insertIncidentSchema
     severity: z.enum(["low", "medium", "high"], {
       required_error: "Please select a severity level",
     }),
+    actorType: z.enum(["state", "non-state"], {
+      required_error: "Please select an actor type",
+    }),
+    actorName: z.string().min(2, "Actor name must be at least 2 characters"),
   });
 
 type IncidentFormValues = z.infer<typeof incidentSchema>;
@@ -193,6 +197,8 @@ export default function DataCollectionPage() {
       description: "",
       location: "",
       severity: undefined,
+      actorType: undefined,
+      actorName: "",
     },
   });
 
@@ -209,7 +215,11 @@ export default function DataCollectionPage() {
           coordinates: data.location,
           region: "Nigeria"
         },
-        verificationStatus: "unverified"
+        verificationStatus: "unverified",
+        actors: {
+          type: data.actorType,
+          name: data.actorName
+        }
       };
       
       const res = await apiRequest("POST", "/api/incidents", incidentData);
@@ -729,6 +739,47 @@ export default function DataCollectionPage() {
                                   <SelectItem value="high">High</SelectItem>
                                 </SelectContent>
                               </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <FormField
+                          control={form.control}
+                          name="actorType"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Actor Type</FormLabel>
+                              <Select 
+                                onValueChange={field.onChange} 
+                                defaultValue={field.value}
+                              >
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select actor type" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  <SelectItem value="state">State Actor</SelectItem>
+                                  <SelectItem value="non-state">Non-State Actor</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        
+                        <FormField
+                          control={form.control}
+                          name="actorName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Actor Name</FormLabel>
+                              <FormControl>
+                                <Input placeholder="Enter actor name" {...field} />
+                              </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
