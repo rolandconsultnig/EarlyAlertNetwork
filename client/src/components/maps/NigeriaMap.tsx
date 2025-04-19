@@ -7,6 +7,7 @@ import 'leaflet/dist/leaflet.css';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Info, AlertCircle, MapPin, Users } from 'lucide-react';
+import IncidentDetailModal from '@/components/incident/IncidentDetailModal';
 
 // Fix Leaflet marker icon issues
 // Using CDNs that are more reliable with larger icon sizes for better visibility
@@ -281,6 +282,8 @@ export default function NigeriaMap({
   const [clickedPosition, setClickedPosition] = useState<[number, number] | null>(null);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [mapReady, setMapReady] = useState(false);
+  const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
   
   // Ensure map stability by tracking when it's fully loaded
   useEffect(() => {
@@ -563,7 +566,15 @@ export default function NigeriaMap({
                   </div>
                   
                   <div className="flex gap-2">
-                    <Button className="flex-1 text-xs h-7" variant="default">
+                    <Button 
+                      className="flex-1 text-xs h-7" 
+                      variant="default"
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent closing the popup
+                        setSelectedIncident(incident as Incident);
+                        setDetailModalOpen(true);
+                      }}
+                    >
                       View Details
                     </Button>
                     <Button className="flex-1 text-xs h-7" variant="outline">
@@ -622,6 +633,13 @@ export default function NigeriaMap({
           );
         })}
       </MapContainer>
+      
+      {/* Incident Detail Modal */}
+      <IncidentDetailModal
+        incident={selectedIncident}
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+      />
     </div>
   );
 }

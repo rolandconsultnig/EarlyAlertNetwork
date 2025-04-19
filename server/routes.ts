@@ -15,7 +15,9 @@ import {
   insertResponsePlanSchema,
   insertApiKeySchema,
   insertWebhookSchema,
-  riskAnalyses
+  insertIncidentReactionSchema,
+  riskAnalyses,
+  incidentReactions
 } from "@shared/schema";
 import { analysisService } from "./services/analysis-service";
 import { nlpService } from "./services/nlp-service";

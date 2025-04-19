@@ -1,235 +1,193 @@
-import React, { useState, useEffect } from 'react';
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
-import { Badge } from "@/components/ui/badge";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-import { apiRequest } from "@/lib/queryClient";
+import React, { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { apiRequest } from '@/lib/queryClient';
+import { useToast } from '@/hooks/use-toast';
+import { IncidentReaction } from '@shared/schema';
+import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Loader2 } from 'lucide-react';
 
-// Emoji reactions available in the system
-export const emojiReactions = [
-  { emoji: "👍", label: "Agree", color: "bg-green-100 border-green-300" },
-  { emoji: "👎", label: "Disagree", color: "bg-red-100 border-red-300" },
-  { emoji: "😢", label: "Sad", color: "bg-blue-100 border-blue-300" },
-  { emoji: "😡", label: "Angry", color: "bg-orange-100 border-orange-300" },
-  { emoji: "🤔", label: "Thinking", color: "bg-purple-100 border-purple-300" },
-  { emoji: "🙏", label: "Praying", color: "bg-yellow-100 border-yellow-300" },
-  { emoji: "❤️", label: "Care", color: "bg-pink-100 border-pink-300" },
-  { emoji: "🚨", label: "Alert", color: "bg-red-100 border-red-300" },
+// Common emoji reactions
+const EMOJIS = [
+  { emoji: '👍', label: 'Agree' },
+  { emoji: '👎', label: 'Disagree' },
+  { emoji: '❤️', label: 'Support' },
+  { emoji: '😡', label: 'Angry' },
+  { emoji: '😢', label: 'Sad' },
+  { emoji: '🙏', label: 'Praying' },
+  { emoji: '🔍', label: 'Investigating' },
+  { emoji: '⚠️', label: 'Warning' }
 ];
 
-interface Reaction {
+interface EmojiCount {
   emoji: string;
   count: number;
-  users: number[]; // User IDs who reacted
+  userReacted: boolean;
 }
 
 interface EmojiReactionSystemProps {
   incidentId: number;
-  className?: string;
-  userId?: number; // Current user ID
-  initialReactions?: Reaction[];
-  onReactionUpdate?: (reactions: Reaction[]) => void;
-  size?: 'sm' | 'md' | 'lg';
-  displayCount?: boolean;
+  userId?: number;
   displayLabel?: boolean;
-  limit?: number; // Limit number of emoji reactions shown
-  disabled?: boolean;
+  displayCount?: boolean;
+  className?: string;
 }
 
 const EmojiReactionSystem: React.FC<EmojiReactionSystemProps> = ({
   incidentId,
-  className,
-  userId = 1, // Default to admin user if not provided
-  initialReactions,
-  onReactionUpdate,
-  size = 'md',
+  userId,
+  displayLabel = false,
   displayCount = true,
-  displayLabel = true,
-  limit,
-  disabled = false,
+  className = '',
 }) => {
-  // State for reactions
-  const [reactions, setReactions] = useState<Reaction[]>(initialReactions || []);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const { toast } = useToast();
-
-  // Size classes based on prop
-  const sizeClasses = {
-    sm: "text-sm p-1",
-    md: "text-base p-1.5",
-    lg: "text-lg p-2",
-  };
-
-  // Fetch initial reactions if not provided
+  const queryClient = useQueryClient();
+  const [reactionsCount, setReactionsCount] = useState<EmojiCount[]>([]);
+  
+  // Fetch existing reactions for this incident
+  const { data: reactions, isLoading, error } = useQuery<IncidentReaction[]>({
+    queryKey: [`/api/incidents/${incidentId}/reactions`],
+    enabled: !!incidentId, // Only run query if incidentId is provided
+  });
+  
+  // Process reactions into counts
   useEffect(() => {
-    if (!initialReactions) {
-      fetchReactions();
-    }
-  }, [incidentId, initialReactions]);
-
-  // Fetch reactions from API
-  const fetchReactions = async () => {
-    try {
-      const response = await apiRequest('GET', `/api/incidents/${incidentId}/reactions`);
+    if (reactions) {
+      // Group reactions by emoji
+      const emojiGroups: Record<string, { count: number; userIds: number[] }> = {};
       
-      if (response.ok) {
-        const data = await response.json();
-        setReactions(data);
-        if (onReactionUpdate) {
-          onReactionUpdate(data);
+      reactions.forEach((reaction) => {
+        if (!emojiGroups[reaction.emoji]) {
+          emojiGroups[reaction.emoji] = { count: 0, userIds: [] };
         }
-      } else {
-        console.error("Failed to fetch reactions:", await response.text());
-        // Initialize with empty reactions array on API error
-        setReactions([]);
-      }
-    } catch (error) {
-      console.error("Failed to fetch reactions:", error);
-      // Initialize with empty reactions array on API error
-      setReactions([]);
+        emojiGroups[reaction.emoji].count += 1;
+        emojiGroups[reaction.emoji].userIds.push(reaction.userId);
+      });
+      
+      // Create array of emoji counts with user reaction status
+      const counts = Object.entries(emojiGroups).map(([emoji, { count, userIds }]) => ({
+        emoji,
+        count,
+        userReacted: userId ? userIds.includes(userId) : false
+      }));
+      
+      // Include all default emojis even if no reactions yet
+      const allCounts = [...EMOJIS.map(({ emoji }) => {
+        const existingCount = counts.find(c => c.emoji === emoji);
+        return existingCount || {
+          emoji,
+          count: 0,
+          userReacted: false
+        };
+      }), ...counts.filter(c => !EMOJIS.some(e => e.emoji === c.emoji))];
+      
+      setReactionsCount(allCounts);
     }
-  };
-
-  // Handle emoji click
-  const handleReaction = async (emoji: string) => {
-    if (disabled || isSubmitting || !userId) return;
-    
-    setIsSubmitting(true);
-    
-    try {
-      // Find if this reaction already exists
-      const existingReaction = reactions.find(r => r.emoji === emoji);
-      let hasUserReacted = false;
-      
-      // Check if user already reacted with this emoji
-      if (existingReaction) {
-        hasUserReacted = existingReaction.users.includes(userId);
+  }, [reactions, userId]);
+  
+  // Toggle reaction mutation
+  const toggleReactionMutation = useMutation({
+    mutationFn: async ({ emoji }: { emoji: string }) => {
+      if (!userId) {
+        throw new Error('Login required to react');
       }
-
-      // Prepare optimistic update
-      let updatedReactions: Reaction[];
       
-      if (existingReaction) {
-        if (hasUserReacted) {
-          // Remove user's reaction
-          updatedReactions = reactions.map(r => 
-            r.emoji === emoji 
-              ? { 
-                  ...r, 
-                  count: Math.max(0, r.count - 1),
-                  users: r.users.filter(id => id !== userId)
-                } 
-              : r
-          );
-        } else {
-          // Add user's reaction
-          updatedReactions = reactions.map(r => 
-            r.emoji === emoji 
-              ? { 
-                  ...r, 
-                  count: r.count + 1,
-                  users: [...r.users, userId]
-                } 
-              : r
-          );
-        }
-      } else {
-        // Create new reaction
-        updatedReactions = [
-          ...reactions,
-          { emoji, count: 1, users: [userId] }
-        ];
-      }
-
-      // Apply optimistic update
-      setReactions(updatedReactions);
-      
-      // Send to API
-      const response = await apiRequest(
-        'POST', 
-        `/api/incidents/${incidentId}/reactions`,
-        { emoji }
+      // Find if user already reacted with this emoji
+      const existingReaction = reactions?.find(
+        r => r.emoji === emoji && r.userId === userId
       );
       
-      if (!response.ok) {
-        throw new Error('Failed to update reaction');
+      if (existingReaction) {
+        // If already reacted, delete the reaction (toggle off)
+        await apiRequest('DELETE', `/api/incident-reactions/${existingReaction.id}`);
+        return { action: 'removed', emoji };
+      } else {
+        // Otherwise, add new reaction
+        const response = await apiRequest('POST', '/api/incident-reactions', {
+          incidentId,
+          userId,
+          emoji,
+        });
+        return { action: 'added', emoji, data: await response.json() };
       }
-      
-      // Update parent if callback provided
-      if (onReactionUpdate) {
-        onReactionUpdate(updatedReactions);
-      }
-      
-    } catch (error) {
-      console.error("Failed to update reaction:", error);
+    },
+    onSuccess: () => {
+      // Invalidate the reactions query to refetch data
+      queryClient.invalidateQueries({ queryKey: [`/api/incidents/${incidentId}/reactions`] });
+    },
+    onError: (error: Error) => {
       toast({
-        title: "Could not update reaction",
-        description: "Please try again or contact support.",
-        variant: "destructive",
+        title: 'Error reacting to incident',
+        description: error.message,
+        variant: 'destructive',
       });
-      // Revert optimistic update on error
-      fetchReactions();
-    } finally {
-      setIsSubmitting(false);
+    },
+  });
+  
+  const handleEmojiClick = (emoji: string) => {
+    if (!userId) {
+      toast({
+        title: 'Authentication Required',
+        description: 'Please log in to react to incidents',
+        variant: 'default',
+      });
+      return;
     }
+    
+    toggleReactionMutation.mutate({ emoji });
   };
-
-  // Get emojis to display (apply limit if provided)
-  const displayableEmojis = limit ? emojiReactions.slice(0, limit) : emojiReactions;
-
+  
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className={`flex items-center justify-center py-2 ${className}`}>
+        <Loader2 className="h-4 w-4 animate-spin" />
+        <span className="ml-2 text-xs">Loading reactions...</span>
+      </div>
+    );
+  }
+  
+  // Error state
+  if (error) {
+    return (
+      <div className={`text-xs text-red-500 py-2 ${className}`}>
+        Failed to load reactions: {(error as Error).message}
+      </div>
+    );
+  }
+  
+  // Find emoji label
+  const getEmojiLabel = (emoji: string) => {
+    const emojiConfig = EMOJIS.find(e => e.emoji === emoji);
+    return emojiConfig?.label || 'React';
+  };
+  
   return (
-    <div className={cn("flex flex-wrap gap-2", className)}>
-      {displayableEmojis.map((emojiData) => {
-        // Find if this reaction already exists
-        const existingReaction = reactions.find(r => r.emoji === emojiData.emoji);
-        const reactionCount = existingReaction?.count || 0;
-        const hasUserReacted = existingReaction?.users.includes(userId) || false;
-        
-        return (
-          <TooltipProvider key={emojiData.emoji}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className={cn(
-                    sizeClasses[size],
-                    hasUserReacted ? emojiData.color : "bg-background",
-                    "transition-all border font-normal",
-                    disabled && "opacity-50 cursor-not-allowed"
-                  )}
-                  onClick={() => handleReaction(emojiData.emoji)}
-                  disabled={disabled || isSubmitting}
-                >
-                  <span className="mr-1">{emojiData.emoji}</span>
-                  {displayLabel && <span className="hidden sm:inline mr-1">{emojiData.label}</span>}
-                  {displayCount && reactionCount > 0 && (
-                    <Badge 
-                      variant="secondary" 
-                      className={cn(
-                        "ml-1 text-xs",
-                        hasUserReacted ? "bg-white/20" : "bg-secondary"
-                      )}
-                    >
-                      {reactionCount}
-                    </Badge>
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{emojiData.label}</p>
-                {reactionCount > 0 && <p className="text-xs">{reactionCount} reactions</p>}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        );
-      })}
+    <div className={`flex flex-wrap gap-2 ${className}`}>
+      {reactionsCount.map(({ emoji, count, userReacted }) => (
+        <TooltipProvider key={emoji}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={userReacted ? 'default' : 'outline'}
+                size="sm"
+                className={`px-2 py-0 h-8 ${userReacted ? 'bg-primary/10 hover:bg-primary/20' : ''}`}
+                onClick={() => handleEmojiClick(emoji)}
+                disabled={toggleReactionMutation.isPending}
+              >
+                <span className="mr-1 text-lg">{emoji}</span>
+                {displayLabel && <span className="text-xs mr-1">{getEmojiLabel(emoji)}</span>}
+                {displayCount && count > 0 && <span className="text-xs bg-muted px-1.5 py-0.5 rounded-full">{count}</span>}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>
+                {userReacted ? 'Remove your reaction' : `React with ${getEmojiLabel(emoji)}`}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ))}
     </div>
   );
 };
