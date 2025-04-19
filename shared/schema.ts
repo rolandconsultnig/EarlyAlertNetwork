@@ -595,3 +595,21 @@ export const insertWebhookSchema = createInsertSchema(webhooks).pick({
 
 export type InsertWebhook = z.infer<typeof insertWebhookSchema>;
 export type Webhook = typeof webhooks.$inferSelect;
+
+// Emoji Reactions for Incidents
+export const incidentReactions = pgTable("incident_reactions", {
+  id: serial("id").primaryKey(),
+  incidentId: integer("incident_id").notNull(),
+  userId: integer("user_id").notNull(),
+  emoji: text("emoji").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export const insertIncidentReactionSchema = createInsertSchema(incidentReactions).pick({
+  incidentId: true,
+  userId: true,
+  emoji: true,
+});
+
+export type InsertIncidentReaction = z.infer<typeof insertIncidentReactionSchema>;
+export type IncidentReaction = typeof incidentReactions.$inferSelect;
