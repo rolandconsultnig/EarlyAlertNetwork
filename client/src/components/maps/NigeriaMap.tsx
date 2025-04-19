@@ -9,45 +9,48 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Info, AlertCircle, MapPin, Users } from 'lucide-react';
 
 // Fix Leaflet marker icon issues
-// Using CDNs that are more reliable
+// Using CDNs that are more reliable with larger icon sizes for better visibility
 const defaultIcon = L.icon({
   iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  iconSize: [30, 45],  // Increased size
+  iconAnchor: [15, 45],
+  popupAnchor: [1, -40],
+  shadowSize: [45, 45]
 });
 
 // Set default icon globally
 L.Marker.prototype.options.icon = defaultIcon;
 
-// Custom icons for different incident types
+// Custom icons for different incident types with increased size
 const highSeverityIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  iconSize: [35, 57],  // Larger size for higher visibility
+  iconAnchor: [17, 57],
+  popupAnchor: [1, -50],
+  shadowSize: [45, 45],
+  className: 'high-severity-marker' // Add class for potential CSS targeting
 });
 
 const mediumSeverityIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  iconSize: [32, 52],  // Medium-large size
+  iconAnchor: [16, 52],
+  popupAnchor: [1, -45],
+  shadowSize: [45, 45],
+  className: 'medium-severity-marker' // Add class for potential CSS targeting
 });
 
 const lowSeverityIcon = new L.Icon({
   iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-  popupAnchor: [1, -34],
-  shadowSize: [41, 41]
+  iconSize: [30, 45],  // Standard size
+  iconAnchor: [15, 45],
+  popupAnchor: [1, -40],
+  shadowSize: [45, 45],
+  className: 'low-severity-marker' // Add class for potential CSS targeting
 });
 
 // Nigeria map bounds to restrict panning
@@ -468,11 +471,11 @@ export default function NigeriaMap({
   };
   
   return (
-    <div style={{ height, position: 'relative', zIndex: 1 }}>
+    <div className="map-container" style={{ height, position: 'relative', zIndex: 25 }}>
       <MapContainer 
         center={[9.0765, 7.3986]} 
         zoom={6} 
-        style={{ height: "100%", width: "100%", zIndex: 1 }}
+        style={{ height: "100%", width: "100%" }}
         maxBoundsViscosity={1.0}
         className="leaflet-container"
         minZoom={6}
