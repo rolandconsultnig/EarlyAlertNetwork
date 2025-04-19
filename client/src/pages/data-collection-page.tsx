@@ -805,11 +805,30 @@ export default function DataCollectionPage() {
               </Card>
               
               <Card>
-                <CardHeader>
-                  <CardTitle>Data Source Status</CardTitle>
-                  <CardDescription>
-                    Monitor the health and activity of your data connections
-                  </CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                  <div>
+                    <CardTitle>Data Source Status</CardTitle>
+                    <CardDescription>
+                      Monitor the health and activity of your data connections
+                    </CardDescription>
+                  </div>
+                  <Button 
+                    onClick={fetchFromAllSources}
+                    disabled={fetchingData}
+                    className="ml-2"
+                  >
+                    {fetchingData ? (
+                      <>
+                        <span className="animate-spin mr-2">⊝</span>
+                        Collecting...
+                      </>
+                    ) : (
+                      <>
+                        <Database className="h-4 w-4 mr-2" />
+                        Collect Now
+                      </>
+                    )}
+                  </Button>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-8">
