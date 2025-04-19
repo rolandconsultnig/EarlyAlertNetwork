@@ -87,6 +87,36 @@ export default function DashboardPage() {
   };
   
   // Function to create a new incident
+  const createIncidentMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const response = await fetch('/api/incidents', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create incident');
+      }
+      
+      return await response.json();
+    },
+    onSuccess: () => {
+      // Invalidate the incidents query to refetch the data
+      queryClient.invalidateQueries({ queryKey: ['/api/incidents'] });
+      
+      // Close the dialog
+      setShowAddIncidentDialog(false);
+      setClickedPosition(null);
+    },
+    onError: (error) => {
+      console.error('Error creating incident:', error);
+      alert('Failed to save incident. Please try again.');
+    }
+  });
+  
   const createIncident = (e: React.FormEvent) => {
     e.preventDefault();
     const form = e.target as HTMLFormElement;
@@ -110,12 +140,8 @@ export default function DashboardPage() {
       reportedAt: new Date().toISOString(),
     };
     
-    // TODO: Use API to create incident
-    console.log("Creating incident:", incidentData);
-    
-    // Close the dialog
-    setShowAddIncidentDialog(false);
-    setClickedPosition(null);
+    // Save the incident to the server
+    createIncidentMutation.mutate(incidentData);
   };
   
   return (
@@ -509,13 +535,40 @@ export default function DashboardPage() {
                     </Select>
                   </div>
                 </div>
+                
+                {clickedPosition && (
+                  <div className="bg-muted p-3 rounded-md text-xs">
+                    <p className="font-medium mb-1">Selected Location:</p>
+                    <p>Latitude: {clickedPosition.lat.toFixed(6)}</p>
+                    <p>Longitude: {clickedPosition.lng.toFixed(6)}</p>
+                  </div>
+                )}
               </div>
               
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowAddIncidentDialog(false)}>
+                <Button 
+                  type="button" 
+                  variant="outline" 
+                  onClick={() => {
+                    setShowAddIncidentDialog(false);
+                    setClickedPosition(null);
+                  }}
+                >
                   Cancel
                 </Button>
-                <Button type="submit">Submit Incident</Button>
+                <Button 
+                  type="submit"
+                  disabled={createIncidentMutation.isPending}
+                >
+                  {createIncidentMutation.isPending ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    "Submit Incident"
+                  )}
+                </Button>
               </DialogFooter>
             </form>
           </DialogContent>
