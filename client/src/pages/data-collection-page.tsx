@@ -219,20 +219,39 @@ export default function DataCollectionPage() {
     });
   };
   
-  // State for fetch data loading
+  // State for fetch data loading and processing status
   const [fetchingData, setFetchingData] = useState(false);
+  const [processingStats, setProcessingStats] = useState<{
+    total: number;
+    unprocessed: number;
+    processed: number;
+    errors: number;
+  } | null>(null);
+  const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
   
   // Function to fetch data from active sources
   const fetchFromAllSources = async () => {
     try {
       setFetchingData(true);
       const res = await apiRequest("POST", "/api/data-sources/fetch-all", {});
+      
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || "Failed to fetch data");
+      }
+      
       const result = await res.json();
       
       toast({
         title: "Data Collection Initiated",
-        description: `Collection started from ${result.sourcesCount} active data sources.`,
+        description: `Collection started from ${result.sourcesCount || 0} active data sources.`,
       });
+      
+      // Refetch the data sources to update their status
+      await queryClient.invalidateQueries({ queryKey: ["/api/data-sources"] });
+      
+      // Start polling for data processing status
+      pollDataProcessingStatus();
     } catch (error) {
       toast({
         title: "Data Collection Failed",

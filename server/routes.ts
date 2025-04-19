@@ -22,7 +22,7 @@ import { nlpService } from "./services/nlp-service";
 import { apiIntegrationService } from "./services/api-integration-service";
 import { dataSourceService } from "./services/data-source-service";
 import { db } from "./db";
-import { desc } from "drizzle-orm";
+import { desc, eq, count } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
@@ -939,13 +939,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
     try {
+      // Get all active sources
+      const sources = await storage.getDataSources();
+      const activeSources = sources.filter(source => source.status === 'active');
+      
       // Start fetching data from all active sources
       await dataSourceService.fetchFromAllSources();
       
       // Process the collected data
       await dataSourceService.processCollectedData();
       
-      res.status(200).json({ success: true, message: "Data fetch initiated from all active sources" });
+      res.status(200).json({ 
+        success: true, 
+        message: "Data fetch initiated from all active sources",
+        sourcesCount: activeSources.length
+      });
     } catch (error) {
       console.error("Error fetching data from sources:", error);
       res.status(500).json({ success: false, error: "Failed to fetch data from sources" });
@@ -1005,6 +1013,52 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error adding manual data:", error);
       res.status(500).json({ success: false, error: "Failed to add manual data" });
+    }
+  });
+  
+  // Check collected data processing status
+  app.get("/api/collected-data/status", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // Query the database for collected data statistics
+      const { collectedData } = await import("@shared/schema");
+      
+      // Get total count
+      const [totalResult] = await db.select({ count: count() }).from(collectedData);
+      const total = totalResult?.count || 0;
+      
+      // Get unprocessed count
+      const [unprocessedResult] = await db.select({ count: count() })
+        .from(collectedData)
+        .where(eq(collectedData.status, 'unprocessed'));
+      const unprocessed = unprocessedResult?.count || 0;
+      
+      // Get processed count
+      const [processedResult] = await db.select({ count: count() })
+        .from(collectedData)
+        .where(eq(collectedData.status, 'processed'));
+      const processed = processedResult?.count || 0;
+      
+      // Get error count
+      const [errorResult] = await db.select({ count: count() })
+        .from(collectedData)
+        .where(eq(collectedData.status, 'error'));
+      const errors = errorResult?.count || 0;
+      
+      // Return statistics
+      res.status(200).json({
+        success: true,
+        stats: {
+          total,
+          unprocessed,
+          processed,
+          errors
+        }
+      });
+    } catch (error) {
+      console.error("Error getting collected data status:", error);
+      res.status(500).json({ success: false, error: "Failed to get collected data status" });
     }
   });
   
