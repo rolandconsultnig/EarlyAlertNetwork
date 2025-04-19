@@ -1,0 +1,21 @@
+/* Higher z-index for dialogs */
+.dialog-container {
+  position: relative;
+  z-index: 9999 !important;
+}
+
+.dialog-overlay {
+  z-index: 9998 !important;
+}
+
+.dialog-content {
+  z-index: 9999 !important;
+}
+
+.leaflet-container {
+  z-index: 1 !important;
+}
+
+[data-radix-popper-content-wrapper] {
+  z-index: 9999 !important;
+}

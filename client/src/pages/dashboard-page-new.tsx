@@ -466,17 +466,18 @@ export default function DashboardPage() {
       </div>
       
       {/* Add Incident Dialog */}
-      <Dialog open={showAddIncidentDialog} onOpenChange={setShowAddIncidentDialog} modal={true}>
-        <DialogContent className="z-[999]" style={{ position: 'fixed', zIndex: 999 }}>
-          <DialogHeader>
-            <DialogTitle>Report New Incident</DialogTitle>
-            <DialogDescription>
-              {clickedPosition ? 
-                `Add details about the incident at coordinates: ${clickedPosition.lat.toFixed(4)}, ${clickedPosition.lng.toFixed(4)}` :
-                "Add details about the new incident"
-              }
-            </DialogDescription>
-          </DialogHeader>
+      <div className="dialog-container" style={{ position: 'relative', zIndex: 9999 }}>
+        <Dialog open={showAddIncidentDialog} onOpenChange={setShowAddIncidentDialog} modal={true}>
+          <DialogContent className="dialog-content" style={{ position: 'fixed', zIndex: 9999 }}>
+            <DialogHeader>
+              <DialogTitle>Report New Incident</DialogTitle>
+              <DialogDescription>
+                {clickedPosition ? 
+                  `Add details about the incident at coordinates: ${clickedPosition.lat.toFixed(4)}, ${clickedPosition.lng.toFixed(4)}` :
+                  "Add details about the new incident"
+                }
+              </DialogDescription>
+            </DialogHeader>
           
           <form onSubmit={createIncident}>
             <div className="grid gap-4 py-4">
@@ -545,7 +546,8 @@ export default function DashboardPage() {
             </DialogFooter>
           </form>
         </DialogContent>
-      </Dialog>
+        </Dialog>
+      </div>
     </MainLayout>
   );
 }

@@ -212,12 +212,13 @@ export default function NigeriaMap({
   };
   
   return (
-    <div style={{ height }}>
+    <div style={{ height, position: 'relative', zIndex: 1 }}>
       <MapContainer 
         center={[9.0765, 7.3986]} 
         zoom={6} 
-        style={{ height: "100%", width: "100%" }}
+        style={{ height: "100%", width: "100%", zIndex: 1 }}
         maxBoundsViscosity={1.0}
+        className="leaflet-container"
       >
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
