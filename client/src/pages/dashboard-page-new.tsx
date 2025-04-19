@@ -168,7 +168,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-gray-500 mb-1">Risk Indicators</p>
                   <p className="text-3xl font-bold">{indicators?.length || 0}</p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {indicators?.filter(i => i.impact === 'high').length || 0} high impact
+                    {indicators?.filter(i => i.threshold > 80).length || 0} high impact
                   </p>
                 </div>
                 <div className="bg-blue-100 p-3 rounded-full">
@@ -184,7 +184,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Response Plans</p>
                   <p className="text-3xl font-bold">
-                    {incidents?.filter(i => i.status === 'active' && i.responsePlanId).length || 0}
+                    {incidents?.filter(i => i.status === 'active').length || 0}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
                     Active response plans
@@ -277,7 +277,7 @@ export default function DashboardPage() {
                               </div>
                               <div className="flex items-center">
                                 <Calendar className="h-3 w-3 mr-1" />
-                                <span>{formatDate(incident.createdAt)}</span>
+                                <span>{formatDate(incident.reportedAt)}</span>
                               </div>
                               <div className="flex items-center">
                                 <Clock className="h-3 w-3 mr-1" />
