@@ -17,6 +17,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import ColorPaletteSelector from "@/components/settings/ColorPaletteSelector";
 import { 
   Settings, 
   User, 
@@ -36,7 +37,11 @@ import {
   UserCog,
   RefreshCw,
   Smartphone,
-  Radio
+  Radio,
+  Palette,
+  Info,
+  TrendingUp,
+  ClipboardCheck
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 
@@ -734,6 +739,28 @@ export default function SettingsPage() {
                           </FormItem>
                         )}
                       />
+
+                      <div className="py-5">
+                        <Separator />
+                        <h3 className="text-lg font-medium flex items-center mt-5 mb-3">
+                          <Palette className="mr-2 h-5 w-5 text-primary" />
+                          Accessibility Color Settings
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-5">
+                          Choose a color scheme that best fits your accessibility needs and preferences
+                        </p>
+                        <ColorPaletteSelector 
+                          onPaletteChange={(palette) => {
+                            toast({
+                              title: "Color palette updated",
+                              description: `Changed to '${palette.name}' color scheme`,
+                              variant: "default",
+                            });
+                          }}
+                        />
+                      </div>
+
+                      <Separator className="my-5" />
                       
                       <FormField
                         control={systemSettingsForm.control}
@@ -963,7 +990,4 @@ export default function SettingsPage() {
   );
 }
 
-// This is an error in the import statement that will be fixed at runtime
-function Info(props: any) {
-  return <Globe {...props} />;
-}
+// Use the imported Info icon from lucide-react instead

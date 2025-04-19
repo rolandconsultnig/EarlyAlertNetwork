@@ -9,12 +9,13 @@ import PageTemplate from "@/components/modules/PageTemplate";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Expand, Filter, Layers, MapPin, AlertTriangle, Tractor, Home, Activity, AlertCircle, PlusCircle } from "lucide-react";
+import { Expand, Filter, Layers, MapPin, AlertTriangle, Tractor, Home, Activity, AlertCircle, PlusCircle, TrendingUp } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import IncidentTrendPrediction from "@/components/visualization/IncidentTrendPrediction";
 
 // Sample incident data
 const incidents = [
@@ -400,7 +401,7 @@ export default function VisualizationPage() {
       toolbar={toolbar}
     >
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid grid-cols-3 h-auto p-1">
+        <TabsList className="grid grid-cols-4 h-auto p-1">
           <TabsTrigger value="incidents" className="py-2">
             <MapPin className="h-4 w-4 mr-2" />
             <span className="hidden md:inline">Nigeria Incident Map</span>
@@ -410,6 +411,11 @@ export default function VisualizationPage() {
             <AlertTriangle className="h-4 w-4 mr-2" />
             <span className="hidden md:inline">Risk Distribution</span>
             <span className="md:hidden">Risk</span>
+          </TabsTrigger>
+          <TabsTrigger value="trends" className="py-2">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            <span className="hidden md:inline">Trend Prediction</span>
+            <span className="md:hidden">Trends</span>
           </TabsTrigger>
           <TabsTrigger value="layers" className="py-2">
             <Layers className="h-4 w-4 mr-2" />
