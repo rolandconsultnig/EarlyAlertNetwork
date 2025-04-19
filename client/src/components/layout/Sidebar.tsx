@@ -83,7 +83,6 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
       title: "Response Management",
       items: [
         { path: "/alerts", label: "Alerts & Notifications", icon: <Bell className="mr-3 h-5 w-5" /> },
-        { path: "/inter-agency-portal", label: "Inter-Agency Portal", icon: <Workflow className="mr-3 h-5 w-5" /> },
         { path: "/case-management", label: "Case Management", icon: <Folder className="mr-3 h-5 w-5" /> },
       ]
     },

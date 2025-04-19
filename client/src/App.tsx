@@ -12,7 +12,6 @@ import AnalysisPage from "@/pages/analysis-page";
 import RiskAssessmentPage from "@/pages/risk-assessment-page";
 import VisualizationPage from "@/pages/visualization-page";
 import AlertsPage from "@/pages/alerts-page-new";
-import ResponsePlansPage from "@/pages/response-plans-page-new";
 import CaseManagementPage from "@/pages/case-management-page";
 import UserManagementPage from "@/pages/user-management-page";
 import IntegrationsPage from "@/pages/integrations-page";
@@ -46,7 +45,6 @@ function Router() {
       
       {/* Response Management */}
       <ProtectedRoute path="/alerts" component={AlertsPage} />
-      <ProtectedRoute path="/inter-agency-portal" component={ResponsePlansPage} />
       <ProtectedRoute path="/case-management" component={CaseManagementPage} />
       
       {/* Communications - SMS Management */}

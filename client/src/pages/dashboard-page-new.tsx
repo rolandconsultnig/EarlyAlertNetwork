@@ -209,13 +209,22 @@ export default function DashboardPage() {
                     Interactive map of incidents across Nigeria
                   </CardDescription>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  onClick={() => setMapHeight(mapHeight === "500px" ? "700px" : "500px")}
-                >
-                  {mapHeight === "500px" ? "Expand" : "Collapse"} Map
-                </Button>
+                <div className="flex space-x-2">
+                  <Button 
+                    size="sm"
+                    onClick={() => setShowAddIncidentDialog(true)}
+                  >
+                    <AlertTriangle className="h-4 w-4 mr-2" />
+                    Report Incident
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setMapHeight(mapHeight === "500px" ? "700px" : "500px")}
+                  >
+                    {mapHeight === "500px" ? "Expand" : "Collapse"} Map
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent className="p-6 pt-2">
@@ -462,7 +471,10 @@ export default function DashboardPage() {
           <DialogHeader>
             <DialogTitle>Report New Incident</DialogTitle>
             <DialogDescription>
-              Add details about the incident at coordinates: {clickedPosition?.lat.toFixed(4)}, {clickedPosition?.lng.toFixed(4)}
+              {clickedPosition ? 
+                `Add details about the incident at coordinates: ${clickedPosition.lat.toFixed(4)}, ${clickedPosition.lng.toFixed(4)}` :
+                "Add details about the new incident"
+              }
             </DialogDescription>
           </DialogHeader>
           
