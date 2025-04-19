@@ -78,6 +78,34 @@ export function setupAuth(app: Express) {
       res.status(201).json(user);
     });
   });
+  
+  // Add a new endpoint for creating users by administrators/high-clearance users
+  app.post("/api/user/create", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    // Users with security clearance level 5 or higher can create new users
+    const currentUser = req.user as SelectUser;
+    if (currentUser.securityLevel < 5 && currentUser.role !== 'admin') {
+      return res.status(403).json({ error: "Creating users requires security clearance level 5 or higher" });
+    }
+    
+    try {
+      const existingUser = await storage.getUserByUsername(req.body.username);
+      if (existingUser) {
+        return res.status(400).json({ error: "Username already exists" });
+      }
+      
+      const newUser = await storage.createUser({
+        ...req.body,
+        password: await hashPassword(req.body.password || 'password123'),
+      });
+      
+      res.status(201).json(newUser);
+    } catch (error) {
+      console.error("Failed to create user:", error);
+      res.status(500).json({ error: "Failed to create user" });
+    }
+  });
 
   app.post("/api/login", passport.authenticate("local"), (req, res) => {
     res.status(200).json(req.user);
@@ -98,10 +126,10 @@ export function setupAuth(app: Express) {
   app.get("/api/user/all", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
-    // Only allow admins to access all users
+    // Users with security clearance level 5 or higher can access user management
     const user = req.user as SelectUser;
-    if (user.role !== 'admin') {
-      return res.status(403).json({ error: "Only administrators can access user management" });
+    if (user.securityLevel < 5 && user.role !== 'admin') {
+      return res.status(403).json({ error: "User management requires security clearance level 5 or higher" });
     }
     
     try {
