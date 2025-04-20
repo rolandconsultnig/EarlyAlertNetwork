@@ -1,15 +1,30 @@
-import { Incident } from '@shared/schema';
+// Translation-related types
 
-// Translation info type definition
 export interface TranslationInfo {
-  isTranslated: boolean;
-  originalLanguage: string;
+  sourceLanguage: string;
   targetLanguage: string;
-  translatedAt: string;
+  translatedAt: string; // ISO date string
+  confidence?: number;
 }
 
-// Extended Incident type with translation info
-export interface TranslatedIncident extends Omit<Incident, 'reportedAt'> {
+export interface TranslatedIncident {
+  id: number;
+  title: string;
+  description: string;
+  location: string;
+  region?: string;
   translationInfo?: TranslationInfo;
-  reportedAt: Date | string;
+  additionalDetails?: Record<string, any>;
+}
+
+export interface Language {
+  code: string;
+  name: string;
+  nativeName?: string;
+}
+
+export interface TranslationStatus {
+  available: boolean;
+  message: string;
+  provider?: string;
 }
