@@ -7,10 +7,12 @@ import TrendChart from "@/components/dashboard/TrendChart";
 import AlertsList from "@/components/dashboard/AlertsList";
 import ResponseActivities from "@/components/dashboard/ResponseActivities";
 import DataSources from "@/components/dashboard/DataSources";
+import VoiceControl from "@/components/voice/VoiceControl";
 import { useQuery } from "@tanstack/react-query";
-import { ClipboardList, Bell, Users, Database, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { ClipboardList, Bell, Users, Database, TrendingUp, AlertTriangle, CheckCircle2, Mic } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 export default function DashboardPage() {
   const [showAlertBanner, setShowAlertBanner] = useState(true);
@@ -59,8 +61,25 @@ export default function DashboardPage() {
 
   const selectedAlert = alerts?.find(alert => alert.id === selectedAlertId);
 
+  // State for voice control popover
+  const [voicePopoverOpen, setVoicePopoverOpen] = useState(false);
+
   return (
     <MainLayout title="Dashboard">
+      {/* Voice Control Button */}
+      <div className="absolute top-4 right-4 z-10">
+        <Popover open={voicePopoverOpen} onOpenChange={setVoicePopoverOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" size="icon" className="rounded-full h-10 w-10 bg-white shadow-md hover:bg-blue-50">
+              <Mic className="h-5 w-5 text-blue-500" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[350px] p-0">
+            <VoiceControl />
+          </PopoverContent>
+        </Popover>
+      </div>
+
       {showAlertBanner && (
         <AlertBanner 
           title="Potential conflict in North Region"

@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { useLocation } from 'wouter';
+import { speak as speechUtilSpeak, cancelSpeech, getSpeechRecognition } from '@/lib/speech-utils';
 
 // Interface for the Web Speech API which isn't fully typed in TypeScript
 interface IWindow extends Window {
@@ -71,11 +72,7 @@ const VoiceControl: React.FC = () => {
 
   // Initialize speech recognition
   useEffect(() => {
-    const windowWithSpeech = window as unknown as IWindow;
-    const SpeechRecognition = windowWithSpeech.SpeechRecognition || 
-                              windowWithSpeech.webkitSpeechRecognition ||
-                              windowWithSpeech.mozSpeechRecognition ||
-                              windowWithSpeech.msSpeechRecognition;
+    const SpeechRecognition = getSpeechRecognition();
     
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
@@ -125,12 +122,12 @@ const VoiceControl: React.FC = () => {
   const speak = (text: string) => {
     setFeedback(text);
     
-    if (speakFeedback && 'speechSynthesis' in window) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.rate = 1.0;
-      utterance.pitch = 1.0;
-      utterance.volume = 1.0;
-      window.speechSynthesis.speak(utterance);
+    if (speakFeedback) {
+      speechUtilSpeak(text, {
+        rate: 1.0,
+        pitch: 1.0,
+        volume: 1.0
+      });
     }
   };
 
