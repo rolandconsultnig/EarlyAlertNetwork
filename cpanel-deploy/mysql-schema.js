@@ -75,7 +75,12 @@ async function setupDatabase() {
         mediaUrls JSON,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (reportedBy) REFERENCES users(id) ON DELETE SET NULL
+        FOREIGN KEY (reportedBy) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_incidents_region (region),
+        INDEX idx_incidents_category (category),
+        INDEX idx_incidents_status (status),
+        INDEX idx_incidents_severity (severity),
+        INDEX idx_incidents_created (createdAt)
       );
       
       -- Alerts table
@@ -92,7 +97,12 @@ async function setupDatabase() {
         expiresAt DATETIME,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (issuedBy) REFERENCES users(id) ON DELETE SET NULL
+        FOREIGN KEY (issuedBy) REFERENCES users(id) ON DELETE SET NULL,
+        INDEX idx_alerts_level (level),
+        INDEX idx_alerts_status (status),
+        INDEX idx_alerts_region (region),
+        INDEX idx_alerts_expires (expiresAt),
+        INDEX idx_alerts_created (createdAt)
       );
       
       -- Risk indicators table
@@ -181,6 +191,29 @@ async function setupDatabase() {
         'admin', 
         7
       ) ON DUPLICATE KEY UPDATE id=id;
+      
+      -- Add some sample data sources for testing
+      INSERT INTO data_sources (name, type, url, apiKey, active, description)
+      VALUES 
+        ('Nigeria News Media', 'RSS', 'https://news.example.com/feed', NULL, TRUE, 'Major news outlets in Nigeria'),
+        ('Social Media Feed', 'API', 'https://api.socialmedia.com', 'sample_key_1234', TRUE, 'Social media monitoring for conflict-related terms'),
+        ('Government Reports', 'CSV', 'https://data.gov.ng/reports', NULL, TRUE, 'Official government security reports')
+      ON DUPLICATE KEY UPDATE id=id;
+      
+      -- Add sample incidents for testing
+      INSERT INTO incidents (title, description, location, region, severity, status, category, coordinates, reportedBy)
+      VALUES 
+        ('Community Dispute in Kaduna', 'Dispute over land ownership between farming communities', 'Kaduna North', 'North West', 'medium', 'active', 'civil_dispute', '{\"lat\": 10.5222, \"lng\": 7.4383}', 1),
+        ('Flooding in Lagos', 'Severe flooding affecting coastal communities', 'Lagos Island', 'South West', 'high', 'active', 'natural_disaster', '{\"lat\": 6.4550, \"lng\": 3.3841}', 1),
+        ('Security Incident in Maiduguri', 'Report of security breach in local market', 'Maiduguri', 'North East', 'high', 'investigating', 'security', '{\"lat\": 11.8469, \"lng\": 13.1569}', 1)
+      ON DUPLICATE KEY UPDATE id=id;
+      
+      -- Add sample alerts for testing
+      INSERT INTO alerts (title, description, level, status, region, affectedAreas, sourceCategory, issuedBy, expiresAt)
+      VALUES 
+        ('Flood Warning - South West Nigeria', 'Heavy rainfall expected to cause flooding in coastal regions', 'warning', 'active', 'South West', JSON_ARRAY('Lagos', 'Ogun', 'Ondo'), 'weather', 1, DATE_ADD(NOW(), INTERVAL 3 DAY)),
+        ('Civil Unrest Advisory - Abuja', 'Potential for civil demonstration in central districts', 'advisory', 'active', 'Federal Capital Territory', JSON_ARRAY('Central Business District', 'Garki'), 'security', 1, DATE_ADD(NOW(), INTERVAL 2 DAY))
+      ON DUPLICATE KEY UPDATE id=id;
     `);
     
     console.log('Database schema created successfully');

@@ -20,20 +20,47 @@ const getConnectionConfig = (url) => {
   };
 };
 
-// Create MySQL connection pool
-const pool = mysql.createPool(
-  process.env.DATABASE_URL ? 
-  getConnectionConfig(process.env.DATABASE_URL) : 
-  {
-    host: 'localhost',
-    user: 'root',
-    password: '',
-    database: 'ipcr_db',
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0
-  }
-);
+// Create MySQL connection pool with error handling
+let pool;
+try {
+  pool = mysql.createPool(
+    process.env.DATABASE_URL ? 
+    getConnectionConfig(process.env.DATABASE_URL) : 
+    {
+      host: process.env.DB_HOST || 'localhost',
+      user: process.env.DB_USER || 'root',
+      password: process.env.DB_PASSWORD || '',
+      database: process.env.DB_NAME || 'ipcr_db',
+      waitForConnections: true,
+      connectionLimit: 10,
+      queueLimit: 0
+    }
+  );
+  
+  // Test the connection on startup
+  (async () => {
+    try {
+      const connection = await pool.getConnection();
+      console.log('Successfully connected to MySQL database');
+      connection.release();
+    } catch (error) {
+      console.error('Failed to connect to MySQL database:', error.message);
+      console.error('Please check your DATABASE_URL or individual database credentials');
+      console.error('Connection details:', process.env.DATABASE_URL ? 
+        'Using DATABASE_URL' : 
+        {
+          host: process.env.DB_HOST || 'localhost',
+          user: process.env.DB_USER || 'root',
+          database: process.env.DB_NAME || 'ipcr_db',
+        }
+      );
+    }
+  })();
+} catch (error) {
+  console.error('Error creating MySQL connection pool:', error.message);
+  console.error('Please check your DATABASE_URL environment variable');
+  process.exit(1);
+}
 
 // Simple query wrapper function
 async function query(sql, params = []) {

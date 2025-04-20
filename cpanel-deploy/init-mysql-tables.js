@@ -6,36 +6,60 @@ require('dotenv').config();
 
 // Helper to create database connection from environment variables
 async function createConnection() {
-  // Check if DATABASE_URL is provided in .env
-  if (!process.env.DATABASE_URL) {
-    console.error("Error: DATABASE_URL environment variable is not set");
-    console.error("Please configure the .env file with your MySQL database connection string");
-    console.error("Example: DATABASE_URL=mysql://username:password@localhost:3306/database_name");
-    process.exit(1);
-  }
-
   try {
-    // Parse connection string - mysql://user:password@host:port/database
-    const match = process.env.DATABASE_URL.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
-    
-    if (!match) {
-      throw new Error("Invalid MySQL connection string format");
+    // First try DATABASE_URL if provided
+    if (process.env.DATABASE_URL) {
+      console.log("Using DATABASE_URL for connection");
+      
+      // Parse connection string - mysql://user:password@host:port/database
+      const match = process.env.DATABASE_URL.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+      
+      if (!match) {
+        console.error("Warning: Invalid MySQL connection string format");
+        console.error("Will try individual connection parameters instead");
+      } else {
+        const [_, user, password, host, port, database] = match;
+        
+        // Create connection using connection string
+        return await mysql.createConnection({
+          host,
+          user,
+          password,
+          port: parseInt(port),
+          database,
+          multipleStatements: true // Allow multiple statements in one query
+        });
+      }
     }
     
-    const [_, user, password, host, port, database] = match;
+    // If DATABASE_URL is not provided or invalid, try individual parameters
+    console.log("Using individual DB parameters for connection");
+    const host = process.env.DB_HOST || 'localhost';
+    const user = process.env.DB_USER;
+    const password = process.env.DB_PASSWORD;
+    const database = process.env.DB_NAME;
+    const port = process.env.DB_PORT || 3306;
     
-    // Create connection
+    if (!user || !password || !database) {
+      console.error("Error: Database connection information missing");
+      console.error("Please provide either DATABASE_URL or individual connection parameters (DB_HOST, DB_USER, DB_PASSWORD, DB_NAME)");
+      console.error("Example: DATABASE_URL=mysql://username:password@localhost:3306/database_name");
+      process.exit(1);
+    }
+    
+    // Create connection using individual parameters
     return await mysql.createConnection({
       host,
       user,
       password,
       port: parseInt(port),
       database,
-      multipleStatements: true // Allow multiple statements in one query
+      multipleStatements: true
     });
   } catch (error) {
     console.error("Failed to connect to MySQL database:", error.message);
-    console.error("Please check your DATABASE_URL and make sure the MySQL server is running");
+    console.error("Please check your database credentials and make sure the MySQL server is running");
+    console.error("If you're using cPanel, make sure the database name includes your cPanel username prefix");
     process.exit(1);
   }
 }
