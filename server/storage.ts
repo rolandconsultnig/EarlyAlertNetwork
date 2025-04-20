@@ -21,12 +21,32 @@ import type {
   SurveyResponse, InsertSurveyResponse
 } from "@shared/schema";
 import session from "express-session";
-import { db, pool } from "./db";
+import { db } from "./db";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import crypto from "crypto";
-import connectPg from "connect-pg-simple";
+import MySQLStore from "express-mysql-session";
 
-const PostgresSessionStore = connectPg(session);
+// MySQL session store setup
+const sessionStoreOptions = {
+  host: process.env.MYSQL_HOST || 'localhost',
+  port: 3306,
+  user: process.env.MYSQL_USER || 'admin',
+  password: process.env.MYSQL_PASSWORD || '$admin123321nimda@',
+  database: process.env.MYSQL_DATABASE || 'ipcr-new',
+  // Additional options for session table
+  createDatabaseTable: true,
+  schema: {
+    tableName: 'sessions',
+    columnNames: {
+      session_id: 'session_id',
+      expires: 'expires',
+      data: 'data'
+    }
+  }
+};
+
+// Create MySQL session store
+const MySQLSessionStore = MySQLStore(session);
 
 export interface IStorage {
   // User methods
@@ -133,10 +153,7 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    this.sessionStore = new PostgresSessionStore({
-      pool,
-      createTableIfMissing: true,
-    });
+    this.sessionStore = new MySQLSessionStore(sessionStoreOptions);
 
     // Initialize default data if needed - would be done through migrations
     // this.initializeDefaultData();
