@@ -18,6 +18,9 @@ import { useToast } from "@/hooks/use-toast";
 import { FileText, Upload, Database, Radio, Users, RefreshCw, Shield, AlertTriangle, MessageCircle, UserCheck, BadgeCheck, BarChart3, MapIcon, Table, Plus, Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CommunityInformants } from "@/components/data-collection/CommunityInformants";
+import { SurveyTemplateManager } from "@/components/survey/SurveyTemplateManager";
+import { SurveyAnalysis } from "@/components/survey/SurveyAnalysis";
 
 // Create a schema for incident reporting
 const incidentSchema = insertIncidentSchema
@@ -1707,56 +1710,7 @@ export default function DataCollectionPage() {
               </Card>
               
               <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Community Informants</CardTitle>
-                    <CardDescription>
-                      Manage network of verified community reporters
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-4">
-                      <div className="border rounded-md p-3 mb-4">
-                        <div className="flex justify-between items-center mb-3">
-                          <h4 className="font-medium">Registered Informants</h4>
-                          <Badge className="bg-blue-50 text-blue-700 border-blue-200">47 Active</Badge>
-                        </div>
-                        
-                        <div className="grid grid-cols-3 gap-2 mb-3">
-                          <div className="border rounded p-2 text-center">
-                            <p className="text-xl font-bold">12</p>
-                            <p className="text-xs text-neutral-500">North Central</p>
-                          </div>
-                          <div className="border rounded p-2 text-center">
-                            <p className="text-xl font-bold">9</p>
-                            <p className="text-xs text-neutral-500">North East</p>
-                          </div>
-                          <div className="border rounded p-2 text-center">
-                            <p className="text-xl font-bold">7</p>
-                            <p className="text-xs text-neutral-500">North West</p>
-                          </div>
-                          <div className="border rounded p-2 text-center">
-                            <p className="text-xl font-bold">6</p>
-                            <p className="text-xs text-neutral-500">South East</p>
-                          </div>
-                          <div className="border rounded p-2 text-center">
-                            <p className="text-xl font-bold">8</p>
-                            <p className="text-xs text-neutral-500">South South</p>
-                          </div>
-                          <div className="border rounded p-2 text-center">
-                            <p className="text-xl font-bold">5</p>
-                            <p className="text-xs text-neutral-500">South West</p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex space-x-2">
-                          <Button size="sm" variant="outline" className="flex-1">Manage Informants</Button>
-                          <Button size="sm" className="flex-1">Add New</Button>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <CommunityInformants />
                 
                 <Card>
                   <CardHeader>
@@ -1875,44 +1829,7 @@ export default function DataCollectionPage() {
                     </div>
                     
                     <div>
-                      <h3 className="text-lg font-medium mb-4">Survey Templates</h3>
-                      <p className="text-sm text-neutral-600 mb-4">
-                        Create standardized templates for consistent data collection
-                      </p>
-                      
-                      <div className="border rounded-md p-4 mb-4">
-                        <h4 className="font-medium mb-2">Available Templates</h4>
-                        <div className="space-y-3">
-                          <div className="flex justify-between items-center px-3 py-2 bg-slate-50 rounded">
-                            <div>
-                              <p className="font-medium">Conflict Risk Assessment</p>
-                              <p className="text-xs text-slate-500">ISO 31000 compliant</p>
-                            </div>
-                            <Button size="sm" variant="ghost">Use</Button>
-                          </div>
-                          
-                          <div className="flex justify-between items-center px-3 py-2 bg-slate-50 rounded">
-                            <div>
-                              <p className="font-medium">Community Security Index</p>
-                              <p className="text-xs text-slate-500">UN Standards based</p>
-                            </div>
-                            <Button size="sm" variant="ghost">Use</Button>
-                          </div>
-                          
-                          <div className="flex justify-between items-center px-3 py-2 bg-slate-50 rounded">
-                            <div>
-                              <p className="font-medium">Post-Crisis Recovery</p>
-                              <p className="text-xs text-slate-500">Adaptive framework</p>
-                            </div>
-                            <Button size="sm" variant="ghost">Use</Button>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <Button variant="outline" className="w-full">
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Create Template
-                      </Button>
+                      <SurveyTemplateManager />
                     </div>
                   </div>
                 </CardContent>
@@ -1994,75 +1911,7 @@ export default function DataCollectionPage() {
                   </CardContent>
                 </Card>
                 
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Survey Analytics</CardTitle>
-                    <CardDescription>
-                      Analyze and visualize standardized survey data
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="border rounded-md p-4 mb-4">
-                      <h4 className="font-medium mb-2">Recent Submissions</h4>
-                      <div className="space-y-3">
-                        <div className="flex justify-between items-center text-sm">
-                          <p>Post-Conflict Assessment</p>
-                          <p className="text-neutral-500">5 minutes ago</p>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <p>Community Security Perception</p>
-                          <p className="text-neutral-500">25 minutes ago</p>
-                        </div>
-                        <div className="flex justify-between items-center text-sm">
-                          <p>Post-Conflict Assessment</p>
-                          <p className="text-neutral-500">42 minutes ago</p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="space-y-4">
-                      <h4 className="font-medium">Data Visualization Options</h4>
-                      <div className="grid grid-cols-2 gap-3">
-                        <Button variant="outline" className="h-auto py-2 justify-start">
-                          <BarChart3 className="h-5 w-5 mr-2" />
-                          <div className="text-left">
-                            <p className="text-sm">Charts</p>
-                            <p className="text-xs text-muted-foreground">Bar, line, pie charts</p>
-                          </div>
-                        </Button>
-                        
-                        <Button variant="outline" className="h-auto py-2 justify-start">
-                          <MapIcon className="h-5 w-5 mr-2" />
-                          <div className="text-left">
-                            <p className="text-sm">Maps</p>
-                            <p className="text-xs text-muted-foreground">Geospatial analysis</p>
-                          </div>
-                        </Button>
-                        
-                        <Button variant="outline" className="h-auto py-2 justify-start">
-                          <Table className="h-5 w-5 mr-2" />
-                          <div className="text-left">
-                            <p className="text-sm">Tables</p>
-                            <p className="text-xs text-muted-foreground">Tabular data format</p>
-                          </div>
-                        </Button>
-                        
-                        <Button variant="outline" className="h-auto py-2 justify-start">
-                          <FileText className="h-5 w-5 mr-2" />
-                          <div className="text-left">
-                            <p className="text-sm">Reports</p>
-                            <p className="text-xs text-muted-foreground">PDF/Excel exports</p>
-                          </div>
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    <Button className="w-full mt-4">
-                      <BarChart3 className="h-4 w-4 mr-2" />
-                      Analyze Survey Data
-                    </Button>
-                  </CardContent>
-                </Card>
+                <SurveyAnalysis />
               </div>
             </div>
           </TabsContent>
