@@ -1,4 +1,9 @@
-import { users, dataSources, incidents, incidentReactions, alerts, responseActivities, responseTeams, riskIndicators, riskAnalyses, responsePlans, apiKeys, webhooks } from "@shared/schema";
+import { 
+  users, dataSources, incidents, incidentReactions, 
+  alerts, responseActivities, responseTeams, 
+  riskIndicators, riskAnalyses, responsePlans, 
+  apiKeys, webhooks, surveys, surveyResponses
+} from "@shared/schema";
 import type { 
   User, InsertUser, 
   DataSource, InsertDataSource, 
@@ -11,11 +16,14 @@ import type {
   RiskAnalysis, InsertRiskAnalysis,
   ResponsePlan, InsertResponsePlan,
   ApiKey, InsertApiKey,
-  Webhook, InsertWebhook
+  Webhook, InsertWebhook,
+  Survey, InsertSurvey,
+  SurveyResponse, InsertSurveyResponse
 } from "@shared/schema";
 import session from "express-session";
 import { db, pool } from "./db";
-import { eq, and, desc, gte, lte } from "drizzle-orm";
+import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
+import crypto from "crypto";
 import connectPg from "connect-pg-simple";
 
 const PostgresSessionStore = connectPg(session);
@@ -606,6 +614,97 @@ export class DatabaseStorage implements IStorage {
     }
     
     return updatedWebhook;
+  }
+
+  // Survey methods
+  async getSurveys(): Promise<Survey[]> {
+    return db.select().from(surveys).orderBy(desc(surveys.createdAt));
+  }
+
+  async getSurveyTemplates(): Promise<Survey[]> {
+    return db
+      .select()
+      .from(surveys)
+      .where(eq(surveys.isTemplate, true))
+      .orderBy(desc(surveys.createdAt));
+  }
+
+  async getSurvey(id: number): Promise<Survey | undefined> {
+    const [survey] = await db.select().from(surveys).where(eq(surveys.id, id));
+    return survey;
+  }
+
+  async createSurvey(survey: InsertSurvey): Promise<Survey> {
+    // Ensure questions have unique IDs
+    const surveyCopy = { ...survey };
+    if (Array.isArray(surveyCopy.questions)) {
+      surveyCopy.questions = surveyCopy.questions.map((q: any) => ({
+        ...q,
+        id: q.id || crypto.randomUUID()
+      }));
+    }
+
+    const [newSurvey] = await db.insert(surveys).values([surveyCopy]).returning();
+    return newSurvey;
+  }
+
+  async updateSurvey(id: number, surveyData: Partial<Survey>): Promise<Survey> {
+    const [updatedSurvey] = await db
+      .update(surveys)
+      .set({
+        ...surveyData,
+        updatedAt: new Date()
+      })
+      .where(eq(surveys.id, id))
+      .returning();
+    
+    if (!updatedSurvey) {
+      throw new Error(`Survey with id ${id} not found`);
+    }
+    
+    return updatedSurvey;
+  }
+
+  async deleteSurvey(id: number): Promise<boolean> {
+    const result = await db
+      .delete(surveys)
+      .where(eq(surveys.id, id))
+      .returning();
+    return result.length > 0;
+  }
+
+  // Survey response methods
+  async getSurveyResponses(surveyId: number): Promise<SurveyResponse[]> {
+    return db
+      .select()
+      .from(surveyResponses)
+      .where(eq(surveyResponses.surveyId, surveyId))
+      .orderBy(desc(surveyResponses.submittedAt));
+  }
+
+  async getSurveyResponse(id: number): Promise<SurveyResponse | undefined> {
+    const [response] = await db
+      .select()
+      .from(surveyResponses)
+      .where(eq(surveyResponses.id, id));
+    return response;
+  }
+
+  async createSurveyResponse(response: InsertSurveyResponse): Promise<SurveyResponse> {
+    const [newResponse] = await db
+      .insert(surveyResponses)
+      .values([response])
+      .returning();
+    
+    // Update the responses count on the survey
+    await db
+      .update(surveys)
+      .set({ 
+        responsesCount: sql`${surveys.responsesCount} + 1` 
+      })
+      .where(eq(surveys.id, response.surveyId));
+    
+    return newResponse;
   }
 }
 
