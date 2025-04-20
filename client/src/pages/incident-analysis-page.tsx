@@ -28,7 +28,7 @@ export default function IncidentAnalysisPage() {
     if (!incidents) return { high: 0, medium: 0, low: 0 };
     
     return incidents.reduce(
-      (acc, incident) => {
+      (acc: {high: number, medium: number, low: number}, incident: Incident) => {
         const severity = incident.severity?.toLowerCase() || 'unknown';
         if (severity === 'high') acc.high += 1;
         else if (severity === 'medium') acc.medium += 1;
@@ -44,7 +44,7 @@ export default function IncidentAnalysisPage() {
     if (!incidents) return {};
     
     const regions: Record<string, number> = {};
-    incidents.forEach(incident => {
+    incidents.forEach((incident: Incident) => {
       const region = incident.region || 'Unknown';
       regions[region] = (regions[region] || 0) + 1;
     });
@@ -57,7 +57,7 @@ export default function IncidentAnalysisPage() {
     if (!incidents) return {};
     
     const categories: Record<string, number> = {};
-    incidents.forEach(incident => {
+    incidents.forEach((incident: Incident) => {
       const category = incident.category?.replace('_', ' ') || 'Uncategorized';
       categories[category] = (categories[category] || 0) + 1;
     });

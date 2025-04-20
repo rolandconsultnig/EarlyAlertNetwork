@@ -191,7 +191,7 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
                 <nav className="mt-2 px-2 space-y-1">
                   {group.items.map((item) => (
                     <Link key={item.path} href={item.path} onClick={closeMobileMenu}>
-                      <a 
+                      <div 
                         className={`flex items-center pl-4 py-2 pr-4 text-sm font-medium rounded-md ${
                           isActive(item.path)
                             ? "bg-blue-50 text-blue-600 border-l-4 border-blue-500"
@@ -200,7 +200,7 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
                       >
                         {item.icon}
                         {item.label}
-                      </a>
+                      </div>
                     </Link>
                   ))}
                 </nav>
