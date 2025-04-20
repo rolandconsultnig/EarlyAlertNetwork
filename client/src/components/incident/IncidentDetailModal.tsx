@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Info, AlertCircle, MapPin, Clock, User, MessageSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EmojiReactionSystem from './EmojiReactionSystem';
-import { TranslationSelector, TranslateButton } from '@/components/translation';
+import { TranslationSelector, TranslateButton, OneClickTranslateButton } from '@/components/translation';
 
 // Define the translation info type
 interface TranslationInfo {
@@ -141,11 +141,18 @@ const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
             </div>
             
             <div className="flex items-center justify-between mt-3">
-              <TranslationSelector onLanguageChange={setSelectedLanguage} />
-              <TranslateButton 
+              <div className="flex items-center gap-2">
+                <TranslationSelector onLanguageChange={setSelectedLanguage} />
+                <TranslateButton 
+                  incidentId={incident.id}
+                  targetLanguage={selectedLanguage}
+                  onTranslationComplete={(data) => setTranslatedIncident(data)}
+                />
+              </div>
+              <OneClickTranslateButton
                 incidentId={incident.id}
-                targetLanguage={selectedLanguage}
                 onTranslationComplete={(data) => setTranslatedIncident(data)}
+                compact={true}
               />
             </div>
             
