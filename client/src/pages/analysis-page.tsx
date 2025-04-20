@@ -30,6 +30,8 @@ import {
   Download, 
   RefreshCw 
 } from "lucide-react";
+import StatisticalModels from "@/components/analysis/StatisticalModels";
+import MachineLearningModels from "@/components/analysis/MachineLearningModels";
 
 // Sample locations for the filter
 const locations = [
@@ -401,6 +403,13 @@ export default function AnalysisPage() {
       </Tabs>
       
       <div className="mt-6">
+        {/* Statistical Models Component */}
+        <StatisticalModels />
+        
+        {/* Machine Learning Models Component */}
+        <MachineLearningModels />
+        
+        {/* Analysis Insights Card */}
         <Card>
           <CardHeader>
             <CardTitle>Analysis Insights</CardTitle>
