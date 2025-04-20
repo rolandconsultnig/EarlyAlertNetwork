@@ -64,8 +64,29 @@ try {
 
 // Simple query wrapper function
 async function query(sql, params = []) {
-  const [rows] = await pool.execute(sql, params);
-  return rows;
+  try {
+    const [rows] = await pool.execute(sql, params);
+    return rows;
+  } catch (error) {
+    // Log the error with query details (but sanitize sensitive data)
+    console.error('Database query error:', error.message);
+    console.error('Query:', sql.substring(0, 200) + (sql.length > 200 ? '...' : ''));
+    console.error('Parameters:', Array.isArray(params) ? 
+      `[${params.length} items]` : 
+      'Object parameters');
+    
+    // Distinguish between connection errors and query errors
+    if (error.code === 'ECONNREFUSED' || error.code === 'ER_ACCESS_DENIED_ERROR') {
+      console.error('Database connection error - please check your database credentials and connection settings');
+    } else if (error.code === 'ER_BAD_DB_ERROR') {
+      console.error('Database does not exist - please check your database name');
+    } else if (error.code === 'ER_NO_SUCH_TABLE') {
+      console.error('Table does not exist - please run the database initialization script');
+    }
+    
+    // Re-throw the error for the caller to handle
+    throw error;
+  }
 }
 
 // Adapter functions that mimic Drizzle ORM operations

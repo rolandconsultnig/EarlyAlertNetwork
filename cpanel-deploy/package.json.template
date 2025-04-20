@@ -1,0 +1,24 @@
+{
+  "name": "ipcr-early-warning-system-cpanel",
+  "version": "1.0.0",
+  "description": "IPCR Early Warning & Response System (cPanel MySQL version)",
+  "main": "server-mysql.js",
+  "scripts": {
+    "start": "node start-mysql.cjs",
+    "init-db": "node mysql-schema.js",
+    "test-db": "node test-mysql-connection.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "mysql2": "^3.3.3",
+    "express-mysql-session": "^3.0.0",
+    "dotenv": "^16.0.3",
+    "cors": "^2.8.5",
+    "helmet": "^7.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  },
+  "private": true
+}

@@ -1345,5 +1345,143 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Translation API
+  // Get supported languages
+  app.get("/api/translation/languages", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { supportedLanguages } = await import('./services/translationService');
+      res.json(supportedLanguages);
+    } catch (error) {
+      console.error("Error fetching supported languages:", error);
+      res.status(500).json({ error: "Failed to fetch supported languages" });
+    }
+  });
+
+  // Translate text
+  app.post("/api/translation/translate", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { text, targetLanguage } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ error: "Text is required" });
+      }
+      
+      if (!targetLanguage) {
+        return res.status(400).json({ error: "Target language is required" });
+      }
+      
+      const { translateText } = await import('./services/translationService');
+      const translatedText = await translateText(text, targetLanguage);
+      
+      res.json({ 
+        original: text,
+        translated: translatedText,
+        targetLanguage
+      });
+    } catch (error) {
+      console.error("Translation error:", error);
+      res.status(500).json({ error: "Translation failed", details: error.message });
+    }
+  });
+
+  // Detect language
+  app.post("/api/translation/detect", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { text } = req.body;
+      
+      if (!text) {
+        return res.status(400).json({ error: "Text is required" });
+      }
+      
+      const { detectLanguage, supportedLanguages } = await import('./services/translationService');
+      const detectedLanguageCode = await detectLanguage(text);
+      
+      // Find the full language name
+      const language = supportedLanguages.find(lang => lang.code === detectedLanguageCode) || 
+                     { code: detectedLanguageCode, name: "Unknown" };
+      
+      res.json({ 
+        text,
+        detectedLanguage: language
+      });
+    } catch (error) {
+      console.error("Language detection error:", error);
+      res.status(500).json({ error: "Language detection failed", details: error.message });
+    }
+  });
+
+  // Translate incident by ID
+  app.post("/api/incidents/:id/translate", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const id = parseInt(req.params.id);
+      const { targetLanguage } = req.body;
+      
+      if (!targetLanguage) {
+        return res.status(400).json({ error: "Target language is required" });
+      }
+      
+      // Get the incident
+      const incident = await storage.getIncident(id);
+      if (!incident) {
+        return res.status(404).json({ error: "Incident not found" });
+      }
+      
+      const { translateText } = await import('./services/translationService');
+      
+      // Fields to translate
+      const translatedIncident = { ...incident };
+      
+      // Translate title and description
+      if (incident.title) {
+        translatedIncident.title = await translateText(incident.title, targetLanguage);
+      }
+      
+      if (incident.description) {
+        translatedIncident.description = await translateText(incident.description, targetLanguage);
+      }
+      
+      // Translate location if available
+      if (incident.location) {
+        translatedIncident.location = await translateText(incident.location, targetLanguage);
+      }
+      
+      // Add translation metadata
+      translatedIncident.translationInfo = {
+        isTranslated: true,
+        originalLanguage: "auto-detected",
+        targetLanguage,
+        translatedAt: new Date().toISOString()
+      };
+      
+      res.json(translatedIncident);
+    } catch (error) {
+      console.error("Incident translation error:", error);
+      res.status(500).json({ error: "Incident translation failed", details: error.message });
+    }
+  });
+
+  // Check if API key is available
+  app.get("/api/translation/status", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    // Check if OpenAI API key is configured
+    const apiKeyAvailable = !!process.env.OPENAI_API_KEY;
+    
+    res.json({
+      available: apiKeyAvailable,
+      message: apiKeyAvailable 
+        ? "Translation service is available" 
+        : "Translation service is not available. OpenAI API key is not configured."
+    });
+  });
+
   return httpServer;
 }

@@ -10,24 +10,55 @@ require('dotenv').config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+// Parse the connection options for MySQL session store
+const getSessionOptions = () => {
+  if (process.env.DATABASE_URL) {
+    const match = process.env.DATABASE_URL.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+    if (match) {
+      const [_, user, password, host, port, database] = match;
+      return {
+        host,
+        port: parseInt(port),
+        user,
+        password,
+        database,
+        createDatabaseTable: true,
+        schema: {
+          tableName: 'sessions',
+          columnNames: {
+            session_id: 'session_id',
+            expires: 'expires',
+            data: 'data'
+          }
+        }
+      };
+    }
+  }
+  
+  // Fallback to pool connection
+  return { pool };
+};
+
 // MySQL session store
 const MySQLStore = require('express-mysql-session')(session);
-const sessionStore = new MySQLStore({}, pool);
+const sessionStore = new MySQLStore(getSessionOptions());
 
 // Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Session configuration
+// Session configuration with improved security and options
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || 'your-session-secret',
+    key: 'ipcr_session',
+    secret: process.env.SESSION_SECRET || 'change-this-to-a-secure-random-string-in-production',
     resave: false,
     saveUninitialized: false,
     store: sessionStore,
     cookie: {
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 1000 * 60 * 60 * 24 // 1 day
+      secure: process.env.NODE_ENV === 'production' && !process.env.DISABLE_SECURE_COOKIE,
+      httpOnly: true,
+      maxAge: parseInt(process.env.SESSION_MAX_AGE || '86400000') // Default 24 hours
     }
   })
 );
