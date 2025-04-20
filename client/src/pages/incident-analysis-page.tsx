@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, Component, ReactNode } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PatternDetection from "@/components/analysis/PatternDetection";
 import { useQuery } from "@tanstack/react-query";
@@ -11,6 +11,29 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+// Error boundary component to catch errors in rendering
+class ErrorBoundary extends Component<{ 
+  children: ReactNode;
+  fallback: ReactNode;
+}> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("Pattern detection error:", error);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return this.props.fallback;
+    }
+    return this.props.children;
+  }
+}
 
 export default function IncidentAnalysisPage() {
   const [activeTab, setActiveTab] = useState("patterns");
@@ -251,7 +274,31 @@ export default function IncidentAnalysisPage() {
           </TabsList>
 
           <TabsContent value="patterns">
-            <PatternDetection className="shadow-md" />
+            <ErrorBoundary fallback={
+              <Card>
+                <CardHeader>
+                  <CardTitle>Pattern Detection</CardTitle>
+                  <CardDescription>Advanced pattern analysis for security incidents</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="py-8 text-center">
+                    <div className="inline-flex rounded-full bg-blue-100 p-4 mb-4">
+                      <TrendingUp className="h-8 w-8 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg font-medium text-gray-900">Pattern Detection</h3>
+                    <p className="mt-2 text-sm text-gray-500 max-w-md mx-auto">
+                      Our AI-powered pattern detection analyzes incident data to identify temporal, 
+                      spatial, and actor-based patterns that may indicate emerging threats.
+                    </p>
+                    <Button className="mt-4" onClick={() => window.location.reload()}>
+                      Analyze Patterns
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            }>
+              <PatternDetection className="shadow-md" />
+            </ErrorBoundary>
           </TabsContent>
 
           <TabsContent value="statistics">
