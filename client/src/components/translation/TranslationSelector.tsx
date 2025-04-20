@@ -106,13 +106,13 @@ export function TranslationSelector({
                 Loading...
               </span>
             ) : (
-              languages?.find((lang) => lang.code === selectedLanguage)?.name ||
+              languages?.find((lang: Language) => lang.code === selectedLanguage)?.name ||
               "English"
             )}
           </SelectValue>
         </SelectTrigger>
         <SelectContent>
-          {languages?.map((language) => (
+          {languages?.map((language: Language) => (
             <SelectItem key={language.code} value={language.code}>
               <span className="flex items-center justify-between w-full">
                 {language.name}

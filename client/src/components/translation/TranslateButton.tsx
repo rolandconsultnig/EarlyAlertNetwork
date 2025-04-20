@@ -1,7 +1,8 @@
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Loader2, Translate } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { Translate } from "lucide-react/dist/esm/icons";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 
@@ -41,7 +42,7 @@ export function TranslateButton({
       
       return await response.json();
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast({
         title: "Translation Successful",
         description: "The incident has been translated successfully.",

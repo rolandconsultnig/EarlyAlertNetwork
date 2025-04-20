@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, Info, AlertCircle, MapPin, Clock, User, MessageSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EmojiReactionSystem from './EmojiReactionSystem';
+import { TranslationSelector, TranslateButton } from '@/components/translation';
 
 interface IncidentDetailModalProps {
   incident: Incident | null;
@@ -24,6 +25,8 @@ const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
   const { user } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
+  const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
+  const [translatedIncident, setTranslatedIncident] = useState<Incident | null>(null);
   
   if (!incident) {
     return null;
