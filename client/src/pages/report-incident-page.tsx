@@ -15,7 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { ArrowLeft, FileText, MapPin, AlertTriangle, User } from "lucide-react";
+import { ArrowLeft, FileText, MapPin, AlertTriangle, User, Mic } from "lucide-react";
+import VoiceIncidentReporting from "@/components/voice/VoiceIncidentReporting";
 
 // Import the IPCR logo
 import ipcr_logo from "@assets/Institute-For-Peace-And-Conflict-Resolution.jpg";
@@ -151,6 +152,16 @@ export default function ReportIncidentPage() {
                   Help us build peace by reporting incidents of conflict or violence. Your information will be kept confidential.
                 </p>
               </div>
+              
+              {/* Voice Incident Reporting Component */}
+              <VoiceIncidentReporting onSubmit={(incident) => {
+                // Handle voice-submitted incidents if needed
+                toast({
+                  title: "Voice Incident Reported",
+                  description: "Your incident report has been submitted successfully via voice command.",
+                });
+                setIsSubmitSuccess(true);
+              }} />
 
               <Card className="shadow-lg">
                 <CardHeader className="bg-gradient-to-r from-blue-500 to-sky-500 text-white">
