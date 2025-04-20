@@ -4,6 +4,8 @@ import { storage } from "./storage";
 import { setupAuth } from "./auth";
 import { WebSocketServer, WebSocket } from "ws";
 import { z } from "zod";
+import { fromZodError } from 'zod-validation-error';
+import crypto from 'crypto';
 import {
   insertDataSourceSchema,
   insertIncidentSchema,
@@ -16,6 +18,8 @@ import {
   insertApiKeySchema,
   insertWebhookSchema,
   insertIncidentReactionSchema,
+  insertSurveySchema,
+  insertSurveyResponseSchema,
   riskAnalyses,
   incidentReactions
 } from "@shared/schema";
@@ -29,6 +33,14 @@ import { db } from "./db";
 import { desc, eq, count } from "drizzle-orm";
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // Authentication middleware
+  const isAuthenticated = (req: Request, res: Response, next: NextFunction) => {
+    if (req.isAuthenticated()) {
+      return next();
+    }
+    res.status(401).json({ error: "Authentication required" });
+  };
+
   // Setup authentication routes
   setupAuth(app);
   
@@ -1481,6 +1493,145 @@ export async function registerRoutes(app: Express): Promise<Server> {
         ? "Translation service is available" 
         : "Translation service is not available. OpenAI API key is not configured."
     });
+  });
+
+  // Survey Management Routes
+  app.get("/api/surveys", isAuthenticated, async (req, res) => {
+    try {
+      const surveys = await storage.getSurveys();
+      res.json(surveys);
+    } catch (error) {
+      console.error("Error fetching surveys:", error);
+      res.status(500).json({ error: "Failed to fetch surveys" });
+    }
+  });
+  
+  app.get("/api/surveys/templates", isAuthenticated, async (req, res) => {
+    try {
+      const templates = await storage.getSurveyTemplates();
+      res.json(templates);
+    } catch (error) {
+      console.error("Error fetching survey templates:", error);
+      res.status(500).json({ error: "Failed to fetch survey templates" });
+    }
+  });
+  
+  app.get("/api/surveys/:id", isAuthenticated, async (req, res) => {
+    try {
+      const surveyId = parseInt(req.params.id);
+      const survey = await storage.getSurvey(surveyId);
+      
+      if (!survey) {
+        return res.status(404).json({ error: "Survey not found" });
+      }
+      
+      res.json(survey);
+    } catch (error) {
+      console.error("Error fetching survey:", error);
+      res.status(500).json({ error: "Failed to fetch survey details" });
+    }
+  });
+  
+  app.post("/api/surveys", isAuthenticated, async (req, res) => {
+    try {
+      const parsedData = insertSurveySchema.safeParse(req.body);
+      
+      if (!parsedData.success) {
+        return res.status(400).json({ 
+          error: "Invalid survey data", 
+          details: fromZodError(parsedData.error).message
+        });
+      }
+      
+      // Ensure every question has a unique ID
+      if (parsedData.data.questions) {
+        parsedData.data.questions = parsedData.data.questions.map(question => ({
+          ...question,
+          id: question.id || crypto.randomUUID()
+        }));
+      }
+      
+      const survey = await storage.createSurvey(parsedData.data);
+      res.status(201).json(survey);
+    } catch (error) {
+      console.error("Error creating survey:", error);
+      res.status(500).json({ error: "Failed to create survey" });
+    }
+  });
+  
+  app.patch("/api/surveys/:id", isAuthenticated, async (req, res) => {
+    try {
+      const surveyId = parseInt(req.params.id);
+      const existingSurvey = await storage.getSurvey(surveyId);
+      
+      if (!existingSurvey) {
+        return res.status(404).json({ error: "Survey not found" });
+      }
+      
+      const updatedSurvey = await storage.updateSurvey(surveyId, req.body);
+      res.json(updatedSurvey);
+    } catch (error) {
+      console.error("Error updating survey:", error);
+      res.status(500).json({ error: "Failed to update survey" });
+    }
+  });
+  
+  app.delete("/api/surveys/:id", isAuthenticated, async (req, res) => {
+    try {
+      const surveyId = parseInt(req.params.id);
+      const deleted = await storage.deleteSurvey(surveyId);
+      
+      if (!deleted) {
+        return res.status(404).json({ error: "Survey not found or could not be deleted" });
+      }
+      
+      res.json({ success: true });
+    } catch (error) {
+      console.error("Error deleting survey:", error);
+      res.status(500).json({ error: "Failed to delete survey" });
+    }
+  });
+  
+  // Survey Response Routes
+  app.get("/api/surveys/:id/responses", isAuthenticated, async (req, res) => {
+    try {
+      const surveyId = parseInt(req.params.id);
+      const responses = await storage.getSurveyResponses(surveyId);
+      res.json(responses);
+    } catch (error) {
+      console.error("Error fetching survey responses:", error);
+      res.status(500).json({ error: "Failed to fetch survey responses" });
+    }
+  });
+  
+  app.post("/api/surveys/:id/responses", async (req, res) => {
+    try {
+      const surveyId = parseInt(req.params.id);
+      const survey = await storage.getSurvey(surveyId);
+      
+      if (!survey) {
+        return res.status(404).json({ error: "Survey not found" });
+      }
+      
+      // Validate required data
+      const parsedData = insertSurveyResponseSchema.safeParse({
+        ...req.body,
+        surveyId
+      });
+      
+      if (!parsedData.success) {
+        return res.status(400).json({ 
+          error: "Invalid survey response data", 
+          details: fromZodError(parsedData.error).message
+        });
+      }
+      
+      const response = await storage.createSurveyResponse(parsedData.data);
+      res.status(201).json(response);
+    } catch (error) {
+      console.error("Error submitting survey response:", error);
+      res.status(500).json({ error: "Failed to submit survey response" });
+    }
   });
 
   return httpServer;
