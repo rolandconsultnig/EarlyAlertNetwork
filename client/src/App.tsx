@@ -31,10 +31,10 @@ import { ProtectedRoute } from "./lib/protected-route";
 function Router() {
   return (
     <Switch>
-      <Route path="/" component={HomePage} />
+      <ProtectedRoute path="/" component={HomePage} allowPublicAccess={true} />
       <Route path="/auth" component={AuthPage} />
-      <Route path="/report-incident" component={ReportIncidentPage} />
-      <Route path="/map" component={MapPage} />
+      <ProtectedRoute path="/report-incident" component={ReportIncidentPage} allowPublicAccess={true} />
+      <ProtectedRoute path="/map" component={MapPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
       
       {/* Data Collection & Processing */}

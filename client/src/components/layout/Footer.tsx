@@ -12,13 +12,13 @@ export default function Footer() {
         </div>
         <div className="mt-4 md:mt-0">
           <Link href="#">
-            <a className="text-primary hover:text-primary-light mr-4">Privacy Policy</a>
+            <div className="text-primary hover:text-primary-light mr-4 inline">Privacy Policy</div>
           </Link>
           <Link href="#">
-            <a className="text-primary hover:text-primary-light mr-4">Terms of Service</a>
+            <div className="text-primary hover:text-primary-light mr-4 inline">Terms of Service</div>
           </Link>
           <Link href="#">
-            <a className="text-primary hover:text-primary-light">Help Center</a>
+            <div className="text-primary hover:text-primary-light inline">Help Center</div>
           </Link>
         </div>
       </div>
