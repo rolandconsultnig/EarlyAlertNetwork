@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
-import { useNavigate } from "wouter";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -52,7 +52,7 @@ export function SurveyManagement() {
   const [activeTab, setActiveTab] = useState("all");
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const { toast } = useToast();
-  const navigate = useNavigate();
+  const [, setLocation] = useLocation();
   const queryClient = useQueryClient();
 
   // Fetch surveys
@@ -128,7 +128,7 @@ export function SurveyManagement() {
       form.reset();
       
       // Navigate to the survey editor
-      navigate(`/surveys/edit/${newSurvey.id}`);
+      setLocation(`/surveys/edit/${newSurvey.id}`);
     },
     onError: (error) => {
       toast({
@@ -296,8 +296,8 @@ export function SurveyManagement() {
                   key={survey.id} 
                   survey={survey}
                   onDelete={() => handleDeleteSurvey(survey.id)}
-                  onEdit={() => navigate(`/surveys/edit/${survey.id}`)}
-                  onViewResponses={() => navigate(`/surveys/responses/${survey.id}`)}
+                  onEdit={() => setLocation(`/surveys/edit/${survey.id}`)}
+                  onViewResponses={() => setLocation(`/surveys/responses/${survey.id}`)}
                 />
               ))}
             </div>
@@ -325,7 +325,7 @@ export function SurveyManagement() {
                   key={template.id} 
                   template={template}
                   onDelete={() => handleDeleteSurvey(template.id)}
-                  onEdit={() => navigate(`/surveys/edit/${template.id}`)}
+                  onEdit={() => setLocation(`/surveys/edit/${template.id}`)}
                   onCreateFromTemplate={() => createFromTemplate(template.id)}
                 />
               ))}

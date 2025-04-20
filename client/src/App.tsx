@@ -26,6 +26,7 @@ import AiAnalysisPage from "@/pages/ai-analysis-page";
 import AiPredictionPage from "@/pages/ai-prediction-page";
 import ReportIncidentPage from "@/pages/report-incident-page";
 import MapPage from "@/pages/map-page";
+import SurveyManagementPage from "@/pages/survey-management-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -75,6 +76,11 @@ function Router() {
       <ProtectedRoute path="/integrations" component={IntegrationsPage} />
       <ProtectedRoute path="/reporting" component={ReportingPage} />
       <ProtectedRoute path="/settings" component={SettingsPage} />
+      
+      {/* Surveys */}
+      <ProtectedRoute path="/surveys" component={SurveyManagementPage} />
+      <ProtectedRoute path="/surveys/edit/:id" component={SurveyManagementPage} />
+      <ProtectedRoute path="/surveys/responses/:id" component={SurveyManagementPage} />
       
       <Route component={NotFound} />
     </Switch>
