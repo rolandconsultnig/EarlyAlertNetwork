@@ -1,79 +1,53 @@
-# IPCR Early Warning & Response System - cPanel Deployment (MySQL Version)
+# IPCR Early Warning & Response System - cPanel MySQL Deployment
 
-This package contains the IPCR Early Warning & Response System prepared for cPanel deployment with MySQL database support.
+This package contains all files required to deploy the IPCR Early Warning & Response System on a cPanel hosting environment with MySQL database support.
 
-## Important Note
+## What's Included
 
-This deployment package has been modified to work with MySQL instead of PostgreSQL since most cPanel installations use MySQL as the default database system.
+- **Pre-configured MySQL Adapter**: Modified database connection files to work with MySQL instead of PostgreSQL
+- **Database Schema Scripts**: Ready-to-use database initialization scripts that create all necessary tables
+- **Node.js Startup Scripts**: Pre-configured scripts to run the application in a cPanel environment
+- **Environment Templates**: Sample configuration files for your production environment
+- **Testing Utilities**: Database connection test tools to verify proper setup
 
-## Deployment Steps
+## Quick Start Guide
 
-1. Upload all these files to your cPanel hosting
-2. Edit the `.env` file with your MySQL database credentials:
-   ```
-   DATABASE_URL=mysql://your_db_user:your_password@localhost:3306/your_db_name
-   SESSION_SECRET=your_secure_random_string
-   ```
+1. **Upload the entire contents of this directory** to your cPanel hosting environment
+2. **Set up a MySQL database** in cPanel and create a database user with all privileges
+3. **Configure environment variables** by editing the `.env` file with your database credentials
+4. **Initialize the database** by running `node mysql-schema.js`
+5. **Start the application** using cPanel's Node.js Application Manager with `start.cjs` as the entry point
 
-3. In cPanel, navigate to "MySQL Databases" and:
-   - Create a new database (e.g., `your_cpanel_username_ipcr`)
-   - Create a new MySQL user with a strong password
-   - Add the user to the database with ALL PRIVILEGES
+Detailed step-by-step instructions can be found in the `UPDATED_CPANEL_DEPLOYMENT_GUIDE.md` file.
 
-4. Install dependencies via SSH or cPanel Terminal:
-   ```bash
-   npm install mysql2 express-mysql-session
-   npm ci --omit=dev
-   ```
+## Default Admin Credentials
 
-5. Initialize the MySQL database schema:
-   ```bash
-   node mysql-schema.js
-   ```
+- **Username**: `admin`
+- **Password**: `admin123`
 
-6. Set up the Node.js application in cPanel's Application Manager:
-   - Application root: The directory containing these files
-   - Application URL: Your domain or subdomain
-   - Application startup file: `start-mysql.cjs`
-   - Node.js version: 16.x or newer
+**IMPORTANT**: Change these credentials immediately after your first login.
 
-## Default Admin Login
+## File Overview
 
-After initializing the database, you can log in with:
-- Username: `admin`
-- Password: `admin123`
-
-**IMPORTANT:** Change this password immediately after your first login!
-
-## File Structure Explanation
-
-- `server-mysql.js` - Modified server implementation to use MySQL
-- `db-mysql.js` - MySQL database adapter
-- `mysql-schema.js` - Database schema initialization script
-- `start-mysql.cjs` - cPanel startup script for MySQL version
-- `.env` - Environment configuration (edit with your settings)
-- `dist/` - Built application files
+- `server-mysql.js` - Main server file adapted for MySQL
+- `db-mysql.js` - MySQL database connection and utility functions
+- `mysql-schema.js` - Database initialization script
+- `simple-mysql-test.js` - Quick MySQL connection test utility
+- `start.cjs` - Application entry point for cPanel
+- `.env.template` - Template for environment variables configuration
+- `package.json` - Dependencies and scripts for the MySQL version
 
 ## Troubleshooting
 
-### Database Connection Issues
-- Check that your MySQL connection string is correct
-- Verify the MySQL user has the right permissions
-- Make sure your database name includes your cPanel username prefix (often required by hosts)
+If you encounter any issues during deployment:
 
-### Application Not Starting
-- Check the Node.js error logs in your cPanel account
-- Verify that all required dependencies are installed
-- Make sure file permissions are set properly (755 for directories, 644 for files)
+1. Check database connection with `node simple-mysql-test.js`
+2. Review application logs in cPanel's Node.js Application Manager
+3. Verify environment variables in the `.env` file
+4. Consult the troubleshooting guides:
+   - `MYSQL_TROUBLESHOOTING.md`
+   - `CPANEL_DEPLOYMENT_CHECKLIST.md`
 
-### Login Problems
-- If you can't log in as admin, rerun the MySQL schema script which creates the default admin user
+## Support
 
-## Security Notes
-
-- Change the default admin password immediately after deployment
-- Generate a strong, unique SESSION_SECRET in your .env file
-- Set proper file permissions on your server
-- Remove the `mysql-schema.js` script after successful initial deployment
-
-For detailed deployment instructions, refer to the CPANEL_MYSQL_INSTRUCTIONS.txt file that was provided separately.
+For additional support, please contact the system administrators at the Institute for Peace and Conflict Resolution.
