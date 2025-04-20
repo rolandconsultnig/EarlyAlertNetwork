@@ -5,18 +5,36 @@ require('dotenv').config();
 // MySQL connection string from .env
 const connectionString = process.env.DATABASE_URL;
 
-// Parse connection string
+// Parse connection string or use specified database name and password
 const getConnectionConfig = (url) => {
-  // Example: mysql://user:password@localhost:3306/dbname
-  const matches = url.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
-  if (!matches) throw new Error('Invalid MySQL connection string');
+  // If URL is provided, parse it
+  if (url) {
+    // Example: mysql://user:password@localhost:3306/dbname
+    const matches = url.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
+    if (!matches) throw new Error('Invalid MySQL connection string');
+    
+    return {
+      host: matches[3],
+      user: matches[1],
+      password: matches[2],
+      port: parseInt(matches[4]),
+      database: 'ipcr-new', // Override with our specific database name
+      multipleStatements: true
+    };
+  }
+  
+  // Fall back to environment variables
+  const host = process.env.DB_HOST || 'localhost';
+  const user = process.env.DB_USER || 'admin';
+  const password = process.env.DB_PASSWORD || '@admin123321nimda$';
+  const port = parseInt(process.env.DB_PORT || '3306');
   
   return {
-    host: matches[3],
-    user: matches[1],
-    password: matches[2],
-    port: parseInt(matches[4]),
-    database: matches[5],
+    host,
+    user,
+    password,
+    port,
+    database: 'ipcr-new',
     multipleStatements: true
   };
 };
@@ -216,10 +234,17 @@ async function setupDatabase() {
       ON DUPLICATE KEY UPDATE id=id;
     `);
     
+    // Update admin user with new password
+    await connection.execute(`
+      UPDATE users 
+      SET password = '9f27ac323fd6613f8ee96f5008a751b6a02e47b83eb8ba4700dd95b4630dbddb.4dbc581e0ad25430a8e20408b150850e' 
+      WHERE username = 'admin'
+    `);
+    
     console.log('Database schema created successfully');
     console.log('Default admin user created:');
     console.log('Username: admin');
-    console.log('Password: admin123');
+    console.log('Password: @admin123321nimda$');
     
   } catch (error) {
     console.error('Error setting up database:', error);

@@ -32,10 +32,27 @@ Detailed step-by-step instructions can be found in the `UPDATED_CPANEL_DEPLOYMEN
 - `server-mysql.js` - Main server file adapted for MySQL
 - `db-mysql.js` - MySQL database connection and utility functions
 - `mysql-schema.js` - Database initialization script
+- `mysql-schema.sql` - Ready-to-use SQL file for direct import to phpMyAdmin
 - `simple-mysql-test.js` - Quick MySQL connection test utility
+- `export-mysql-database.js` - Export complete database (schema + data) to SQL
+- `export-mysql-schema.js` - Export schema only (no data) to SQL
 - `start.cjs` - Application entry point for cPanel
 - `.env.template` - Template for environment variables configuration
 - `package.json` - Dependencies and scripts for the MySQL version
+
+## Database Export Tools
+
+If you need to export your database for backup or migration purposes:
+
+```bash
+# Export complete database (schema + data)
+npm run export-db
+
+# Export database schema only (no data)
+npm run export-schema
+```
+
+Exported files are saved in the `db_export` directory with timestamped filenames.
 
 ## Troubleshooting
 

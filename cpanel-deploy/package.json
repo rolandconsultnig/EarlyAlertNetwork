@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node start.cjs",
     "init-db": "node mysql-schema.js",
-    "test-db": "node simple-mysql-test.js"
+    "test-db": "node simple-mysql-test.js",
+    "export-db": "node export-mysql-database.js",
+    "export-schema": "node export-mysql-schema.js"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.28.6",

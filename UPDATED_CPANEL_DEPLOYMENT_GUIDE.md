@@ -123,6 +123,30 @@ This guide provides detailed instructions for deploying the IPCR Early Warning &
    node init-mysql-tables.js
    ```
 
+## Optional: Export Database for Backup or Migration
+
+If you need to export your database for backup or migration purposes, you can use the provided export tools:
+
+### Export Complete Database (Schema + Data)
+
+```bash
+npm run export-db
+```
+
+This creates a full SQL dump with schema and data in the `db_export` directory.
+
+### Export Schema Only (No Data)
+
+```bash
+npm run export-schema
+```
+
+This creates a SQL file with table structures only (no data) in the `db_export` directory.
+
+### Using Pre-Generated Schema
+
+For a fresh installation, you can use the pre-generated `mysql-schema.sql` file directly with phpMyAdmin's import feature.
+
 ## Step 6: Set Up Node.js Application in cPanel
 
 1. **Access Node.js App Manager** in cPanel
