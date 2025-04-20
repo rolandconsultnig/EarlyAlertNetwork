@@ -10,9 +10,19 @@ echo ""
 echo "🔨 Step 1: Building the frontend application..."
 npm run build
 
-# Step 2: Copy built files to deployment directory
+# Step 2: Run the cPanel preparation script if needed
 echo ""
-echo "📂 Step 2: Copying built files to deployment directory..."
+echo "🔧 Step 2: Ensuring cPanel files are prepared..."
+if [ ! -f "cpanel-deploy/server-mysql.js" ]; then
+  echo "Running cPanel preparation script..."
+  node cpanel-prepare-no-ssh.cjs
+else
+  echo "cPanel deployment files already exist."
+fi
+
+# Step 3: Copy built files to deployment directory
+echo ""
+echo "📂 Step 3: Copying built files to deployment directory..."
 if [ -d "dist" ]; then
   # Make sure the target directory exists
   mkdir -p cpanel-deploy/dist
@@ -29,9 +39,9 @@ else
   exit 1
 fi
 
-# Step 3: Create a ZIP archive of the deployment files
+# Step 4: Create a ZIP archive of the deployment files
 echo ""
-echo "📦 Step 3: Creating deployment ZIP archive..."
+echo "📦 Step 4: Creating deployment ZIP archive..."
 zip -r cpanel-deploy-package.zip cpanel-deploy/
 
 echo ""
@@ -43,4 +53,8 @@ echo "1. Download the 'cpanel-deploy-package.zip' file"
 echo "2. Extract the archive on your local machine"
 echo "3. Upload all files from 'cpanel-deploy/' to your cPanel hosting via FTP"
 echo "4. Follow instructions in 'cpanel-deploy/README.md' to complete setup"
+echo ""
+echo "Default admin login:"
+echo "- Username: admin"
+echo "- Password: @admin123321nimda$"
 echo "==========================================================="

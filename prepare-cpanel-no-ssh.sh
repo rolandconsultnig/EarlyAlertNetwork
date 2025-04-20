@@ -8,7 +8,7 @@ echo ""
 
 # Step 1: Prepare cPanel files
 echo "🔧 Step 1: Preparing cPanel deployment files..."
-node cpanel-prepare-no-ssh.js
+node cpanel-prepare-no-ssh.cjs
 
 # Step 2: Build the frontend
 echo ""
@@ -21,6 +21,9 @@ echo "📂 Step 3: Copying built files to deployment directory..."
 if [ -d "dist" ]; then
   # Make sure the target directory exists
   mkdir -p cpanel-deploy/dist
+  
+  # Clear existing files
+  rm -rf cpanel-deploy/dist/*
   
   # Copy all files from dist to cpanel-deploy/dist
   cp -r dist/* cpanel-deploy/dist/
@@ -45,4 +48,8 @@ echo "1. Download the 'cpanel-deploy-package.zip' file"
 echo "2. Extract the archive on your local machine"
 echo "3. Upload all files from 'cpanel-deploy/' to your cPanel hosting via FTP"
 echo "4. Follow instructions in 'cpanel-deploy/README.md' to complete setup"
+echo ""
+echo "Default admin login:"
+echo "- Username: admin"
+echo "- Password: @admin123321nimda$"
 echo "==========================================================="

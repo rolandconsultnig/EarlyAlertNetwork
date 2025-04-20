@@ -6,144 +6,130 @@
  * your database and environment variables to verify everything is working.
  */
 
-const mysql = require('mysql2/promise');
 require('dotenv').config();
+const mysql = require('mysql2/promise');
 
-// Helper to parse DATABASE_URL or use individual connection parameters
+// Get database connection configuration
 function getConnectionConfig() {
-  // Check for DATABASE_URL format
-  if (process.env.DATABASE_URL) {
-    console.log("Using DATABASE_URL for connection...");
-    const match = process.env.DATABASE_URL.match(/mysql:\/\/([^:]+):([^@]+)@([^:]+):(\d+)\/(.+)/);
-    
-    if (match) {
-      const [_, user, password, host, port, database] = match;
-      return {
-        host,
-        user,
-        password,
-        port: parseInt(port),
-        database,
-        multipleStatements: true
-      };
-    } else {
-      console.warn("WARNING: DATABASE_URL is present but format appears invalid.");
-      console.warn("Format should be: mysql://user:password@host:port/database");
-      console.warn("Falling back to individual connection parameters...");
-    }
-  }
-  
-  // Use individual parameters
-  console.log("Using individual connection parameters...");
   return {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD,
-    database: process.env.DB_NAME,
-    port: parseInt(process.env.DB_PORT || '3306'),
-    multipleStatements: true
+    host: process.env.MYSQL_HOST || 'localhost',
+    user: process.env.MYSQL_USER,
+    password: process.env.MYSQL_PASSWORD,
+    database: process.env.MYSQL_DATABASE || 'ipcr-new',
+    port: process.env.MYSQL_PORT || 3306,
   };
 }
 
+// Main function to test connection
 async function testConnection() {
-  console.log("======================================");
-  console.log("MySQL Connection Test for cPanel Deployment");
-  console.log("======================================");
-  console.log("\nTesting database connection...");
-  
   let connection;
+  
+  console.log('\n🔎 Testing MySQL Connection for IPCR Early Warning System\n');
   
   try {
     const config = getConnectionConfig();
     
-    // Display connection info (sanitized)
-    console.log("\nConnection information:");
-    console.log(`- Host: ${config.host}`);
-    console.log(`- Port: ${config.port}`);
-    console.log(`- User: ${config.user}`);
-    console.log(`- Database: ${config.database}`);
-    console.log(`- Password: ${'*'.repeat(config.password?.length || 8)}`);
+    // Display connection info (but hide password)
+    console.log('Connection details:');
+    console.log('   Host:', config.host);
+    console.log('   User:', config.user);
+    console.log('   Database:', config.database);
+    console.log('   Port:', config.port);
     
-    // Test connection
-    console.log("\nAttempting to connect...");
+    console.log('\nAttempting to connect...');
+    
+    // Try to connect
     connection = await mysql.createConnection(config);
-    console.log("✅ Connection successful!");
+    console.log('✅ Successfully connected to MySQL!');
     
-    // Check database tables
-    console.log("\nVerifying database tables...");
-    const [tables] = await connection.query("SHOW TABLES");
+    // Check tables
+    console.log('\nChecking database tables...');
+    const [tables] = await connection.query('SHOW TABLES');
+    const tableNames = tables.map(table => Object.values(table)[0]);
     
-    if (tables.length === 0) {
-      console.error("⚠️ WARNING: No tables found in the database!");
-      console.error("Run the mysql-schema.js script to create the required tables.");
+    console.log(`Found ${tableNames.length} tables:`);
+    tableNames.forEach(table => console.log(`   - ${table}`));
+    
+    // Check required tables
+    const requiredTables = [
+      'users', 'incidents', 'data_sources', 'alerts', 
+      'response_plans', 'sessions'
+    ];
+    
+    const missingTables = requiredTables.filter(table => 
+      !tableNames.includes(table) && !tableNames.includes(table.toLowerCase())
+    );
+    
+    if (missingTables.length > 0) {
+      console.log('\n⚠️ Missing required tables:');
+      missingTables.forEach(table => console.log(`   - ${table}`));
+      console.log('\nPlease import the schema.sql file to create all tables.');
     } else {
-      console.log(`✅ Found ${tables.length} tables:`);
-      const tableList = [];
-      const tableField = `Tables_in_${config.database}`;
-      
-      for (const tableRow of tables) {
-        tableList.push(tableRow[tableField]);
-      }
-      console.log("  - " + tableList.join("\n  - "));
-      
-      // Check if essential tables exist
-      const essentialTables = ['users', 'incidents', 'alerts', 'risk_indicators', 'sessions'];
-      const missingTables = essentialTables.filter(table => !tableList.includes(table));
-      
-      if (missingTables.length > 0) {
-        console.error("\n⚠️ WARNING: Some essential tables are missing:");
-        console.error("  - " + missingTables.join("\n  - "));
-        console.error("Run the mysql-schema.js script to create all required tables.");
-      } else {
-        console.log("\n✅ All essential tables are present.");
-      }
-      
-      // Check if admin user exists
-      console.log("\nChecking for admin user...");
-      const [users] = await connection.query("SELECT id, username, role FROM users WHERE username = 'admin'");
-      
-      if (users.length === 0) {
-        console.error("⚠️ WARNING: Admin user not found!");
-        console.error("Run the mysql-schema.js script to create the default admin user.");
-      } else {
-        console.log("✅ Admin user found:", users[0]);
+      console.log('\n✅ All required tables exist!');
+    }
+    
+    // Check for admin user
+    console.log('\nChecking for admin user...');
+    const [adminUsers] = await connection.query('SELECT id, username, role, securityLevel FROM users WHERE username = ?', ['admin']);
+    
+    if (adminUsers.length > 0) {
+      console.log('✅ Admin user exists:');
+      console.log('   ID:', adminUsers[0].id);
+      console.log('   Username:', adminUsers[0].username);
+      console.log('   Role:', adminUsers[0].role);
+      console.log('   Security Level:', adminUsers[0].securityLevel);
+    } else {
+      console.log('⚠️ Admin user not found in database!');
+      console.log('Run the following SQL query to create the admin user:');
+      console.log(`
+INSERT INTO users (username, password, fullName, email, role, createdAt, securityLevel) 
+VALUES ('admin', '$2a$10$9XxQKzAKA2iBV2mNlQHgXOJCbw5XtpnbfpVirk9a.irFIQET9H3zK', 'System Administrator', 'admin@example.com', 'admin', NOW(), 'high');
+      `);
+    }
+    
+    // Check record counts for key tables
+    console.log('\nCounting records in key tables:');
+    
+    const tables_to_count = [
+      'users', 'incidents', 'data_sources', 'alerts', 
+      'response_plans', 'risk_indicators', 'surveys'
+    ];
+    
+    for (const table of tables_to_count) {
+      try {
+        const [countResult] = await connection.query(`SELECT COUNT(*) as count FROM ${table}`);
+        console.log(`   - ${table}: ${countResult[0].count} records`);
+      } catch (err) {
+        console.log(`   - ${table}: Table not found or error: ${err.message}`);
       }
     }
     
-    console.log("\n======================================");
-    console.log("Test completed successfully!");
-    console.log("Your database connection is working properly.");
-    console.log("======================================");
+    console.log('\n✅ Database connection test completed successfully!');
     
   } catch (error) {
-    console.error("\n❌ ERROR: Connection failed!");
-    console.error(error.message);
+    console.error('\n❌ MySQL Connection Error:', error.message);
+    console.log('\nPlease check:');
+    console.log('1. Your database credentials in the .env file');
+    console.log('2. That the MySQL server is running');
+    console.log('3. That the database has been created');
+    console.log('4. That the user has permissions on the database');
     
-    if (error.code === 'ER_ACCESS_DENIED_ERROR') {
-      console.error("\nAccess denied error. Please check:");
-      console.error("1. Your database username and password are correct");
-      console.error("2. The user has permissions to access the database");
-      console.error("3. The MySQL user has been added to the database in cPanel");
-    } else if (error.code === 'ECONNREFUSED') {
-      console.error("\nConnection refused. Please check:");
-      console.error("1. MySQL server is running");
-      console.error("2. Host and port are correct");
-      console.error("3. No firewall is blocking the connection");
-    } else if (error.code === 'ER_BAD_DB_ERROR') {
-      console.error("\nDatabase not found. Please check:");
-      console.error("1. The database name is correct");
-      console.error("2. The database has been created in cPanel");
-      console.error("3. For cPanel, remember the database name might need your cPanel username prefix");
+    const config = getConnectionConfig();
+    if (!config.user || !config.password) {
+      console.log('\n⚠️ Missing database credentials in .env file!');
+      console.log('Make sure you have these variables in your .env file:');
+      console.log('   MYSQL_HOST=your_host (usually localhost)');
+      console.log('   MYSQL_USER=your_database_username');
+      console.log('   MYSQL_PASSWORD=your_database_password');
+      console.log('   MYSQL_DATABASE=ipcr-new');
     }
-    
-    console.error("\nFor more help, see TROUBLESHOOTING.md");
-    process.exit(1);
   } finally {
     if (connection) {
       await connection.end();
+      console.log('\nDatabase connection closed.');
     }
   }
 }
 
 // Run the test
-testConnection().catch(console.error);
+testConnection();
