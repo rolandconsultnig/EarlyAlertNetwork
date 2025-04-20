@@ -1,17 +1,33 @@
 import React from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
-import { Translate } from "lucide-react/dist/esm/icons";
+import { Loader2, Languages } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+
+// Define the translation info type
+interface TranslationInfo {
+  isTranslated: boolean;
+  originalLanguage: string;
+  targetLanguage: string;
+  translatedAt: string;
+}
+
+// Import the Incident type
+import { Incident } from '@shared/schema';
+
+// Define the translated incident type
+interface TranslatedIncident extends Omit<Incident, 'reportedAt'> {
+  translationInfo?: TranslationInfo;
+  reportedAt: Date | string;
+}
 
 // PropTypes for component
 interface TranslateButtonProps {
   incidentId: number;
   targetLanguage: string;
   disabled?: boolean;
-  onTranslationComplete: (translatedData: any) => void;
+  onTranslationComplete: (translatedData: TranslatedIncident) => void;
 }
 
 export function TranslateButton({
@@ -42,7 +58,7 @@ export function TranslateButton({
       
       return await response.json();
     },
-    onSuccess: (data: any) => {
+    onSuccess: (data: TranslatedIncident) => {
       toast({
         title: "Translation Successful",
         description: "The incident has been translated successfully.",
@@ -93,7 +109,7 @@ export function TranslateButton({
         </>
       ) : (
         <>
-          <Translate className="w-4 h-4 mr-1" />
+          <Languages className="w-4 h-4 mr-1" />
           Translate
         </>
       )}

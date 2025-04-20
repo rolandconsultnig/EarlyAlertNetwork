@@ -11,6 +11,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import EmojiReactionSystem from './EmojiReactionSystem';
 import { TranslationSelector, TranslateButton } from '@/components/translation';
 
+// Define the translation info type
+interface TranslationInfo {
+  isTranslated: boolean;
+  originalLanguage: string;
+  targetLanguage: string;
+  translatedAt: string;
+}
+
+// Extended interface for Incident with translation info
+interface TranslatedIncident extends Omit<Incident, 'reportedAt'> {
+  translationInfo?: TranslationInfo;
+  reportedAt: Date | string;
+}
+
 interface IncidentDetailModalProps {
   incident: Incident | null;
   open: boolean;
@@ -26,7 +40,24 @@ const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('overview');
   const [selectedLanguage, setSelectedLanguage] = useState<string>("en");
-  const [translatedIncident, setTranslatedIncident] = useState<Incident | null>(null);
+  const [translatedIncident, setTranslatedIncident] = useState<TranslatedIncident | null>(null);
+  
+  // Reset translation if incident changes
+  useEffect(() => {
+    setTranslatedIncident(null);
+  }, [incident?.id]);
+  
+  // Map of language codes to names
+  const languageNames: Record<string, string> = {
+    en: "English",
+    ha: "Hausa",
+    yo: "Yoruba",
+    ig: "Igbo",
+    pcm: "Nigerian Pidgin",
+    fr: "French",
+    ar: "Arabic",
+    pt: "Portuguese"
+  };
   
   if (!incident) {
     return null;
@@ -88,7 +119,9 @@ const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold">{incident.title}</DialogTitle>
+          <DialogTitle className="text-xl font-bold">
+            {translatedIncident?.title || incident.title}
+          </DialogTitle>
           <DialogDescription>
             <div className="flex flex-wrap gap-2 mt-2">
               <div className={`flex items-center text-xs px-2 py-1 rounded-full border ${getSeverityColor(incident.severity)}`}>
@@ -106,6 +139,26 @@ const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
                 <span className="font-medium">{incident.region}</span>
               </div>
             </div>
+            
+            <div className="flex items-center justify-between mt-3">
+              <TranslationSelector onLanguageChange={setSelectedLanguage} />
+              <TranslateButton 
+                incidentId={incident.id}
+                targetLanguage={selectedLanguage}
+                onTranslationComplete={(data) => setTranslatedIncident(data)}
+              />
+            </div>
+            
+            {translatedIncident && (
+              <div className="mt-2 text-xs text-muted-foreground">
+                <span className="italic">
+                  Translated from original language to {languageNames[selectedLanguage] || selectedLanguage}
+                  {translatedIncident.translationInfo?.translatedAt && (
+                    <> • {new Date(translatedIncident.translationInfo.translatedAt).toLocaleTimeString()}</>
+                  )}
+                </span>
+              </div>
+            )}
           </DialogDescription>
         </DialogHeader>
         
@@ -118,14 +171,14 @@ const IncidentDetailModal: React.FC<IncidentDetailModalProps> = ({
           
           <TabsContent value="overview" className="space-y-4">
             <div className="p-4 bg-gray-50 rounded-lg">
-              <p className="text-sm mb-4">{incident.description}</p>
+              <p className="text-sm mb-4">{translatedIncident?.description || incident.description}</p>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div className="space-y-2">
                   <div className="flex items-center text-sm">
                     <MapPin className="h-4 w-4 mr-2 text-blue-600" />
                     <span className="font-medium">Location:</span>
-                    <span className="ml-2">{incident.location}</span>
+                    <span className="ml-2">{translatedIncident?.location || incident.location}</span>
                   </div>
                   
                   <div className="flex items-center text-sm">
