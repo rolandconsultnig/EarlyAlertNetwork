@@ -12,6 +12,9 @@ import AnalysisPage from "@/pages/analysis-page";
 import RiskAssessmentPage from "@/pages/risk-assessment-page";
 import VisualizationPage from "@/pages/visualization-page";
 import AlertsPage from "@/pages/alerts-page-new";
+import AlertsListPage from "@/pages/alerts-list-page";
+import IncidentsListPage from "@/pages/incidents-list-page";
+import IncidentAnalysisPage from "@/pages/incident-analysis-page";
 import CaseManagementPage from "@/pages/case-management-page";
 import UserManagementPage from "@/pages/user-management-page";
 import IntegrationsPage from "@/pages/integrations-page";
@@ -46,9 +49,12 @@ function Router() {
       {/* Risk Assessment */}
       <ProtectedRoute path="/analysis" component={RiskAssessmentPage} />
       <ProtectedRoute path="/visualization" component={VisualizationPage} />
+      <ProtectedRoute path="/incident-analysis" component={IncidentAnalysisPage} />
       
       {/* Response Management */}
       <ProtectedRoute path="/alerts" component={AlertsPage} />
+      <ProtectedRoute path="/alerts-list" component={AlertsListPage} />
+      <ProtectedRoute path="/incidents-list" component={IncidentsListPage} />
       <ProtectedRoute path="/case-management" component={CaseManagementPage} />
       
       {/* Communications - SMS Management */}

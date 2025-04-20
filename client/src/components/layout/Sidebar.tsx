@@ -78,12 +78,20 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
       items: [
         { path: "/analysis", label: "Risk Assessment", icon: <LineChart className="mr-3 h-5 w-5" /> },
         { path: "/visualization", label: "Visualization", icon: <Map className="mr-3 h-5 w-5" /> },
+        { path: "/incident-analysis", label: "Incident Analysis", icon: <BarChart3 className="mr-3 h-5 w-5" /> },
+      ]
+    },
+    {
+      title: "Incident Management",
+      items: [
+        { path: "/incidents-list", label: "View All Incidents", icon: <FileText className="mr-3 h-5 w-5" /> },
       ]
     },
     {
       title: "Response Management",
       items: [
         { path: "/alerts", label: "Alerts & Notifications", icon: <Bell className="mr-3 h-5 w-5" /> },
+        { path: "/alerts-list", label: "View All Alerts", icon: <ExternalLink className="mr-3 h-5 w-5" /> },
         { path: "/case-management", label: "Case Management", icon: <Folder className="mr-3 h-5 w-5" /> },
       ]
     },
@@ -122,6 +130,7 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
     "AI Assistant": true,
     "Data Collection & Processing": true,
     "Risk Assessment": true,
+    "Incident Management": true,
     "Response Management": true,
     "Communications": true,
     "Social Media": true,
