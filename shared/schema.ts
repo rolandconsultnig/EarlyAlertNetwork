@@ -613,3 +613,82 @@ export const insertIncidentReactionSchema = createInsertSchema(incidentReactions
 
 export type InsertIncidentReaction = z.infer<typeof insertIncidentReactionSchema>;
 export type IncidentReaction = typeof incidentReactions.$inferSelect;
+
+// Surveys
+export const surveys = pgTable("surveys", {
+  id: serial("id").primaryKey(),
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  createdBy: integer("created_by").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  isTemplate: boolean("is_template").notNull().default(false),
+  isActive: boolean("is_active").notNull().default(true),
+  targetRegion: text("target_region"),
+  targetGroup: text("target_group"),
+  startDate: timestamp("start_date"),
+  endDate: timestamp("end_date"),
+  questions: jsonb("questions").$type<SurveyQuestion[]>().notNull(), // Array of question objects
+  responsesCount: integer("responses_count").notNull().default(0),
+});
+
+export const insertSurveySchema = createInsertSchema(surveys).pick({
+  title: true,
+  description: true,
+  createdBy: true,
+  isTemplate: true,
+  isActive: true,
+  targetRegion: true,
+  targetGroup: true,
+  startDate: true,
+  endDate: true,
+  questions: true,
+});
+
+export type InsertSurvey = z.infer<typeof insertSurveySchema>;
+export type Survey = typeof surveys.$inferSelect;
+
+// Survey Responses
+export const surveyResponses = pgTable("survey_responses", {
+  id: serial("id").primaryKey(),
+  surveyId: integer("survey_id").notNull(),
+  respondentId: integer("respondent_id"),
+  respondentName: text("respondent_name"),
+  respondentContact: text("respondent_contact"),
+  location: text("location"),
+  region: text("region"),
+  coordinates: jsonb("coordinates"),
+  submittedAt: timestamp("submitted_at").defaultNow().notNull(),
+  answers: jsonb("answers").$type<SurveyAnswer[]>().notNull(), // Array of answer objects
+  metaData: jsonb("meta_data"), // Additional data like device info, completion time
+});
+
+export const insertSurveyResponseSchema = createInsertSchema(surveyResponses).pick({
+  surveyId: true,
+  respondentId: true,
+  respondentName: true,
+  respondentContact: true,
+  location: true,
+  region: true,
+  coordinates: true,
+  answers: true,
+  metaData: true,
+});
+
+export type InsertSurveyResponse = z.infer<typeof insertSurveyResponseSchema>;
+export type SurveyResponse = typeof surveyResponses.$inferSelect;
+
+// Types for survey questions and answers
+export interface SurveyQuestion {
+  id: string;
+  type: 'multiple_choice' | 'single_choice' | 'text' | 'rating' | 'location';
+  text: string;
+  required: boolean;
+  options?: string[];
+  helpText?: string;
+}
+
+export interface SurveyAnswer {
+  questionId: string;
+  answer: string | string[] | number | { [key: string]: any };
+}

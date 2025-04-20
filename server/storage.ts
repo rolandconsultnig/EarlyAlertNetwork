@@ -103,6 +103,19 @@ export interface IStorage {
   updateWebhook(id: number, webhook: Partial<Webhook>): Promise<Webhook>;
   deleteWebhook(id: number): Promise<boolean>;
   updateWebhookLastTriggered(id: number): Promise<Webhook>;
+
+  // Survey methods
+  getSurveys(): Promise<Survey[]>;
+  getSurveyTemplates(): Promise<Survey[]>;
+  getSurvey(id: number): Promise<Survey | undefined>;
+  createSurvey(survey: InsertSurvey): Promise<Survey>;
+  updateSurvey(id: number, survey: Partial<Survey>): Promise<Survey>;
+  deleteSurvey(id: number): Promise<boolean>;
+  
+  // Survey response methods
+  getSurveyResponses(surveyId: number): Promise<SurveyResponse[]>;
+  getSurveyResponse(id: number): Promise<SurveyResponse | undefined>;
+  createSurveyResponse(response: InsertSurveyResponse): Promise<SurveyResponse>;
   
   // Session store
   sessionStore: any;
