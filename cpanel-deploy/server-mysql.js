@@ -70,13 +70,28 @@ app.post('/api/login', async (req, res) => {
     
     const user = users[0];
     
-    // Simple password check (replace with proper authentication)
-    if (user.password === password) {
-      req.session.userId = user.id;
-      delete user.password; // Don't send password to client
-      return res.json(user);
-    } else {
-      return res.status(401).json({ error: 'Invalid credentials' });
+    // Use proper password authentication with scrypt
+    try {
+      // Compare password using the stored hash
+      // Format of password hash: hashedPassword.salt
+      const [storedHash, salt] = user.password.split('.');
+      
+      // We need to use the crypto library to hash the provided password with the same salt
+      const crypto = require('crypto');
+      const hashedInputBuffer = crypto.scryptSync(password, salt, 64);
+      const inputHashHex = hashedInputBuffer.toString('hex');
+      
+      // Compare the hashes
+      if (inputHashHex === storedHash) {
+        req.session.userId = user.id;
+        delete user.password; // Don't send password to client
+        return res.json(user);
+      } else {
+        return res.status(401).json({ error: 'Invalid credentials' });
+      }
+    } catch (error) {
+      console.error('Password verification error:', error);
+      return res.status(500).json({ error: 'Authentication error' });
     }
   } catch (error) {
     console.error('Login error:', error);
@@ -156,6 +171,68 @@ app.post('/api/incidents', authenticateUser, async (req, res) => {
     res.status(201).json(newIncident[0]);
   } catch (error) {
     console.error('Create incident error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Additional API endpoints for core functionality
+
+// Risk indicators
+app.get('/api/risk-indicators', authenticateUser, async (req, res) => {
+  try {
+    const indicators = await db.execute('SELECT * FROM risk_indicators');
+    res.json(indicators);
+  } catch (error) {
+    console.error('Get risk indicators error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Alerts
+app.get('/api/alerts', authenticateUser, async (req, res) => {
+  try {
+    const alerts = await db.execute('SELECT * FROM alerts ORDER BY createdAt DESC');
+    res.json(alerts);
+  } catch (error) {
+    console.error('Get alerts error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Response plans
+app.get('/api/response-plans', authenticateUser, async (req, res) => {
+  try {
+    const plans = await db.execute('SELECT * FROM response_plans ORDER BY createdAt DESC');
+    res.json(plans);
+  } catch (error) {
+    console.error('Get response plans error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// Data sources
+app.get('/api/data-sources', authenticateUser, async (req, res) => {
+  try {
+    const sources = await db.execute('SELECT * FROM data_sources ORDER BY name ASC');
+    res.json(sources);
+  } catch (error) {
+    console.error('Get data sources error:', error);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// GET a single incident by ID
+app.get('/api/incidents/:id', authenticateUser, async (req, res) => {
+  try {
+    const [incidents] = await db.execute('SELECT * FROM incidents WHERE id = ?', [req.params.id]);
+    
+    if (incidents.length === 0) {
+      return res.status(404).json({ error: 'Incident not found' });
+    }
+    
+    res.json(incidents[0]);
+  } catch (error) {
+    console.error('Get incident error:', error);
     res.status(500).json({ error: 'Server error' });
   }
 });
