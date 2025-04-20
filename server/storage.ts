@@ -24,29 +24,12 @@ import session from "express-session";
 import { db } from "./db";
 import { eq, and, desc, gte, lte, sql } from "drizzle-orm";
 import crypto from "crypto";
-import MySQLStore from "express-mysql-session";
+import connectPg from "connect-pg-simple";
+import { pool } from "./db";
 
-// MySQL session store setup
-const sessionStoreOptions = {
-  host: process.env.MYSQL_HOST || 'localhost',
-  port: 3306,
-  user: process.env.MYSQL_USER || 'admin',
-  password: process.env.MYSQL_PASSWORD || '$admin123321nimda@',
-  database: process.env.MYSQL_DATABASE || 'ipcr-new',
-  // Additional options for session table
-  createDatabaseTable: true,
-  schema: {
-    tableName: 'sessions',
-    columnNames: {
-      session_id: 'session_id',
-      expires: 'expires',
-      data: 'data'
-    }
-  }
-};
-
-// Create MySQL session store
-const MySQLSessionStore = MySQLStore(session);
+// PostgreSQL session store for development in Replit
+// For MySQL deployment, we'll use express-mysql-session in the cPanel deployment
+const PostgresSessionStore = connectPg(session);
 
 export interface IStorage {
   // User methods
@@ -153,7 +136,10 @@ export class DatabaseStorage implements IStorage {
   sessionStore: any;
 
   constructor() {
-    this.sessionStore = new MySQLSessionStore(sessionStoreOptions);
+    this.sessionStore = new PostgresSessionStore({
+      pool,
+      createTableIfMissing: true,
+    });
 
     // Initialize default data if needed - would be done through migrations
     // this.initializeDefaultData();

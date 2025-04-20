@@ -1,15 +1,20 @@
-// Import from mysql-db.ts for MySQL configuration
-import { db, testConnection } from './mysql-db';
+// Using PostgreSQL for Replit environment 
+// (MySQL will be configured for cPanel deployment)
+import { Pool, neonConfig } from '@neondatabase/serverless';
+import { drizzle } from 'drizzle-orm/neon-serverless';
+import ws from "ws";
+import * as schema from "@shared/schema";
 
-// Test the connection when the server starts
-testConnection()
-  .then(success => {
-    if (success) {
-      console.log('Connected to MySQL database: ipcr-new');
-    } else {
-      console.error('Failed to connect to MySQL database');
-    }
-  });
+neonConfig.webSocketConstructor = ws;
 
-// Export the database connection
-export { db };
+if (!process.env.DATABASE_URL) {
+  throw new Error(
+    "DATABASE_URL must be set. Did you forget to provision a database?",
+  );
+}
+
+export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+export const db = drizzle({ client: pool, schema });
+
+// For MySQL deployment, we'll use the configuration from mysql-db.ts
+// This will be handled in the cPanel deployment scripts
