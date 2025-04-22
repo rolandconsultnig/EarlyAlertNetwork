@@ -24,6 +24,7 @@ import SmsPage from "@/pages/sms-page";
 import SocialMediaPage from "@/pages/social-media-page";
 import AiAnalysisPage from "@/pages/ai-analysis-page";
 import AiPredictionPage from "@/pages/ai-prediction-page";
+import AISearchPage from "@/pages/ai-search-page";
 import ReportIncidentPage from "@/pages/report-incident-page";
 import MapPage from "@/pages/map-page";
 import SurveyManagementPage from "@/pages/survey-management-page";
@@ -45,6 +46,7 @@ function Router() {
       {/* AI Assistant */}
       <ProtectedRoute path="/ai-analysis" component={AiAnalysisPage} />
       <ProtectedRoute path="/ai-prediction" component={AiPredictionPage} />
+      <ProtectedRoute path="/ai-search" component={AISearchPage} />
       <ProtectedRoute path="/ai-advisor" component={AiAnalysisPage} />
       
       {/* Risk Assessment */}

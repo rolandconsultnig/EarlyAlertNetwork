@@ -1575,6 +1575,115 @@ export async function registerRoutes(app: Express): Promise<Server> {
         : "Translation service is not available. OpenAI API key is not configured."
     });
   });
+  
+  // AI-powered search endpoint
+  app.post("/api/search/ai", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { query, filter } = req.body;
+      
+      if (!query || typeof query !== 'string') {
+        return res.status(400).json({ error: "Search query is required" });
+      }
+      
+      // Fetch incidents to search through
+      const incidents = await storage.getIncidents();
+      
+      // Apply category filter if specified
+      const filteredIncidents = filter && filter !== 'all'
+        ? incidents.filter(inc => inc.category === filter)
+        : incidents;
+      
+      // If no OpenAI API key or incidents, return error
+      if (!process.env.OPENAI_API_KEY || filteredIncidents.length === 0) {
+        return res.status(400).json({ 
+          error: "Search unavailable", 
+          message: !process.env.OPENAI_API_KEY 
+            ? "AI search requires OpenAI API key" 
+            : "No incidents available to search" 
+        });
+      }
+      
+      // Format incidents for the AI to process
+      const incidentsData = filteredIncidents.map(inc => ({
+        id: inc.id,
+        title: inc.title,
+        description: inc.description,
+        location: inc.location,
+        region: inc.region,
+        severity: inc.severity,
+        category: inc.category,
+        reportedAt: inc.reportedAt
+      }));
+      
+      try {
+        // Call OpenAI to perform the search
+        const prompt = `
+          You are an AI assistant for the Institute for Peace and Conflict Resolution in Nigeria.
+          
+          Here is a collection of incident reports:
+          ${JSON.stringify(incidentsData, null, 2)}
+          
+          User Query: "${query}"
+          
+          Search through these incidents and identify the most relevant ones to the query.
+          For each relevant incident, provide:
+          - Why it's relevant to the query
+          - An AI insight that adds value beyond the incident description
+          - A relevance score (0-100)
+          
+          Return your response in JSON format with exact structure:
+          {
+            "results": [
+              {
+                "id": <incident id>,
+                "title": <incident title>,
+                "description": <incident description>,
+                "aiInsight": <your analysis/insight about this incident>,
+                "relevance": <relevance score 0-100>,
+                "category": <incident category>,
+                "severity": <incident severity>,
+                "region": <incident region>,
+                "date": <formatted date>
+              },
+              ...
+            ]
+          }
+          
+          Sort the results by relevance (highest first) and limit to the 5 most relevant incidents.
+        `;
+        
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
+          messages: [
+            { role: "system", content: "You are an AI search engine specializing in conflict analysis and peace research." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.3,
+          response_format: { type: "json_object" }
+        });
+        
+        // Parse the AI response
+        const aiResponse = JSON.parse(completion.choices[0].message.content || '{}');
+        
+        // Return the search results
+        res.json(aiResponse);
+      } catch (aiError: any) {
+        console.error("AI search error:", aiError);
+        res.status(500).json({ 
+          error: "AI search failed", 
+          message: aiError?.message || String(aiError)
+        });
+      }
+    } catch (error: any) {
+      console.error("Error in search:", error);
+      res.status(500).json({ 
+        error: "Search failed", 
+        message: error?.message || String(error)
+      });
+    }
+  });
 
   // Survey Management Routes
   app.get("/api/surveys", isAuthenticated, async (req, res) => {
