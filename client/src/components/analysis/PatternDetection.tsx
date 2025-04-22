@@ -166,7 +166,42 @@ const PatternDetection: React.FC<PatternDetectionProps> = ({ className }) => {
       
       if (data.patterns && data.aiGenerated) {
         // Use AI-generated patterns
-        setPatterns(data.patterns);
+        // Ensure patterns has the correct structure
+        const formattedPatterns = {
+          temporal: Array.isArray(data.patterns.temporal) ? data.patterns.temporal : [],
+          spatial: Array.isArray(data.patterns.spatial) ? data.patterns.spatial : [],
+          actor: Array.isArray(data.patterns.actor) ? data.patterns.actor : []
+        };
+        
+        // Validate that each pattern has the required properties
+        formattedPatterns.temporal = formattedPatterns.temporal.map(pattern => ({
+          name: pattern.name || "Unnamed Pattern",
+          description: pattern.description || "No description provided",
+          significance: typeof pattern.significance === 'number' ? pattern.significance : 50,
+          relevance: ['high', 'medium', 'low'].includes(pattern.relevance) ? pattern.relevance : 'medium',
+          period: pattern.period || "Unknown period",
+          incidents: Array.isArray(pattern.incidents) ? pattern.incidents : []
+        }));
+        
+        formattedPatterns.spatial = formattedPatterns.spatial.map(pattern => ({
+          name: pattern.name || "Unnamed Pattern",
+          description: pattern.description || "No description provided",
+          significance: typeof pattern.significance === 'number' ? pattern.significance : 50,
+          relevance: ['high', 'medium', 'low'].includes(pattern.relevance) ? pattern.relevance : 'medium',
+          region: pattern.region || "Unknown region",
+          incidents: Array.isArray(pattern.incidents) ? pattern.incidents : []
+        }));
+        
+        formattedPatterns.actor = formattedPatterns.actor.map(pattern => ({
+          name: pattern.name || "Unnamed Pattern",
+          description: pattern.description || "No description provided",
+          significance: typeof pattern.significance === 'number' ? pattern.significance : 50,
+          relevance: ['high', 'medium', 'low'].includes(pattern.relevance) ? pattern.relevance : 'medium',
+          actor: pattern.actor || "Unknown actor",
+          incidents: Array.isArray(pattern.incidents) ? pattern.incidents : []
+        }));
+        
+        setPatterns(formattedPatterns);
       } else {
         // Fall back to rule-based analysis if AI analysis fails
         const detectedPatterns = {

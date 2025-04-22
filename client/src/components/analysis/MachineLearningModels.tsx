@@ -65,8 +65,8 @@ const ensembleComparisonData = [
   { name: 'AUC', rf: 92, gradient: 90, ada: 86, voting: 93 },
 ];
 
-// Sample data for predictive modeling
-const predictiveModelData = [
+// Initial data for predictive modeling
+const initialPredictiveModelData = [
   { date: 'Jan', prob: 0.12, threshold: 0.5 },
   { date: 'Feb', prob: 0.18, threshold: 0.5 },
   { date: 'Mar', prob: 0.25, threshold: 0.5 },
@@ -99,6 +99,15 @@ const MachineLearningModels: React.FC = () => {
     useEnsemble: true,
     includeGeoData: true,
   });
+  
+  // Use state for predictive model data to allow updates
+  const [predictiveModelData, setPredictiveModelData] = useState(
+    initialPredictiveModelData.map(item => ({
+      ...item,
+      threshold: modelConfig.confidenceThreshold,
+      alert: item.prob > modelConfig.confidenceThreshold
+    }))
+  );
   
   // Training status simulation
   const [trainingStatus, setTrainingStatus] = useState({
@@ -224,7 +233,19 @@ const MachineLearningModels: React.FC = () => {
                       max={0.9}
                       step={0.05}
                       value={modelConfig.confidenceThreshold}
-                      onChange={(e) => setModelConfig({...modelConfig, confidenceThreshold: parseFloat(e.target.value)})}
+                      onChange={(e) => {
+                        const newThreshold = parseFloat(e.target.value);
+                        setModelConfig({...modelConfig, confidenceThreshold: newThreshold});
+                        
+                        // Update the predictive model data with the new threshold
+                        setPredictiveModelData(prev => 
+                          prev.map(item => ({
+                            ...item,
+                            threshold: newThreshold,
+                            alert: item.prob > newThreshold
+                          }))
+                        );
+                      }}
                       className="mt-1"
                     />
                   </div>
