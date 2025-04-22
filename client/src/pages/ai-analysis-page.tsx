@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
+import AiChat from "@/components/ai/AiChat";
 import { 
   BarChart3, 
   Sparkles, 
@@ -119,10 +120,11 @@ export default function AiAnalysisPage() {
         onValueChange={setActiveTab}
         className="space-y-4"
       >
-        <TabsList className="grid grid-cols-3 w-[500px]">
+        <TabsList className="grid grid-cols-4 w-[650px]">
           <TabsTrigger value="risk-analysis">Risk Analysis</TabsTrigger>
           <TabsTrigger value="incident-analysis">Incident Analysis</TabsTrigger>
           <TabsTrigger value="pattern-detection">Pattern Detection</TabsTrigger>
+          <TabsTrigger value="ai-chat">AI Chat</TabsTrigger>
         </TabsList>
         
         <TabsContent value="risk-analysis" className="space-y-4">
@@ -395,6 +397,66 @@ export default function AiAnalysisPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="ai-chat">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="md:col-span-2">
+              <AiChat />
+            </div>
+            
+            <div className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg flex items-center">
+                    <Brain className="h-5 w-5 mr-2 text-blue-500" />
+                    AI Assistant Features
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    <div className="p-3 bg-blue-50 rounded-md">
+                      <h3 className="font-medium text-sm mb-1">Conflict Analysis</h3>
+                      <p className="text-xs text-gray-600">Get AI-powered analysis of conflict situations and security incidents</p>
+                    </div>
+                    
+                    <div className="p-3 bg-blue-50 rounded-md">
+                      <h3 className="font-medium text-sm mb-1">Risk Assessment</h3>
+                      <p className="text-xs text-gray-600">Request risk assessments for specific regions or types of conflict</p>
+                    </div>
+                    
+                    <div className="p-3 bg-blue-50 rounded-md">
+                      <h3 className="font-medium text-sm mb-1">Pattern Recognition</h3>
+                      <p className="text-xs text-gray-600">Ask about trends and patterns in security incidents</p>
+                    </div>
+                    
+                    <div className="p-3 bg-blue-50 rounded-md">
+                      <h3 className="font-medium text-sm mb-1">Response Recommendations</h3>
+                      <p className="text-xs text-gray-600">Get suggestions for effective responses to conflict situations</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">AI Knowledge Base</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2 text-sm">
+                    <p>The AI assistant has been trained on:</p>
+                    <ul className="list-disc pl-5 space-y-1 text-gray-600">
+                      <li>Conflict analysis methodologies</li>
+                      <li>Nigerian regional security data</li>
+                      <li>Early warning best practices</li>
+                      <li>Peace and conflict resolution approaches</li>
+                      <li>Historical conflict patterns in Nigeria</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
       </Tabs>
     </MainLayout>
