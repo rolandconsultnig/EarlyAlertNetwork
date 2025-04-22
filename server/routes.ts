@@ -828,15 +828,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
         
         // Parse the AI response
-        const aiResponse = JSON.parse(response.choices[0].message.content || '{}');
-        // Check if we got the expected format or need to restructure
-        let patterns = aiResponse;
-        if (!aiResponse.temporal && !aiResponse.spatial && !aiResponse.actor) {
-          // If the response has a nested 'patterns' object, use that
-          if (aiResponse.patterns) {
-            patterns = aiResponse.patterns;
-          }
+        const responseContent = response.choices[0].message.content || '{}';
+        console.log("Raw AI response:", responseContent);
+        
+        let aiResponse;
+        try {
+          aiResponse = JSON.parse(responseContent);
+        } catch (parseError) {
+          console.error("Failed to parse AI response:", parseError);
+          throw new Error("Invalid response format from AI");
         }
+        
+        // Structure validation and normalization
+        let patterns = {
+          temporal: [],
+          spatial: [],
+          actor: []
+        };
+        
+        // Check for different response structure possibilities
+        if (aiResponse.patterns) {
+          // Case: { patterns: { temporal: [], spatial: [], actor: [] } }
+          patterns = aiResponse.patterns;
+        } else if (aiResponse.temporal || aiResponse.spatial || aiResponse.actor) {
+          // Case: { temporal: [], spatial: [], actor: [] }
+          patterns = {
+            temporal: Array.isArray(aiResponse.temporal) ? aiResponse.temporal : [],
+            spatial: Array.isArray(aiResponse.spatial) ? aiResponse.spatial : [],
+            actor: Array.isArray(aiResponse.actor) ? aiResponse.actor : []
+          };
+        }
+        
+        // Verify we have the expected structure
+        if (!Array.isArray(patterns.temporal)) patterns.temporal = [];
+        if (!Array.isArray(patterns.spatial)) patterns.spatial = [];
+        if (!Array.isArray(patterns.actor)) patterns.actor = [];
         
         res.json({
           patterns: patterns,
