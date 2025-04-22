@@ -138,31 +138,72 @@ const PatternDetection: React.FC<PatternDetectionProps> = ({ className }) => {
     }, 1500);
   };
 
-  // Function to analyze incidents for patterns
-  const analyzePatterns = (incidentData: Incident[]) => {
+  // Function to analyze incidents for patterns using AI
+  const analyzePatterns = async (incidentData: Incident[]) => {
     setIsAnalyzing(true);
     
-    // Simulate analysis (this would be a more complex algorithm in production)
-    setTimeout(() => {
+    try {
+      // Call the AI pattern detection API
+      const response = await fetch('/api/analysis/patterns', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          incidents: incidentData,
+          // Optional filters that can be added later
+          category: activeTab === 'all' ? undefined : activeTab,
+          region: undefined, // Could be added as a filter parameter
+          timeframe: undefined, // Could be added as a filter parameter
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('AI pattern analysis failed');
+      }
+      
+      const data = await response.json();
+      
+      if (data.patterns && data.aiGenerated) {
+        // Use AI-generated patterns
+        setPatterns(data.patterns);
+      } else {
+        // Fall back to rule-based analysis if AI analysis fails
+        const detectedPatterns = {
+          temporal: detectTemporalPatterns(incidentData),
+          spatial: detectSpatialPatterns(incidentData),
+          actor: detectActorPatterns(incidentData)
+        };
+        setPatterns(detectedPatterns);
+      }
+    } catch (error) {
+      console.error("Error analyzing patterns:", error);
+      
+      // Fall back to rule-based analysis
       try {
         const detectedPatterns = {
           temporal: detectTemporalPatterns(incidentData),
           spatial: detectSpatialPatterns(incidentData),
           actor: detectActorPatterns(incidentData)
         };
-        
         setPatterns(detectedPatterns);
-        setIsAnalyzing(false);
-      } catch (error) {
-        console.error("Error analyzing patterns:", error);
+        
+        toast({
+          title: "AI Analysis Unavailable",
+          description: "Using rule-based analysis as a fallback.",
+          variant: "destructive"
+        });
+      } catch (fallbackError) {
+        console.error("Fallback analysis also failed:", fallbackError);
         toast({
           title: "Analysis Error",
           description: "Failed to analyze patterns in the incident data.",
           variant: "destructive"
         });
-        setIsAnalyzing(false);
       }
-    }, 1500); // Simulated analysis time
+    } finally {
+      setIsAnalyzing(false);
+    }
   };
 
   // Detect temporal patterns in incidents

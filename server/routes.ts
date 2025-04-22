@@ -6,6 +6,7 @@ import { WebSocketServer, WebSocket } from "ws";
 import { z } from "zod";
 import { fromZodError } from 'zod-validation-error';
 import crypto from 'crypto';
+import OpenAI from 'openai';
 import {
   insertDataSourceSchema,
   insertIncidentSchema,
@@ -31,6 +32,11 @@ import { registerIntegrationRoutes } from "./services/integrations/integration-r
 import { integrationServices } from "./services/integrations";
 import { db } from "./db";
 import { desc, eq, count } from "drizzle-orm";
+
+// Initialize OpenAI client 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication middleware
@@ -823,9 +829,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         // Parse the AI response
         const aiResponse = JSON.parse(response.choices[0].message.content || '{}');
+        // Check if we got the expected format or need to restructure
+        let patterns = aiResponse;
+        if (!aiResponse.temporal && !aiResponse.spatial && !aiResponse.actor) {
+          // If the response has a nested 'patterns' object, use that
+          if (aiResponse.patterns) {
+            patterns = aiResponse.patterns;
+          }
+        }
+        
         res.json({
-          patterns: aiResponse,
-          aiGenerated: true
+          patterns: patterns,
+          aiGenerated: true,
+          message: "Patterns detected using AI analysis"
         });
       } catch (aiError) {
         console.error("AI pattern analysis failed:", aiError);
