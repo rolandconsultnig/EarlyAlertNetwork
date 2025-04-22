@@ -772,6 +772,70 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ error: "Failed to analyze incident" });
     }
   });
+  
+  // AI Pattern Detection endpoint
+  app.post("/api/analysis/patterns", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { incidents, category, region, timeframe } = req.body;
+      
+      if (!incidents || !Array.isArray(incidents) || incidents.length === 0) {
+        return res.status(400).json({ error: "Valid incidents array is required" });
+      }
+      
+      // Call OpenAI for pattern analysis
+      const prompt = `
+        As a conflict analysis expert for the Institute for Peace and Conflict Resolution in Nigeria, 
+        analyze these incidents to identify patterns, trends, and insights.
+        
+        Incidents data:
+        ${JSON.stringify(incidents, null, 2)}
+        
+        ${category ? `Focus on this category: ${category}` : 'Consider all categories'}
+        ${region ? `Focus on this region: ${region}` : 'Consider all regions'}
+        ${timeframe ? `Focus on this timeframe: ${timeframe}` : 'Consider all timeframes'}
+        
+        Based on this information, identify and explain:
+        1. Temporal patterns (time-based trends)
+        2. Spatial patterns (location-based trends)
+        3. Actor-based patterns (people/groups involved)
+        
+        Provide your analysis in JSON format with these keys:
+        - temporal: Array of temporal patterns (each with name, description, significance (1-100), relevance (high/medium/low), period, incidents)
+        - spatial: Array of spatial patterns (each with name, description, significance (1-100), relevance (high/medium/low), location, incidents)
+        - actor: Array of actor patterns (each with name, description, significance (1-100), relevance (high/medium/low), actors, incidents)
+      `;
+      
+      try {
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+          messages: [
+            { 
+              role: "system", 
+              content: "You are an AI analyst specializing in conflict analysis, early warning systems, and pattern detection for the Institute for Peace and Conflict Resolution in Nigeria. Provide detailed and accurate pattern analysis." 
+            },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.3,
+          response_format: { type: "json_object" }
+        });
+        
+        // Parse the AI response
+        const aiResponse = JSON.parse(response.choices[0].message.content || '{}');
+        res.json({
+          patterns: aiResponse,
+          aiGenerated: true
+        });
+      } catch (aiError) {
+        console.error("AI pattern analysis failed:", aiError);
+        res.status(500).json({ error: "AI pattern analysis failed. Please try again later." });
+      }
+    } catch (error) {
+      console.error("Error in AI pattern analysis:", error);
+      res.status(500).json({ error: "Failed to analyze patterns" });
+    }
+  });
 
   // NLP API Endpoints
   app.post("/api/nlp/sentiment", async (req, res) => {

@@ -66,8 +66,8 @@ const PatternDetection: React.FC<PatternDetectionProps> = ({ className }) => {
     if (incidents && !isAnalyzing) {
       analyzePatterns(incidents);
     } else if (!incidents && !isLoading && !isAnalyzing) {
-      // Generate sample patterns for demo purposes
-      generateSamplePatterns();
+      // Show loading state instead of sample patterns
+      setIsAnalyzing(true);
     }
   }, [incidents, isLoading]);
 
