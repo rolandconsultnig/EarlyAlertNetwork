@@ -879,6 +879,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // AI Chat endpoint - direct connection to OpenAI
+  app.post("/api/ai/chat", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { message, conversationHistory } = req.body;
+      
+      if (!message || typeof message !== 'string') {
+        return res.status(400).json({ error: "Valid message is required" });
+      }
+      
+      // Prepare conversation history for OpenAI
+      let messages = [
+        { 
+          role: "system", 
+          content: "You are an AI assistant for the Institute for Peace and Conflict Resolution in Nigeria. Your purpose is to assist with conflict analysis, early warning, and response planning. Focus on providing helpful, accurate, and concise information about peace and security issues in Nigeria. Cite specific incidents or patterns when they help illustrate your points. Always be sensitive to the serious nature of conflict issues while maintaining a constructive, solution-oriented approach." 
+        }
+      ];
+      
+      // Add conversation history if provided
+      if (conversationHistory && Array.isArray(conversationHistory)) {
+        messages = [...messages, ...conversationHistory.map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }))];
+      }
+      
+      // Add the new user message
+      messages.push({ role: "user", content: message });
+      
+      try {
+        const response = await openai.chat.completions.create({
+          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
+          messages: messages,
+          temperature: 0.7,
+          max_tokens: 1000
+        });
+        
+        const aiResponse = response.choices[0].message.content;
+        
+        res.json({
+          response: aiResponse,
+          success: true
+        });
+      } catch (aiError) {
+        console.error("AI chat response failed:", aiError);
+        res.status(500).json({ 
+          error: "Failed to get AI response. Please try again.", 
+          success: false 
+        });
+      }
+    } catch (error) {
+      console.error("Error in AI chat:", error);
+      res.status(500).json({ 
+        error: "An unexpected error occurred.", 
+        success: false 
+      });
+    }
+  });
+
   // NLP API Endpoints
   app.post("/api/nlp/sentiment", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
