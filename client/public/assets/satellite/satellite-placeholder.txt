@@ -1,0 +1,1 @@
+Placeholder for satellite imagery. In a real implementation, this would be actual satellite imagery from providers like Sentinel-2, Landsat, or DigitalGlobe.

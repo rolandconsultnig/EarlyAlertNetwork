@@ -2,8 +2,10 @@ import { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { AlertTriangle, Loader2 } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertTriangle, Loader2, Map, Satellite } from "lucide-react";
 import NigeriaMap from "@/components/maps/NigeriaMap";
+import SatelliteImagery from "@/components/map/SatelliteImagery";
 import type { Incident } from "@shared/schema";
 
 // Create our own mock incidents with custom properties for the map display
@@ -225,25 +227,67 @@ export default function MapPage() {
           </div>
         </CardHeader>
         <CardContent className="p-6 pt-2">
-          <div className="border rounded-md overflow-hidden" style={{ position: 'relative', zIndex: 5 }}>
-            {!isMapReady ? (
-              <div style={{ height: mapHeight }} className="flex items-center justify-center bg-gray-50">
-                <div className="text-center">
-                  <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
-                  <p className="text-sm text-gray-500">Loading map and incidents...</p>
+          <Tabs defaultValue="map" className="w-full">
+            <TabsList className="mb-4 w-full">
+              <TabsTrigger value="map" className="flex items-center">
+                <Map className="h-4 w-4 mr-2" />
+                Crisis Map
+              </TabsTrigger>
+              <TabsTrigger value="satellite" className="flex items-center">
+                <Satellite className="h-4 w-4 mr-2" />
+                Satellite Imagery
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="map" className="border rounded-md overflow-hidden" style={{ position: 'relative', zIndex: 5 }}>
+              {!isMapReady ? (
+                <div style={{ height: mapHeight }} className="flex items-center justify-center bg-gray-50">
+                  <div className="text-center">
+                    <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-500" />
+                    <p className="text-sm text-gray-500">Loading map and incidents...</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="map-wrapper">
+                  <NigeriaMap 
+                    height={mapHeight}
+                    showIncidents={true}
+                    // Force use of component's internal mock data
+                    incidents={undefined}
+                  />
+                </div>
+              )}
+            </TabsContent>
+            
+            <TabsContent value="satellite">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <SatelliteImagery />
+                <div className="bg-slate-50 p-4 rounded-lg">
+                  <h3 className="text-lg font-semibold mb-3">Satellite Imagery Analysis</h3>
+                  <p className="text-sm text-gray-600 mb-4">
+                    Satellite imagery provides critical insights for monitoring and analyzing conflict zones, environmental changes, population movements, and infrastructure damage.
+                  </p>
+                  
+                  <div className="space-y-2 text-sm">
+                    <h4 className="font-medium">Available Data Sources:</h4>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Landsat 8/9 - Medium resolution imagery for environmental monitoring</li>
+                      <li>Sentinel-2 - High resolution optical imagery with 10-60m resolution</li>
+                      <li>MODIS - Daily global coverage at 250-1000m resolution</li>
+                    </ul>
+                    
+                    <h4 className="font-medium mt-4">Applications:</h4>
+                    <ul className="list-disc pl-5 space-y-1">
+                      <li>Early warning of environmental triggers for conflicts</li>
+                      <li>Monitoring of population displacements</li>
+                      <li>Assessment of infrastructure damage following incidents</li>
+                      <li>Verification of reported incidents and conflict zones</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-            ) : (
-              <div className="map-wrapper">
-                <NigeriaMap 
-                  height={mapHeight}
-                  showIncidents={true}
-                  // Force use of component's internal mock data
-                  incidents={undefined}
-                />
-              </div>
-            )}
-          </div>
+            </TabsContent>
+          </Tabs>
         </CardContent>
       </Card>
       
