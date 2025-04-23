@@ -30,6 +30,7 @@ import { apiIntegrationService } from "./services/api-integration-service";
 import { dataSourceService } from "./services/data-source-service";
 import { registerIntegrationRoutes } from "./services/integrations/integration-routes";
 import { integrationServices } from "./services/integrations";
+import { erosService } from "./services/eros-service";
 import { db } from "./db";
 import { desc, eq, count } from "drizzle-orm";
 
@@ -1000,6 +1001,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Satellite Imagery API Endpoints
+  app.get("/api/satellite/datasets", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const datasets = await erosService.searchDatasets();
+      res.json(datasets);
+    } catch (error) {
+      console.error("Error fetching satellite datasets:", error);
+      res.status(500).json({ error: "Failed to fetch satellite datasets" });
+    }
+  });
+  
+  app.get("/api/satellite/imagery", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { 
+        lat, lng, region, dataset = 'landsat_ot_c2_l2', 
+        radius = 50, maxResults = 5 
+      } = req.query;
+      
+      if (!lat || !lng) {
+        return res.status(400).json({ error: "Latitude and longitude are required" });
+      }
+      
+      const latitude = parseFloat(lat as string);
+      const longitude = parseFloat(lng as string);
+      const radiusKm = parseInt(radius as string);
+      const results = parseInt(maxResults as string);
+      
+      let imagery = [];
+      
+      // Use dataset-specific methods
+      if (dataset === 'sentinel_2a' || dataset === 'sentinel-2') {
+        imagery = await erosService.getNigeriaSentinelImagery(
+          region as string || 'Unknown', 
+          latitude, 
+          longitude, 
+          radiusKm,
+          results
+        );
+      } else {
+        // Default to Landsat
+        imagery = await erosService.getNigeriaLandsatImagery(
+          region as string || 'Unknown',
+          latitude,
+          longitude,
+          radiusKm,
+          results
+        );
+      }
+      
+      res.json(imagery);
+    } catch (error) {
+      console.error("Error fetching satellite imagery:", error);
+      res.status(500).json({ error: "Failed to fetch satellite imagery" });
+    }
+  });
+  
+  app.get("/api/satellite/imagery/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { id } = req.params;
+      const { dataset = 'landsat_ot_c2_l2' } = req.query;
+      
+      const metadata = await erosService.getSceneMetadata(dataset as string, id);
+      res.json(metadata);
+    } catch (error) {
+      console.error("Error fetching satellite scene metadata:", error);
+      res.status(500).json({ error: "Failed to fetch scene metadata" });
+    }
+  });
+  
+  app.get("/api/satellite/download/:id", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { id } = req.params;
+      const { dataset = 'landsat_ot_c2_l2' } = req.query;
+      
+      const downloadUrl = await erosService.getDownloadUrl(dataset as string, id);
+      res.json({ downloadUrl });
+    } catch (error) {
+      console.error("Error getting download URL:", error);
+      res.status(500).json({ error: "Failed to get download URL" });
+    }
+  });
+  
   // NLP API Endpoints
   app.post("/api/nlp/sentiment", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);

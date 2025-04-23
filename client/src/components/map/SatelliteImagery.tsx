@@ -41,45 +41,80 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
       data.filter((source: SatelliteSource) => source.type === 'satellite')
   });
 
-  // Simulated satellite image URLs for demonstration
-  // In a real implementation, these would be actual URLs to satellite imagery
-  const sampleImages = {
+  // When no real imagery data is available, these will be used as fallbacks
+  const fallbackImages = {
     'Sentinel-2': 'https://www.evernaconsulting.com/wp-content/uploads/2020/07/Nigeria-Urban-Growth-Analytics-Spatial-Planning-scaled.jpg',
     'Landsat 8/9': 'https://www.nesdis.noaa.gov/sites/default/files/assets/images/nigeria-landsat.jpg',
     'MODIS': 'https://eoimages.gsfc.nasa.gov/images/imagerecords/92000/92674/nigeria_viirs_2016_lrg.jpg',
     'Satellite Imagery': 'https://www.evernaconsulting.com/wp-content/uploads/2020/07/Nigeria-Urban-Growth-Analytics-Spatial-Planning-scaled.jpg',
   };
 
-  // Function to fetch satellite imagery (simulated)
+  // Function to fetch satellite imagery from EROS API
   const fetchSatelliteImage = async (sourceId: string) => {
     setIsLoading(true);
     
     try {
-      // In a real implementation, this would make an API call to fetch actual imagery
-      // For now, we're using sample images
-      await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-      
       const source = satelliteSources?.find((s: SatelliteSource) => s.id.toString() === sourceId);
       
       if (!source) {
         throw new Error('Invalid satellite source');
       }
       
-      // Use the sample image by source name, or fall back to a default
-      const imageUrl = sampleImages[source.name as keyof typeof sampleImages] || sampleImages['Satellite Imagery'];
+      // Determine dataset name based on source
+      let datasetName = '';
+      if (source.name.includes('Sentinel')) {
+        datasetName = 'sentinel_2a';
+      } else if (source.name.includes('Landsat')) {
+        datasetName = 'landsat_ot_c2_l2';
+      } else if (source.name.includes('MODIS')) {
+        datasetName = 'modis_terra_lst';
+      } else {
+        datasetName = 'landsat_ot_c2_l2'; // Default to Landsat
+      }
       
-      setCurrentImage(imageUrl);
-      if (onImageLoad) onImageLoad(imageUrl);
+      // Call satellite imagery API
+      const response = await fetch(`/api/satellite/imagery?lat=${location.lat}&lng=${location.lng}&dataset=${datasetName}&radius=50&maxResults=1`);
       
-      toast({
-        title: 'Imagery Loaded',
-        description: `Successfully loaded imagery from ${source.name}`,
-      });
+      if (!response.ok) {
+        throw new Error('Failed to fetch satellite imagery');
+      }
+      
+      const data = await response.json();
+      
+      if (data && data.length > 0 && data[0].thumbnailUrl) {
+        // We have a real satellite image from the API
+        setCurrentImage(data[0].thumbnailUrl);
+        if (onImageLoad) onImageLoad(data[0].thumbnailUrl);
+        
+        toast({
+          title: 'Imagery Loaded',
+          description: `Successfully loaded ${data[0].displayId || source.name} from ${new Date(data[0].acquisitionDate).toLocaleDateString() || 'unknown date'}`,
+        });
+      } else {
+        // Fall back to sample images if no real data is available
+        const fallbackUrl = fallbackImages[source.name as keyof typeof fallbackImages] || fallbackImages['Satellite Imagery'];
+        setCurrentImage(fallbackUrl);
+        if (onImageLoad) onImageLoad(fallbackUrl);
+        
+        toast({
+          title: 'Using Sample Imagery',
+          description: `No recent satellite imagery available for ${source.name}. Using sample image instead.`,
+        });
+      }
     } catch (error) {
       console.error('Error loading satellite imagery:', error);
+      
+      // Fall back to sample images on error
+      const source = satelliteSources?.find((s: SatelliteSource) => s.id.toString() === sourceId);
+      if (source) {
+        const fallbackUrl = fallbackImages[source.name as keyof typeof fallbackImages] || fallbackImages['Satellite Imagery'];
+        setCurrentImage(fallbackUrl);
+        if (onImageLoad) onImageLoad(fallbackUrl);
+      }
+      
       toast({
-        title: 'Error',
-        description: 'Failed to load satellite imagery. Please try again.',
+        title: 'API Error',
+        description: 'Failed to load satellite imagery from EROS service. Using sample image instead.',
         variant: 'destructive',
       });
     } finally {
