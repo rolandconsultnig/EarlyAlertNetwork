@@ -189,6 +189,8 @@ const mockIncidents: MapMockIncident[] = [
 export default function MapPage() {
   const [mapHeight, setMapHeight] = useState("700px");
   const [isMapReady, setIsMapReady] = useState(false);
+  const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [selectedIncident, setSelectedIncident] = useState<MapMockIncident | null>(null);
   
   // Add stability to make sure the map doesn't disappear
   useEffect(() => {
@@ -199,6 +201,15 @@ export default function MapPage() {
     
     return () => clearTimeout(timer);
   }, []);
+  
+  // Handle incident selection to view corresponding satellite imagery
+  const handleIncidentSelect = (incident: MapMockIncident) => {
+    setSelectedIncident(incident);
+    setSelectedLocation({ 
+      lat: incident.latitude, 
+      lng: incident.longitude 
+    });
+  };
   
   return (
     <MainLayout title="Crisis Map">

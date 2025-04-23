@@ -72,8 +72,12 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
         datasetName = 'landsat_ot_c2_l2'; // Default to Landsat
       }
       
+      // If no location provided, use a default location in Nigeria (Abuja)
+      const defaultLocation = { lat: 9.0765, lng: 7.3986 };
+      const locationToUse = location || defaultLocation;
+      
       // Call satellite imagery API
-      const response = await fetch(`/api/satellite/imagery?lat=${location.lat}&lng=${location.lng}&dataset=${datasetName}&radius=50&maxResults=1`);
+      const response = await fetch(`/api/satellite/imagery?lat=${locationToUse.lat}&lng=${locationToUse.lng}&dataset=${datasetName}&radius=50&maxResults=1`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch satellite imagery');
@@ -137,11 +141,11 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
     setOpacity(value[0]);
   };
   
-  // Update the image when location changes (not implemented in this demo)
+  // Update the image when location changes
   useEffect(() => {
     if (selectedSource && location) {
-      // In a real implementation, this would re-fetch the imagery for the new location
-      // console.log('Location changed, would fetch new imagery for:', location);
+      console.log('Location changed, fetching new imagery for:', location);
+      fetchSatelliteImage(selectedSource);
     }
   }, [location, selectedSource]);
   
@@ -200,9 +204,17 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
                 }}
               />
               {/* No actual satellite data note */}
-              <div className="absolute bottom-2 right-2 bg-white bg-opacity-70 text-xs p-1 rounded">
-                Demo image - Not actual satellite data
-              </div>
+              {currentImage.includes('evernaconsulting') || 
+               currentImage.includes('nesdis') || 
+               currentImage.includes('gsfc.nasa.gov') ? (
+                <div className="absolute bottom-2 right-2 bg-white bg-opacity-70 text-xs p-1 rounded">
+                  Fallback image - Not real-time data
+                </div>
+              ) : (
+                <div className="absolute bottom-2 right-2 bg-white bg-opacity-70 text-xs p-1 rounded">
+                  USGS Earth Explorer
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center h-64 bg-gray-100 text-gray-400">
@@ -264,7 +276,7 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
         )}
       </CardContent>
       <CardFooter className="text-xs text-gray-500">
-        Note: This is a demonstration. In a production environment, this would connect to actual satellite imagery APIs.
+        Powered by USGS Earth Explorer API. Imagery may be delayed based on satellite passes over Nigeria.
       </CardFooter>
     </Card>
   );
