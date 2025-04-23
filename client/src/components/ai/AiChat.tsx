@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2, Send, RotateCcw, Brain, Bot, User } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { apiRequest } from '@/lib/queryClient';
 
 // Message type definition
 interface Message {
@@ -57,49 +58,49 @@ const AiChat: React.FC<AiChatProps> = ({ className }) => {
     if (!inputMessage.trim()) return;
     
     // Add user message
-    addMessage('user', inputMessage);
+    const userMessage = inputMessage;
+    addMessage('user', userMessage);
     
-    // Clear input field
+    // Clear input field and show processing state
     setInputMessage('');
-    
-    // Process with AI
     setIsProcessing(true);
     
+    // Create a copy of current messages for API call
+    const currentMessages = messages.map(msg => ({
+      role: msg.role,
+      content: msg.content
+    }));
+    
     try {
-      // In a real implementation, this would call the OpenAI API
-      // For now, we'll simulate a response after a delay
-      setTimeout(() => {
-        processAiResponse(inputMessage);
-      }, 1500);
+      // Call the OpenAI API endpoint directly
+      const response = await apiRequest('POST', '/api/ai/chat', {
+        message: userMessage,
+        conversationHistory: currentMessages
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to get AI response');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success && data.response) {
+        // Add AI response to messages
+        addMessage('assistant', data.response);
+      } else {
+        throw new Error('Invalid response from AI');
+      }
     } catch (error) {
       console.error('Error processing message:', error);
       toast({
         title: 'Error',
-        description: 'Failed to process your message. Please try again.',
+        description: error.message || 'Failed to get response from AI. Please try again.',
         variant: 'destructive',
       });
+    } finally {
       setIsProcessing(false);
     }
-  };
-
-  // Process AI response (simulated)
-  const processAiResponse = (userMessage: string) => {
-    // This would normally be replaced with an actual API call
-    let responseText = '';
-    
-    if (userMessage.toLowerCase().includes('risk')) {
-      responseText = 'Based on our analysis of recent incidents in Nigeria, there are elevated risks in the northeastern region due to ongoing conflicts. The risk assessment indicates a 68% probability of further security incidents in the next 30 days.';
-    } else if (userMessage.toLowerCase().includes('pattern') || userMessage.toLowerCase().includes('trend')) {
-      responseText = 'I\'ve analyzed recent incident data and detected several patterns: 1) Increased frequency of incidents on market days in border communities, 2) Correlation between resource scarcity and intercommunal tensions, and 3) Seasonal patterns showing higher conflict rates during dry seasons.';
-    } else if (userMessage.toLowerCase().includes('recommend') || userMessage.toLowerCase().includes('suggest')) {
-      responseText = 'Based on current conflict indicators, I recommend: 1) Increasing community engagement in the Northeastern region, 2) Implementing early warning networks in vulnerable communities, and 3) Coordinating resource sharing agreements between farmer and herder communities prior to the dry season.';
-    } else {
-      responseText = 'I\'m your AI assistant for conflict analysis and early warning. I can help you analyze risk patterns, detect emerging threats, and provide recommendations for conflict prevention. How can I assist with your peace and security initiatives today?';
-    }
-    
-    // Add AI response to messages
-    addMessage('assistant', responseText);
-    setIsProcessing(false);
   };
 
   // Handle key press (Enter to send)
