@@ -11,39 +11,48 @@ An advanced Early Warning & Early Response System leveraging AI and Natural Lang
 - Voice-controlled incident reporting
 - One-click language translation for incident reports with prioritized Nigerian languages
 - Social media platform integrations (Twilio, Twitter/X, Facebook, Instagram)
+- Satellite imagery for geospatial analysis using USGS Earth Explorer API
 
 ## Technical Architecture
 
 - React.js frontend with TypeScript and Leaflet for geospatial mapping
-- PostgreSQL database for Replit development environment
-- MySQL database for cPanel production deployment
+- PostgreSQL database with Drizzle ORM
+- Express.js backend with RESTful API endpoints
 - Advanced Pattern Detection module with AI-powered conflict analysis
-- Comprehensive API integration with enhanced error handling
-
-## Database Configuration
-
-The system is designed to work with both PostgreSQL (for development) and MySQL (for production):
-
-- **Development**: Uses PostgreSQL on Replit
-- **Production**: Uses MySQL on cPanel with the following configuration:
-  - Database: `ipcr-new`
-  - Username: `admin`
-  - Password: (stored securely in environment variables)
-
-## Deployment Options
-
-The system includes deployment scripts for:
-
-1. AWS cloud deployment
-2. Ubuntu desktop deployment
-3. cPanel hosting (with and without SSH access)
+- OpenAI integration for AI chat analysis and language translation
+- Authentication with session-based user management
 
 ## Getting Started
 
 ### Prerequisites
 
 - Node.js 18+
-- PostgreSQL (for development) or MySQL (for production)
+- PostgreSQL database
+
+### Environment Variables
+
+The application requires the following environment variables:
+
+```
+# Database connection
+DATABASE_URL=postgresql://username:password@localhost:5432/ipcr
+
+# Authentication
+SESSION_SECRET=your_session_secret
+
+# OpenAI integration
+OPENAI_API_KEY=your_openai_api_key
+
+# USGS Earth Explorer API (for satellite imagery)
+EROS_USERNAME=your_eros_username
+EROS_PASSWORD=your_eros_password
+EROS_API_KEY=your_eros_api_key
+
+# Optional social media integrations
+TWILIO_ACCOUNT_SID=your_twilio_sid
+TWILIO_AUTH_TOKEN=your_twilio_token
+TWILIO_PHONE_NUMBER=your_twilio_phone
+```
 
 ### Installation
 
@@ -58,28 +67,12 @@ cd ipcr-early-warning-system
 npm install
 ```
 
-3. Set up environment variables
-```bash
-# Create a .env file with the following variables
-DATABASE_URL=postgresql://username:password@localhost:5432/ipcr
-SESSION_SECRET=your_session_secret
-
-# For social media integrations
-TWILIO_ACCOUNT_SID=your_twilio_sid
-TWILIO_AUTH_TOKEN=your_twilio_token
-TWILIO_PHONE_NUMBER=your_twilio_phone
-
-# For production MySQL (cPanel)
-MYSQL_HOST=localhost
-MYSQL_USER=admin
-MYSQL_PASSWORD=your_password
-MYSQL_DATABASE=ipcr-new
-```
-
-4. Start the development server
+3. Start the development server
 ```bash
 npm run dev
 ```
+
+This will start both the Express.js server and the React frontend using Vite.
 
 ## License
 
