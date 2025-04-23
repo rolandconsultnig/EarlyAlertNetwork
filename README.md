@@ -56,10 +56,10 @@ TWILIO_PHONE_NUMBER=your_twilio_phone
 
 ### Installation
 
-1. Clone the repository
+1. Setup the project
 ```bash
-git clone https://github.com/username/ipcr-early-warning-system.git
-cd ipcr-early-warning-system
+# Install dependencies in your project directory
+cd your-project-directory
 ```
 
 2. Install dependencies
