@@ -95,6 +95,7 @@ interface NigeriaMapProps {
   showAddIncidentButton?: boolean;
   onAddIncident?: (lat: number, lng: number) => void;
   incidents?: Incident[];
+  onSelectIncident?: (incident: Incident) => void;
 }
 
 // Custom interface for mock incidents data
@@ -277,6 +278,7 @@ export default function NigeriaMap({
   showIncidents = true,
   showAddIncidentButton = false,
   onAddIncident,
+  onSelectIncident,
   incidents: propIncidents
 }: NigeriaMapProps) {
   const [clickedPosition, setClickedPosition] = useState<[number, number] | null>(null);
@@ -571,8 +573,13 @@ export default function NigeriaMap({
                       variant="default"
                       onClick={(e) => {
                         e.stopPropagation(); // Prevent closing the popup
-                        setSelectedIncident(incident as Incident);
+                        const typedIncident = incident as Incident;
+                        setSelectedIncident(typedIncident);
                         setDetailModalOpen(true);
+                        // Call the onSelectIncident callback if provided
+                        if (onSelectIncident) {
+                          onSelectIncident(typedIncident);
+                        }
                       }}
                     >
                       View Details

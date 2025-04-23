@@ -191,6 +191,7 @@ export default function MapPage() {
   const [isMapReady, setIsMapReady] = useState(false);
   const [selectedLocation, setSelectedLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [selectedIncident, setSelectedIncident] = useState<MapMockIncident | null>(null);
+  const [activeTab, setActiveTab] = useState<string>("map");
   
   // Add stability to make sure the map doesn't disappear
   useEffect(() => {
@@ -209,6 +210,9 @@ export default function MapPage() {
       lat: incident.latitude, 
       lng: incident.longitude 
     });
+    
+    // Switch to satellite tab
+    setActiveTab("satellite");
   };
   
   return (
@@ -263,8 +267,8 @@ export default function MapPage() {
                   <NigeriaMap 
                     height={mapHeight}
                     showIncidents={true}
-                    // Force use of component's internal mock data
-                    incidents={undefined}
+                    incidents={mockIncidents as unknown as Incident[]}
+                    onSelectIncident={(incident) => handleIncidentSelect(incident as unknown as MapMockIncident)}
                   />
                 </div>
               )}
@@ -272,29 +276,61 @@ export default function MapPage() {
             
             <TabsContent value="satellite">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SatelliteImagery />
+                <SatelliteImagery location={selectedLocation} />
                 <div className="bg-slate-50 p-4 rounded-lg">
-                  <h3 className="text-lg font-semibold mb-3">Satellite Imagery Analysis</h3>
-                  <p className="text-sm text-gray-600 mb-4">
-                    Satellite imagery provides critical insights for monitoring and analyzing conflict zones, environmental changes, population movements, and infrastructure damage.
-                  </p>
+                  <h3 className="text-lg font-semibold mb-3">
+                    {selectedIncident ? (
+                      <>Satellite Analysis: {selectedIncident.title}</>
+                    ) : (
+                      <>Satellite Imagery Analysis</>
+                    )}
+                  </h3>
                   
-                  <div className="space-y-2 text-sm">
-                    <h4 className="font-medium">Available Data Sources:</h4>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Landsat 8/9 - Medium resolution imagery for environmental monitoring</li>
-                      <li>Sentinel-2 - High resolution optical imagery with 10-60m resolution</li>
-                      <li>MODIS - Daily global coverage at 250-1000m resolution</li>
-                    </ul>
-                    
-                    <h4 className="font-medium mt-4">Applications:</h4>
-                    <ul className="list-disc pl-5 space-y-1">
-                      <li>Early warning of environmental triggers for conflicts</li>
-                      <li>Monitoring of population displacements</li>
-                      <li>Assessment of infrastructure damage following incidents</li>
-                      <li>Verification of reported incidents and conflict zones</li>
-                    </ul>
-                  </div>
+                  {selectedIncident ? (
+                    <div className="space-y-3">
+                      <p className="text-sm text-gray-600">
+                        Viewing satellite imagery for the area around <strong>{selectedIncident.location || `${selectedIncident.latitude.toFixed(4)}, ${selectedIncident.longitude.toFixed(4)}`}</strong>.
+                      </p>
+                      
+                      <div className="p-3 bg-white rounded-md shadow-sm border border-gray-200">
+                        <h4 className="font-medium text-sm text-blue-700 mb-1">Incident Details</h4>
+                        <div className="space-y-1 text-xs">
+                          <div><span className="font-medium">Type:</span> {selectedIncident.category?.replace('_', ' ') || 'Unclassified'}</div>
+                          <div><span className="font-medium">Severity:</span> {selectedIncident.severity}</div>
+                          <div><span className="font-medium">Status:</span> {selectedIncident.status}</div>
+                          <div><span className="font-medium">Region:</span> {selectedIncident.region}</div>
+                          <div><span className="font-medium">Affected Population:</span> {selectedIncident.impactedPopulation?.toLocaleString() || 'Unknown'}</div>
+                        </div>
+                      </div>
+                      
+                      <div className="text-xs text-gray-500">
+                        Choose different satellite sources to compare imagery and assess the geographic context of this incident. USGS Earth Explorer imagery is automatically requested for the incident coordinates.
+                      </div>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-600 mb-4">
+                        Satellite imagery provides critical insights for monitoring and analyzing conflict zones, environmental changes, population movements, and infrastructure damage.
+                      </p>
+                      
+                      <div className="space-y-2 text-sm">
+                        <h4 className="font-medium">Available Data Sources:</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li>Landsat 8/9 - Medium resolution imagery for environmental monitoring</li>
+                          <li>Sentinel-2 - High resolution optical imagery with 10-60m resolution</li>
+                          <li>MODIS - Daily global coverage at 250-1000m resolution</li>
+                        </ul>
+                        
+                        <h4 className="font-medium mt-4">Applications:</h4>
+                        <ul className="list-disc pl-5 space-y-1">
+                          <li>Early warning of environmental triggers for conflicts</li>
+                          <li>Monitoring of population displacements</li>
+                          <li>Assessment of infrastructure damage following incidents</li>
+                          <li>Verification of reported incidents and conflict zones</li>
+                        </ul>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
             </TabsContent>
