@@ -42,11 +42,12 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
   });
 
   // Simulated satellite image URLs for demonstration
+  // In a real implementation, these would be actual URLs to satellite imagery
   const sampleImages = {
-    'Sentinel-2': '/assets/satellite/sentinel-nigeria.jpg',
-    'Landsat 8/9': '/assets/satellite/landsat-nigeria.jpg',
-    'Satellite Imagery': '/assets/satellite/satellite-default.jpg',
-    // Add more sample images as needed
+    'Sentinel-2': 'https://www.evernaconsulting.com/wp-content/uploads/2020/07/Nigeria-Urban-Growth-Analytics-Spatial-Planning-scaled.jpg',
+    'Landsat 8/9': 'https://www.nesdis.noaa.gov/sites/default/files/assets/images/nigeria-landsat.jpg',
+    'MODIS': 'https://eoimages.gsfc.nasa.gov/images/imagerecords/92000/92674/nigeria_viirs_2016_lrg.jpg',
+    'Satellite Imagery': 'https://www.evernaconsulting.com/wp-content/uploads/2020/07/Nigeria-Urban-Growth-Analytics-Spatial-Planning-scaled.jpg',
   };
 
   // Function to fetch satellite imagery (simulated)
@@ -58,7 +59,7 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
       // For now, we're using sample images
       await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
       
-      const source = satelliteSources?.find(s => s.id.toString() === sourceId);
+      const source = satelliteSources?.find((s: SatelliteSource) => s.id.toString() === sourceId);
       
       if (!source) {
         throw new Error('Invalid satellite source');
@@ -133,7 +134,7 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
               <SelectContent>
                 <SelectGroup>
                   <SelectLabel>Available Sources</SelectLabel>
-                  {satelliteSources?.map(source => (
+                  {satelliteSources?.map((source: SatelliteSource) => (
                     <SelectItem key={source.id} value={source.id.toString()}>
                       {source.name}
                     </SelectItem>
