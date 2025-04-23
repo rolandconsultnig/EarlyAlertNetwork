@@ -242,7 +242,7 @@ export default function MapPage() {
           </div>
         </CardHeader>
         <CardContent className="p-6 pt-2">
-          <Tabs defaultValue="map" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="mb-4 w-full">
               <TabsTrigger value="map" className="flex items-center">
                 <Map className="h-4 w-4 mr-2" />
@@ -276,7 +276,7 @@ export default function MapPage() {
             
             <TabsContent value="satellite">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <SatelliteImagery location={selectedLocation} />
+                <SatelliteImagery location={selectedLocation as { lat: number; lng: number } | undefined} />
                 <div className="bg-slate-50 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold mb-3">
                     {selectedIncident ? (

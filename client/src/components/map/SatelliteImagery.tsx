@@ -10,7 +10,7 @@ import { Slider } from '@/components/ui/slider';
 
 interface SatelliteImageryProps {
   className?: string;
-  location?: { lat: number; lng: number };
+  location?: { lat: number; lng: number } | null;
   onImageLoad?: (imageUrl: string) => void;
 }
 
