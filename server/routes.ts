@@ -90,8 +90,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Data Sources API
   app.get("/api/data-sources", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
-    const sources = await storage.getDataSources();
-    res.json(sources);
+    
+    try {
+      const sources = await storage.getDataSources();
+      
+      // Add satellite data sources if none exist in the database
+      const satelliteSources = sources.filter(source => source.type === 'satellite');
+      
+      if (satelliteSources.length === 0) {
+        // These would typically come from the database, but we're adding them here for demo purposes
+        const mockSatelliteSources = [
+          {
+            id: 1001,
+            name: 'Sentinel-2',
+            type: 'satellite',
+            url: 'https://www.evernaconsulting.com/wp-content/uploads/2020/07/Nigeria-Urban-Growth-Analytics-Spatial-Planning-scaled.jpg',
+            description: 'High resolution optical imagery with 10-60m resolution, ideal for environmental monitoring and land use analysis'
+          },
+          {
+            id: 1002,
+            name: 'Landsat 8/9',
+            type: 'satellite',
+            url: 'https://www.nesdis.noaa.gov/sites/default/files/assets/images/nigeria-landsat.jpg',
+            description: 'Medium resolution imagery for environmental monitoring, with excellent historical data spanning decades'
+          },
+          {
+            id: 1003,
+            name: 'MODIS',
+            type: 'satellite',
+            url: 'https://eoimages.gsfc.nasa.gov/images/imagerecords/92000/92674/nigeria_viirs_2016_lrg.jpg',
+            description: 'Daily global coverage at 250-1000m resolution, ideal for monitoring large-scale environmental changes'
+          }
+        ];
+        
+        // Return combined sources
+        return res.json([...sources, ...mockSatelliteSources]);
+      }
+      
+      res.json(sources);
+    } catch (error) {
+      console.error("Error fetching data sources:", error);
+      res.status(500).json({ error: "Failed to fetch data sources" });
+    }
   });
 
   app.post("/api/data-sources", async (req, res) => {
