@@ -93,9 +93,15 @@ const AiChat: React.FC<AiChatProps> = ({ className }) => {
       }
     } catch (error) {
       console.error('Error processing message:', error);
+      
+      // Safe error handling with proper typing
+      const errorMessage = error instanceof Error 
+        ? error.message 
+        : 'Failed to get response from AI. Please try again.';
+        
       toast({
         title: 'Error',
-        description: error.message || 'Failed to get response from AI. Please try again.',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
