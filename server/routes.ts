@@ -831,94 +831,257 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Valid incidents array is required" });
       }
       
-      // Call OpenAI for pattern analysis
-      const prompt = `
-        As a conflict analysis expert for the Institute for Peace and Conflict Resolution in Nigeria, 
-        analyze these incidents to identify patterns, trends, and insights.
-        
-        Incidents data:
-        ${JSON.stringify(incidents, null, 2)}
-        
-        ${category ? `Focus on this category: ${category}` : 'Consider all categories'}
-        ${region ? `Focus on this region: ${region}` : 'Consider all regions'}
-        ${timeframe ? `Focus on this timeframe: ${timeframe}` : 'Consider all timeframes'}
-        
-        Based on this information, identify and explain:
-        1. Temporal patterns (time-based trends)
-        2. Spatial patterns (location-based trends)
-        3. Actor-based patterns (people/groups involved)
-        
-        Provide your analysis in JSON format with these keys:
-        - temporal: Array of temporal patterns (each with name, description, significance (1-100), relevance (high/medium/low), period, incidents)
-        - spatial: Array of spatial patterns (each with name, description, significance (1-100), relevance (high/medium/low), location, incidents)
-        - actor: Array of actor patterns (each with name, description, significance (1-100), relevance (high/medium/low), actors, incidents)
-      `;
+      // Generate rule-based patterns for fallback
+      const fallbackPatterns = generateRuleBasedPatterns(incidents);
       
+      // Call OpenAI for pattern analysis
       try {
-        const response = await openai.chat.completions.create({
-          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-          messages: [
-            { 
-              role: "system", 
-              content: "You are an AI analyst specializing in conflict analysis, early warning systems, and pattern detection for the Institute for Peace and Conflict Resolution in Nigeria. Provide detailed and accurate pattern analysis." 
-            },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.3,
-          response_format: { type: "json_object" }
-        });
+        const prompt = `
+          As a conflict analysis expert for the Institute for Peace and Conflict Resolution in Nigeria, 
+          analyze these incidents to identify patterns, trends, and insights.
+          
+          Incidents data:
+          ${JSON.stringify(incidents, null, 2)}
+          
+          ${category ? `Focus on this category: ${category}` : 'Consider all categories'}
+          ${region ? `Focus on this region: ${region}` : 'Consider all regions'}
+          ${timeframe ? `Focus on this timeframe: ${timeframe}` : 'Consider all timeframes'}
+          
+          Based on this information, identify and explain:
+          1. Temporal patterns (time-based trends)
+          2. Spatial patterns (location-based trends)
+          3. Actor-based patterns (people/groups involved)
+          
+          Provide your analysis in JSON format with these keys:
+          - temporal: Array of temporal patterns (each with name, description, significance (1-100), relevance (high/medium/low), period, incidents)
+          - spatial: Array of spatial patterns (each with name, description, significance (1-100), relevance (high/medium/low), location, incidents)
+          - actor: Array of actor patterns (each with name, description, significance (1-100), relevance (high/medium/low), actors, incidents)
+        `;
         
-        // Parse the AI response
-        const responseContent = response.choices[0].message.content || '{}';
-        console.log("Raw AI response:", responseContent);
+        // Check if OpenAI API key is available and valid
+        if (!process.env.OPENAI_API_KEY) {
+          console.warn("Missing OpenAI API key, using rule-based pattern detection as fallback");
+          return res.json({
+            patterns: fallbackPatterns,
+            aiGenerated: false,
+            message: "Patterns detected using rule-based analysis (AI unavailable)"
+          });
+        }
         
-        let aiResponse;
         try {
-          aiResponse = JSON.parse(responseContent);
-        } catch (parseError) {
-          console.error("Failed to parse AI response:", parseError);
-          throw new Error("Invalid response format from AI");
-        }
-        
-        // Structure validation and normalization
-        let patterns = {
-          temporal: [],
-          spatial: [],
-          actor: []
-        };
-        
-        // Check for different response structure possibilities
-        if (aiResponse.patterns) {
-          // Case: { patterns: { temporal: [], spatial: [], actor: [] } }
-          patterns = aiResponse.patterns;
-        } else if (aiResponse.temporal || aiResponse.spatial || aiResponse.actor) {
-          // Case: { temporal: [], spatial: [], actor: [] }
-          patterns = {
-            temporal: Array.isArray(aiResponse.temporal) ? aiResponse.temporal : [],
-            spatial: Array.isArray(aiResponse.spatial) ? aiResponse.spatial : [],
-            actor: Array.isArray(aiResponse.actor) ? aiResponse.actor : []
+          const response = await openai.chat.completions.create({
+            model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+            messages: [
+              { 
+                role: "system", 
+                content: "You are an AI analyst specializing in conflict analysis, early warning systems, and pattern detection for the Institute for Peace and Conflict Resolution in Nigeria. Provide detailed and accurate pattern analysis." 
+              },
+              { role: "user", content: prompt }
+            ],
+            temperature: 0.3,
+            response_format: { type: "json_object" }
+          });
+          
+          // Parse the AI response
+          const responseContent = response.choices[0].message.content || '{}';
+          console.log("Raw AI response:", responseContent);
+          
+          let aiResponse;
+          try {
+            aiResponse = JSON.parse(responseContent);
+          } catch (parseError) {
+            console.error("Failed to parse AI response:", parseError);
+            throw new Error("Invalid response format from AI");
+          }
+          
+          // Structure validation and normalization
+          let patterns = {
+            temporal: [],
+            spatial: [],
+            actor: []
           };
+          
+          // Check for different response structure possibilities
+          if (aiResponse.patterns) {
+            // Case: { patterns: { temporal: [], spatial: [], actor: [] } }
+            patterns = aiResponse.patterns;
+          } else if (aiResponse.temporal || aiResponse.spatial || aiResponse.actor) {
+            // Case: { temporal: [], spatial: [], actor: [] }
+            patterns = {
+              temporal: Array.isArray(aiResponse.temporal) ? aiResponse.temporal : [],
+              spatial: Array.isArray(aiResponse.spatial) ? aiResponse.spatial : [],
+              actor: Array.isArray(aiResponse.actor) ? aiResponse.actor : []
+            };
+          }
+          
+          // Verify we have the expected structure
+          if (!Array.isArray(patterns.temporal)) patterns.temporal = [];
+          if (!Array.isArray(patterns.spatial)) patterns.spatial = [];
+          if (!Array.isArray(patterns.actor)) patterns.actor = [];
+          
+          res.json({
+            patterns: patterns,
+            aiGenerated: true,
+            message: "Patterns detected using AI analysis"
+          });
+        } catch (aiError) {
+          // Check for rate limit or quota errors
+          if (aiError.code === 'insufficient_quota' || 
+              (aiError.status === 429) || 
+              (aiError.message && aiError.message.includes('quota'))) {
+            console.error("OpenAI API quota exceeded:", aiError);
+            // Use the fallback patterns
+            return res.json({
+              patterns: fallbackPatterns,
+              aiGenerated: false,
+              message: "Patterns detected using rule-based analysis (AI quota exceeded)"
+            });
+          }
+          
+          // For other OpenAI errors, also use fallback but with different message
+          console.error("AI pattern analysis failed:", aiError);
+          return res.json({
+            patterns: fallbackPatterns,
+            aiGenerated: false,
+            message: "Patterns detected using rule-based analysis (AI service unavailable)"
+          });
         }
-        
-        // Verify we have the expected structure
-        if (!Array.isArray(patterns.temporal)) patterns.temporal = [];
-        if (!Array.isArray(patterns.spatial)) patterns.spatial = [];
-        if (!Array.isArray(patterns.actor)) patterns.actor = [];
-        
-        res.json({
-          patterns: patterns,
-          aiGenerated: true,
-          message: "Patterns detected using AI analysis"
+      } catch (aiSetupError) {
+        console.error("Error setting up AI analysis:", aiSetupError);
+        return res.json({
+          patterns: fallbackPatterns,
+          aiGenerated: false,
+          message: "Patterns detected using rule-based analysis (AI setup failed)"
         });
-      } catch (aiError) {
-        console.error("AI pattern analysis failed:", aiError);
-        res.status(500).json({ error: "AI pattern analysis failed. Please try again later." });
       }
     } catch (error) {
-      console.error("Error in AI pattern analysis:", error);
+      console.error("Error in pattern analysis:", error);
       res.status(500).json({ error: "Failed to analyze patterns" });
     }
   });
+  
+  /**
+   * Generate rule-based patterns from incident data
+   * This is used as a fallback when AI analysis fails
+   */
+  function generateRuleBasedPatterns(incidents) {
+    // Default patterns structure
+    const patterns = {
+      temporal: [],
+      spatial: [],
+      actor: []
+    };
+    
+    try {
+      // Group incidents by temporal attributes
+      const monthGroups = {};
+      incidents.forEach(incident => {
+        if (!incident.reportedAt) return;
+        
+        const date = new Date(incident.reportedAt);
+        const monthYear = `${date.getFullYear()}-${date.getMonth() + 1}`;
+        
+        if (!monthGroups[monthYear]) {
+          monthGroups[monthYear] = [];
+        }
+        
+        monthGroups[monthYear].push(incident);
+      });
+      
+      // Find months with unusually high incident counts
+      const monthCounts = Object.keys(monthGroups).map(month => ({
+        month,
+        count: monthGroups[month].length
+      }));
+      
+      // Calculate average incidents per month
+      const avgCount = monthCounts.reduce((sum, item) => sum + item.count, 0) / Math.max(1, monthCounts.length);
+      
+      // Find months with significantly more incidents
+      monthCounts.forEach(({ month, count }) => {
+        if (count > avgCount * 1.2) {
+          const monthDate = new Date(parseInt(month.split('-')[0]), parseInt(month.split('-')[1]) - 1);
+          const monthName = monthDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+          
+          patterns.temporal.push({
+            name: `High Activity in ${monthName}`,
+            description: `Unusually high number of incidents (${count}) reported in ${monthName}, which is ${Math.round((count - avgCount) / avgCount * 100)}% above average.`,
+            significance: Math.min(100, Math.round((count / avgCount) * 60)),
+            relevance: count > avgCount * 1.5 ? "high" : "medium",
+            period: monthName,
+            incidents: monthGroups[month].map(i => i.id)
+          });
+        }
+      });
+      
+      // Group incidents by region
+      const regionGroups = {};
+      incidents.forEach(incident => {
+        if (!incident.region) return;
+        
+        if (!regionGroups[incident.region]) {
+          regionGroups[incident.region] = [];
+        }
+        
+        regionGroups[incident.region].push(incident);
+      });
+      
+      // Find regions with unusually high incident counts
+      const regionCounts = Object.keys(regionGroups).map(region => ({
+        region,
+        count: regionGroups[region].length
+      }));
+      
+      // Calculate average incidents per region
+      const avgRegionCount = regionCounts.reduce((sum, item) => sum + item.count, 0) / Math.max(1, regionCounts.length);
+      
+      // Find regions with significantly more incidents
+      regionCounts.forEach(({ region, count }) => {
+        if (count > avgRegionCount * 1.2) {
+          patterns.spatial.push({
+            name: `Hotspot in ${region}`,
+            description: `${region} has experienced ${count} incidents, which is ${Math.round((count - avgRegionCount) / avgRegionCount * 100)}% above the regional average.`,
+            significance: Math.min(100, Math.round((count / avgRegionCount) * 70)),
+            relevance: count > avgRegionCount * 1.5 ? "high" : "medium",
+            region,
+            incidents: regionGroups[region].map(i => i.id)
+          });
+        }
+      });
+      
+      // Group by categories for actor patterns
+      const categoryGroups = {};
+      incidents.forEach(incident => {
+        if (!incident.category) return;
+        
+        if (!categoryGroups[incident.category]) {
+          categoryGroups[incident.category] = [];
+        }
+        
+        categoryGroups[incident.category].push(incident);
+      });
+      
+      // Find categories with significant incidents
+      Object.keys(categoryGroups).forEach(category => {
+        const categoryIncidents = categoryGroups[category];
+        if (categoryIncidents.length >= 3) {
+          const categoryLabel = category.charAt(0).toUpperCase() + category.slice(1).replace('_', ' ');
+          patterns.actor.push({
+            name: `${categoryLabel} Pattern`,
+            description: `${categoryIncidents.length} incidents categorized as "${category.replace('_', ' ')}" show similar patterns.`,
+            significance: Math.min(90, categoryIncidents.length * 10),
+            relevance: categoryIncidents.length > 5 ? 'high' : 'medium',
+            actor: `${categoryLabel} Related Actors`,
+            incidents: categoryIncidents.map(i => i.id)
+          });
+        }
+      });
+    } catch (error) {
+      console.error("Error generating rule-based patterns:", error);
+    }
+    
+    return patterns;
+  }
 
   // AI Chat endpoint - direct connection to OpenAI
   app.post("/api/ai/chat", async (req, res) => {
