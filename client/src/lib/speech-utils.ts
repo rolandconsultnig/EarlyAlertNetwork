@@ -14,6 +14,7 @@ export function speak(
     pitch?: number;   // Speech pitch (0 to 2)
     volume?: number;  // Speech volume (0 to 1)
     voice?: SpeechSynthesisVoice | null; // Voice to use
+    onEnd?: () => void; // Callback when speech ends
   } = {}
 ): void {
   if (!('speechSynthesis' in window)) {
@@ -32,6 +33,11 @@ export function speak(
   // Set voice if provided
   if (options.voice) {
     utterance.voice = options.voice;
+  }
+  
+  // Add end event listener if callback provided
+  if (options.onEnd) {
+    utterance.onend = options.onEnd;
   }
   
   // Speak the utterance

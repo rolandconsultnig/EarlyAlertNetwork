@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import AccessibilityControls from '@/components/accessibility/AccessibilityControls';
 import {
   Mic,
-  VolumeUp,
+  Volume2,
   HelpCircle,
   Accessibility,
   Eye,
@@ -143,7 +143,7 @@ const AccessibilityPage: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
-                  <VolumeUp className="h-5 w-5 mr-2 text-blue-500" />
+                  <Volume2 className="h-5 w-5 mr-2 text-blue-500" />
                   Screen Reading
                 </CardTitle>
                 <CardDescription>
@@ -180,7 +180,7 @@ const AccessibilityPage: React.FC = () => {
                 
                 <div className="flex space-x-2 mt-4">
                   <Button variant="outline" onClick={testSpeak}>
-                    <VolumeUp className="h-4 w-4 mr-2" />
+                    <Volume2 className="h-4 w-4 mr-2" />
                     Test Text-to-Speech
                   </Button>
                   <Button variant="outline" onClick={stopSpeaking}>

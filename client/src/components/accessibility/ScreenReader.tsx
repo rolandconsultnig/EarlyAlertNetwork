@@ -1,20 +1,23 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { BookOpen, ChevronDown } from 'lucide-react';
-import { speak, cancelSpeech } from '@/lib/speech-utils';
+import { 
+  Volume2, 
+  VolumeX, 
+  BookOpen, 
+  Table, 
+  BarChart, 
+  Loader2
+} from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { speak, cancelSpeech, getAvailableVoices } from '@/lib/speech-utils';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Slider } from "@/components/ui/slider";
 
 interface ScreenReaderProps {
   pageTitle: string;
@@ -22,244 +25,263 @@ interface ScreenReaderProps {
 
 const ScreenReader: React.FC<ScreenReaderProps> = ({ pageTitle }) => {
   const [isReading, setIsReading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [readingMode, setReadingMode] = useState('full-page');
+  const [voiceRate, setVoiceRate] = useState<number>(1.0);
   const { toast } = useToast();
 
-  // Reads the entire page content, focusing on main content areas
-  const readPage = useCallback(() => {
-    // Cancel any ongoing speech
-    cancelSpeech();
+  const readPage = async () => {
+    setIsLoading(true);
     
-    // First, read the page title
-    const pageTitleText = `Current page: ${pageTitle}`;
-    
-    // Get main content elements
-    const mainContent = document.querySelector('main');
-    if (!mainContent) {
-      speak(`${pageTitleText}. Sorry, I couldn't find the main content of this page.`);
-      return;
-    }
-    
-    // Extract headings
-    const headings = mainContent.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    let headingsText = '';
-    
-    if (headings.length > 0) {
-      headingsText = 'This page contains the following sections: ';
-      headings.forEach((heading, index) => {
-        headingsText += `${heading.textContent}${index < headings.length - 1 ? ', ' : '.'}`;
-      });
-    }
-    
-    // Get paragraphs and other text content
-    const paragraphs = mainContent.querySelectorAll('p, .card-content, .description');
-    let paragraphsText = '';
-    
-    paragraphs.forEach(paragraph => {
-      if (paragraph.textContent && paragraph.textContent.trim().length > 0) {
-        paragraphsText += `${paragraph.textContent.trim()}. `;
-      }
-    });
-    
-    // Combine all text
-    const fullText = `${pageTitleText}. ${headingsText} ${paragraphsText}`;
-    
-    // Speak the text
-    speak(fullText, { rate: 1.0 });
-    setIsReading(true);
-    
-    // Update state when speech ends
-    const handleSpeechEnd = () => {
-      setIsReading(false);
-      window.speechSynthesis.removeEventListener('end', handleSpeechEnd);
-    };
-    
-    window.speechSynthesis.addEventListener('end', handleSpeechEnd);
-    
-  }, [pageTitle]);
-
-  // Reads just the headings to give an overview
-  const readHeadings = useCallback(() => {
-    cancelSpeech();
-    
-    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    if (headings.length === 0) {
-      speak(`Current page: ${pageTitle}. This page doesn't have any headings.`);
-      return;
-    }
-    
-    let headingsText = `Current page: ${pageTitle}. This page contains the following sections: `;
-    headings.forEach((heading, index) => {
-      const level = heading.tagName.charAt(1);
-      headingsText += `Level ${level} heading: ${heading.textContent}${index < headings.length - 1 ? '. ' : '.'}`;
-    });
-    
-    speak(headingsText, { rate: 1.0 });
-    setIsReading(true);
-    
-    const handleSpeechEnd = () => {
-      setIsReading(false);
-      window.speechSynthesis.removeEventListener('end', handleSpeechEnd);
-    };
-    
-    window.speechSynthesis.addEventListener('end', handleSpeechEnd);
-    
-  }, [pageTitle]);
-
-  // Reads the data in any visible tables
-  const readTables = useCallback(() => {
-    cancelSpeech();
-    
-    const tables = document.querySelectorAll('table');
-    if (tables.length === 0) {
-      speak(`Current page: ${pageTitle}. This page doesn't have any data tables.`);
-      return;
-    }
-    
-    let tablesText = `Found ${tables.length} data tables on this page. `;
-    
-    tables.forEach((table, tableIndex) => {
-      tablesText += `Table ${tableIndex + 1}: `;
+    try {
+      const voices = await getAvailableVoices();
+      const voice = voices.find(v => v.lang.includes('en')) || null;
       
-      // Read the table headers
-      const headers = table.querySelectorAll('th');
-      if (headers.length > 0) {
-        tablesText += 'Headers: ';
-        headers.forEach((header, index) => {
-          tablesText += `${header.textContent}${index < headers.length - 1 ? ', ' : '. '}`;
-        });
+      // Process the page content based on the selected mode
+      let textToRead = "";
+      
+      switch (readingMode) {
+        case 'headings':
+          textToRead = extractHeadings();
+          break;
+        case 'tables':
+          textToRead = extractTablesContent();
+          break;
+        case 'charts':
+          textToRead = describeCharts();
+          break;
+        case 'full-page':
+        default:
+          textToRead = extractPageContent();
+          break;
       }
       
-      // Read table data (limit to first 5 rows to avoid information overload)
-      const rows = table.querySelectorAll('tr');
-      let rowCount = 0;
+      if (!textToRead) {
+        textToRead = `No ${readingMode === 'full-page' ? 'content' : readingMode} found on this page.`;
+      }
       
-      rows.forEach(row => {
-        // Skip header row
-        if (row.querySelectorAll('th').length === 0 && rowCount < 5) {
-          rowCount++;
-          tablesText += `Row ${rowCount}: `;
-          
-          const cells = row.querySelectorAll('td');
-          cells.forEach((cell, index) => {
-            tablesText += `${cell.textContent}${index < cells.length - 1 ? ', ' : '. '}`;
-          });
-        }
+      // Start with the page title for context
+      const contextText = `Current page: ${pageTitle}. ${textToRead}`;
+      
+      setIsReading(true);
+      speak(contextText, { 
+        voice, 
+        rate: voiceRate,
+        onEnd: () => setIsReading(false) 
       });
       
-      if (rows.length > 5) {
-        tablesText += `And ${rows.length - 5} more rows. `;
-      }
-    });
-    
-    speak(tablesText, { rate: 0.9 });
-    setIsReading(true);
-    
-    const handleSpeechEnd = () => {
-      setIsReading(false);
-      window.speechSynthesis.removeEventListener('end', handleSpeechEnd);
-    };
-    
-    window.speechSynthesis.addEventListener('end', handleSpeechEnd);
-    
-  }, [pageTitle]);
-
-  // Read charts and visualizations
-  const readCharts = useCallback(() => {
-    cancelSpeech();
-    
-    // Look for elements that might be charts (this would need to be adapted based on the charting library used)
-    const charts = document.querySelectorAll('.recharts-wrapper, .chart-container, [role="img"][aria-label*="chart"]');
-    
-    if (charts.length === 0) {
-      speak(`Current page: ${pageTitle}. This page doesn't have any charts or visualizations.`);
-      return;
+      toast({
+        title: "Screen Reader Active",
+        description: `Reading ${readingMode === 'full-page' ? 'page content' : readingMode}`,
+      });
+    } catch (error) {
+      console.error('Screen reader error:', error);
+      toast({
+        title: "Screen Reader Error",
+        description: "An error occurred while trying to read the page.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsLoading(false);
     }
-    
-    let chartsText = `Found ${charts.length} charts or visualizations on this page. `;
-    
-    charts.forEach((chart, index) => {
-      const chartLabel = chart.getAttribute('aria-label') || `Chart ${index + 1}`;
-      chartsText += `${chartLabel}. `;
-      
-      // Try to get the chart description
-      const description = chart.querySelector('.chart-description, [aria-describedby]')?.textContent;
-      if (description) {
-        chartsText += `Description: ${description}. `;
-      }
-    });
-    
-    speak(chartsText, { rate: 0.9 });
-    setIsReading(true);
-    
-    const handleSpeechEnd = () => {
-      setIsReading(false);
-      window.speechSynthesis.removeEventListener('end', handleSpeechEnd);
-    };
-    
-    window.speechSynthesis.addEventListener('end', handleSpeechEnd);
-    
-  }, [pageTitle]);
-
-  // Stop ongoing reading
-  const stopReading = useCallback(() => {
+  };
+  
+  const stopReading = () => {
     cancelSpeech();
     setIsReading(false);
     
     toast({
-      title: "Reading Stopped",
-      description: "Screen reading has been stopped.",
+      title: "Screen Reader Stopped",
+      description: "Speech has been stopped.",
     });
-  }, [toast]);
+  };
+  
+  // Extract page content for reading
+  const extractPageContent = (): string => {
+    // This is a basic implementation that gets the main content
+    const mainElement = document.querySelector('main');
+    if (!mainElement) return '';
+    
+    // Get all text content but ignore hidden elements and scripts
+    return Array.from(mainElement.querySelectorAll('h1, h2, h3, h4, h5, h6, p, li, td, th'))
+      .filter(el => {
+        const style = window.getComputedStyle(el);
+        return style.display !== 'none' && style.visibility !== 'hidden';
+      })
+      .map(el => el.textContent)
+      .filter(text => text && text.trim().length > 0)
+      .join('. ');
+  };
+  
+  // Extract headings for quick navigation
+  const extractHeadings = (): string => {
+    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    if (headings.length === 0) return '';
+    
+    let result = 'Page headings: ';
+    headings.forEach((heading, index) => {
+      const level = heading.tagName.charAt(1);
+      const text = heading.textContent?.trim();
+      if (text) {
+        result += `Heading level ${level}: ${text}. `;
+      }
+    });
+    
+    return result;
+  };
+  
+  // Extract and describe table content
+  const extractTablesContent = (): string => {
+    const tables = document.querySelectorAll('table');
+    if (tables.length === 0) return '';
+    
+    let result = `Found ${tables.length} table${tables.length !== 1 ? 's' : ''} on the page. `;
+    
+    tables.forEach((table, tableIndex) => {
+      result += `Table ${tableIndex + 1}: `;
+      
+      // Look for caption or summary
+      const caption = table.querySelector('caption');
+      if (caption && caption.textContent) {
+        result += `Caption: ${caption.textContent.trim()}. `;
+      }
+      
+      // Count rows and columns
+      const rows = table.querySelectorAll('tr');
+      const headerCells = table.querySelectorAll('th');
+      
+      result += `Contains ${rows.length} rows and approximate ${headerCells.length > 0 ? headerCells.length : 'unknown number of'} columns. `;
+      
+      // Read headers if present
+      if (headerCells.length > 0) {
+        result += 'Headers: ';
+        headerCells.forEach((th, index) => {
+          if (th.textContent) {
+            result += `${th.textContent.trim()}${index < headerCells.length - 1 ? ', ' : '. '}`;
+          }
+        });
+      }
+    });
+    
+    return result;
+  };
+  
+  // Describe charts and visualizations
+  const describeCharts = (): string => {
+    const charts = document.querySelectorAll('[data-visualization], .recharts-wrapper, canvas, svg:not(.lucide)');
+    if (charts.length === 0) return '';
+    
+    let result = `Found ${charts.length} visualization${charts.length !== 1 ? 's' : ''} on the page. `;
+    
+    charts.forEach((chart, index) => {
+      result += `Visualization ${index + 1}: `;
+      
+      // Try to get the chart title from nearby elements
+      const parent = chart.parentElement;
+      const title = parent?.querySelector('h1, h2, h3, h4, h5, h6');
+      if (title && title.textContent) {
+        result += `titled "${title.textContent.trim()}". `;
+      } else {
+        result += 'untitled. ';
+      }
+      
+      // Check if the chart has a description or aria-label
+      const description = chart.getAttribute('aria-label') || chart.getAttribute('title');
+      if (description) {
+        result += `Description: ${description}. `;
+      } else {
+        result += 'No detailed description available. ';
+      }
+    });
+    
+    return result;
+  };
 
   return (
-    <div className="flex items-center space-x-2">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button
-              variant="outline"
-              size="sm"
-              className="flex items-center"
-              onClick={isReading ? stopReading : readPage}
-            >
-              <BookOpen className="h-4 w-4 mr-2" />
-              {isReading ? "Stop Reading" : "Read Page"}
-            </Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            {isReading ? "Stop the current reading" : "Read the page content aloud"}
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-
-      <DropdownMenu>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <ChevronDown className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-            </TooltipTrigger>
-            <TooltipContent>
-              More reading options
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+    <div className="flex flex-col space-y-3">
+      <div className="flex items-center justify-between">
+        <Select
+          value={readingMode}
+          onValueChange={setReadingMode}
+          disabled={isReading}
+        >
+          <SelectTrigger className="w-[180px] h-8 text-sm">
+            <SelectValue placeholder="Select what to read" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="full-page">
+              <div className="flex items-center">
+                <BookOpen className="h-4 w-4 mr-2" />
+                <span>Full Page</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="headings">
+              <div className="flex items-center">
+                <BookOpen className="h-4 w-4 mr-2" />
+                <span>Headings Only</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="tables">
+              <div className="flex items-center">
+                <Table className="h-4 w-4 mr-2" />
+                <span>Tables</span>
+              </div>
+            </SelectItem>
+            <SelectItem value="charts">
+              <div className="flex items-center">
+                <BarChart className="h-4 w-4 mr-2" />
+                <span>Charts & Visualizations</span>
+              </div>
+            </SelectItem>
+          </SelectContent>
+        </Select>
         
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onClick={readHeadings}>
-            Read Headings Only
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={readTables}>
-            Read Data Tables
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={readCharts}>
-            Describe Charts
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        {isReading ? (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="px-3 h-8 bg-red-50 text-red-600 hover:bg-red-100 hover:text-red-700"
+            onClick={stopReading}
+          >
+            <VolumeX className="h-4 w-4 mr-2" />
+            Stop Reading
+          </Button>
+        ) : (
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="px-3 h-8"
+            onClick={readPage}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Loading...
+              </>
+            ) : (
+              <>
+                <Volume2 className="h-4 w-4 mr-2" />
+                Read Aloud
+              </>
+            )}
+          </Button>
+        )}
+      </div>
+      
+      <div className="flex items-center">
+        <span className="text-xs text-gray-500 mr-2 w-16">Speed:</span>
+        <Slider
+          value={[voiceRate]}
+          min={0.5}
+          max={2}
+          step={0.1}
+          className="w-32"
+          onValueChange={(value) => setVoiceRate(value[0])}
+          disabled={isReading}
+        />
+        <span className="text-xs text-gray-500 ml-2">{voiceRate}x</span>
+      </div>
     </div>
   );
 };

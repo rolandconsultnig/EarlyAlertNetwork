@@ -20,7 +20,10 @@ import {
   RefreshCw, 
   AlertTriangle,
   Search,
-  Loader2
+  Loader2,
+  TrendingUp,
+  MapPin,
+  Users
 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
