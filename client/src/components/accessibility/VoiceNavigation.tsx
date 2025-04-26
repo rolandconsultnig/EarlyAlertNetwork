@@ -56,36 +56,38 @@ const VoiceNavigation: React.FC<VoiceNavigationProps> = ({
     const SpeechRecognition = getSpeechRecognition();
     if (SpeechRecognition) {
       recognitionRef.current = new SpeechRecognition();
-      recognitionRef.current.continuous = false;
-      recognitionRef.current.interimResults = false;
-      recognitionRef.current.lang = 'en-US';
+      if (recognitionRef.current) {
+        recognitionRef.current.continuous = false;
+        recognitionRef.current.interimResults = false;
+        recognitionRef.current.lang = 'en-US';
 
-      recognitionRef.current.onresult = (event) => {
-        const result = event.results[0];
-        const text = result[0].transcript.toLowerCase().trim();
-        const confidenceScore = result[0].confidence;
-        setTranscript(text);
-        setConfidence(confidenceScore);
-        processCommand(text);
-      };
+        recognitionRef.current.onresult = (event) => {
+          const result = event.results[0];
+          const text = result[0].transcript.toLowerCase().trim();
+          const confidenceScore = result[0].confidence;
+          setTranscript(text);
+          setConfidence(confidenceScore);
+          processCommand(text);
+        };
 
-      recognitionRef.current.onend = () => {
-        if (isListening) {
-          // Restart if we're still in listening mode
-          recognitionRef.current?.start();
-        }
-      };
+        recognitionRef.current.onend = () => {
+          if (isListening && recognitionRef.current) {
+            // Restart if we're still in listening mode
+            recognitionRef.current.start();
+          }
+        };
 
-      recognitionRef.current.onerror = (event) => {
-        console.error('Speech recognition error', event.error);
-        setIsListening(false);
-        
-        toast({
-          title: 'Voice Recognition Error',
-          description: `Error: ${event.error}. Please try again.`,
-          variant: 'destructive',
-        });
-      };
+        recognitionRef.current.onerror = (event) => {
+          console.error('Speech recognition error', event.error);
+          setIsListening(false);
+          
+          toast({
+            title: 'Voice Recognition Error',
+            description: `Error: ${event.error}. Please try again.`,
+            variant: 'destructive',
+          });
+        };
+      }
     }
 
     return () => {
