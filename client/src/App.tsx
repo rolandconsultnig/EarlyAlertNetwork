@@ -28,6 +28,7 @@ import AISearchPage from "@/pages/ai-search-page";
 import ReportIncidentPage from "@/pages/report-incident-page";
 import MapPage from "@/pages/map-page";
 import SurveyManagementPage from "@/pages/survey-management-page";
+import AccessibilityPage from "@/pages/accessibility-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -83,6 +84,9 @@ function Router() {
       <ProtectedRoute path="/surveys" component={SurveyManagementPage} />
       <ProtectedRoute path="/surveys/edit/:id" component={SurveyManagementPage} />
       <ProtectedRoute path="/surveys/responses/:id" component={SurveyManagementPage} />
+      
+      {/* Accessibility */}
+      <ProtectedRoute path="/accessibility" component={AccessibilityPage} />
       
       <Route component={NotFound} />
     </Switch>

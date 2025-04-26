@@ -30,7 +30,8 @@ import {
   MessageSquareDashed,
   Sparkles,
   Bot,
-  Globe
+  Globe,
+  Accessibility
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -120,6 +121,7 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
         { path: "/user-management", label: "User Management", icon: <Users className="mr-3 h-5 w-5" /> },
         { path: "/integrations", label: "Integrations", icon: <LinkIcon className="mr-3 h-5 w-5" /> },
         { path: "/reporting", label: "Reporting", icon: <FileText className="mr-3 h-5 w-5" /> },
+        { path: "/accessibility", label: "Accessibility", icon: <Accessibility className="mr-3 h-5 w-5" /> },
         { path: "/settings", label: "Settings", icon: <Settings className="mr-3 h-5 w-5" /> },
       ]
     }
