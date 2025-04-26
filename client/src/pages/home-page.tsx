@@ -1,7 +1,8 @@
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { UserCircle, AlertCircle, BookOpen, HeartHandshake, ArrowRight, Coffee, ExternalLink } from "lucide-react";
+import { UserCircle, AlertCircle, BookOpen, HeartHandshake, ArrowRight, Coffee, ExternalLink, Map, Smartphone } from "lucide-react";
+import NigeriaMap from "@/components/maps/NigeriaMap";
 
 // Import the IPCR logo and DG image
 import ipcr_logo from "@assets/Institute-For-Peace-And-Conflict-Resolution.jpg";
@@ -36,11 +37,66 @@ export default function HomePage() {
           <p className="text-xl md:text-2xl max-w-3xl mx-auto mb-8">
             Monitoring, analyzing, and responding to conflict indicators for a peaceful Nigeria
           </p>
-          <Link href="/report-incident">
+          <Link href="/auth">
             <Button size="lg" className="bg-white text-blue-600 hover:bg-blue-50">
-              Report an Incident <ArrowRight className="ml-2 h-5 w-5" />
+              Access Dashboard <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </Link>
+        </div>
+      </section>
+      
+      {/* Crisis Map Section */}
+      <section className="py-10 px-4 bg-white">
+        <div className="container mx-auto">
+          <div className="text-center mb-8">
+            <h2 className="text-3xl font-bold text-gray-800 mb-3">Nigeria Crisis Map</h2>
+            <p className="text-gray-600 max-w-3xl mx-auto">
+              View current incidents and crisis points across Nigeria. For detailed information and response coordination, 
+              please login to access the full dashboard.
+            </p>
+          </div>
+          
+          <Card className="shadow-lg border-none overflow-hidden">
+            <CardContent className="p-0">
+              <div className="border rounded-md overflow-hidden">
+                <NigeriaMap 
+                  height="500px" 
+                  showIncidents={true}
+                  showAddIncidentButton={false}
+                />
+              </div>
+            </CardContent>
+          </Card>
+          
+          <div className="flex flex-wrap gap-4 justify-center mt-6">
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 rounded-full bg-red-500"></div>
+              <span>High Severity</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 rounded-full bg-amber-500"></div>
+              <span>Medium Severity</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 rounded-full bg-blue-500"></div>
+              <span>Low Severity</span>
+            </div>
+          </div>
+          
+          <div className="mt-8 flex flex-wrap gap-4 justify-center">
+            <Link href="/auth">
+              <Button className="flex items-center gap-2">
+                <Map size={16} />
+                View Full Crisis Map
+              </Button>
+            </Link>
+            <Link href="/auth">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Smartphone size={16} />
+                Download Mobile App
+              </Button>
+            </Link>
+          </div>
         </div>
       </section>
 
@@ -127,8 +183,8 @@ export default function HomePage() {
                 and save lives.
               </p>
               <div className="space-y-2">
-                <Link href="/report-incident">
-                  <Button className="w-full">Report Online</Button>
+                <Link href="/auth">
+                  <Button className="w-full">Login to Report</Button>
                 </Link>
                 <Button variant="outline" className="w-full">Call Hotline: 0800-PEACE-NG</Button>
                 <Button variant="outline" className="w-full">SMS Reporting</Button>
@@ -211,7 +267,7 @@ export default function HomePage() {
             <div>
               <h3 className="text-lg font-semibold mb-4">Resources</h3>
               <ul className="space-y-2 text-gray-300">
-                <li><Link href="/map" className="hover:text-blue-300">Nigeria Crisis Map</Link></li>
+                <li><Link href="/auth" className="hover:text-blue-300">Nigeria Crisis Map</Link></li>
                 <li><a href="#" className="hover:text-blue-300">Peace Building Toolkit</a></li>
                 <li><a href="#" className="hover:text-blue-300">Policy Briefs</a></li>
                 <li><a href="#" className="hover:text-blue-300">Media Gallery</a></li>
