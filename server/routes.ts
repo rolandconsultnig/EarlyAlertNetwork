@@ -1302,7 +1302,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         radius = 50, maxResults = 5 
       } = req.query;
       
+      console.log('Satellite imagery request received:', { 
+        lat, lng, region, dataset, radius, maxResults 
+      });
+      
       if (!lat || !lng) {
+        console.log('Satellite imagery error: Missing lat/lng parameters');
         return res.status(400).json({ error: "Latitude and longitude are required" });
       }
       
@@ -1311,10 +1316,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const radiusKm = parseInt(radius as string);
       const results = parseInt(maxResults as string);
       
+      console.log('Parsed satellite imagery parameters:', {
+        latitude, longitude, radiusKm, results, dataset
+      });
+      
+      // Verify EROS API key is available
+      if (!process.env.EROS_API_KEY) {
+        console.log('EROS_API_KEY is not set');
+      } else {
+        console.log('EROS_API_KEY is available');
+      }
+
+      if (!process.env.EROS_USERNAME || !process.env.EROS_PASSWORD) {
+        console.log('EROS_USERNAME or EROS_PASSWORD is not set');
+      } else {
+        console.log('EROS credentials are available');
+      }
+      
       let imagery = [];
       
       // Use dataset-specific methods
       if (dataset === 'sentinel_2a' || dataset === 'sentinel-2') {
+        console.log('Using Sentinel imagery search...');
         imagery = await erosService.getNigeriaSentinelImagery(
           region as string || 'Unknown', 
           latitude, 
@@ -1324,6 +1347,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       } else {
         // Default to Landsat
+        console.log('Using Landsat imagery search...');
         imagery = await erosService.getNigeriaLandsatImagery(
           region as string || 'Unknown',
           latitude,
@@ -1333,10 +1357,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
       }
       
+      console.log(`Imagery search completed. Found ${imagery.length} results.`);
+      if (imagery.length > 0) {
+        console.log('Sample first result:', {
+          id: imagery[0].id,
+          displayId: imagery[0].displayId,
+          thumbnailUrl: imagery[0].thumbnailUrl ? 'Available' : 'Unavailable'
+        });
+      }
+      
       res.json(imagery);
     } catch (error) {
       console.error("Error fetching satellite imagery:", error);
-      res.status(500).json({ error: "Failed to fetch satellite imagery" });
+      res.status(500).json({ 
+        error: "Failed to fetch satellite imagery", 
+        message: error instanceof Error ? error.message : 'Unknown error' 
+      });
     }
   });
   

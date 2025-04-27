@@ -91,27 +91,49 @@ class EROSService {
   
   /**
    * Log in to the EROS service and get an API key
+   * If EROS_API_KEY is set in environment, it will be used directly
+   * otherwise will attempt login with username/password
    */
   async login(): Promise<string> {
+    // If we already have an API key (from env or previous login), use it
     if (this.apiKey) {
+      console.log('Using existing EROS API key');
       return this.apiKey;
     }
     
+    // If we don't have credentials to get a key, throw an error
+    if (!this.username || !this.password) {
+      throw new Error('EROS credentials not configured. Please set EROS_USERNAME and EROS_PASSWORD environment variables.');
+    }
+    
     try {
+      console.log('Attempting to log in to EROS service...');
+      
       const response = await axios.post<LoginResponse>(`${EROS_API_URL}/login`, {
         username: this.username,
         password: this.password
       });
       
       if (response.data.errorCode) {
+        console.error(`EROS login API error: ${response.data.errorCode} - ${response.data.error}`);
         throw new Error(`EROS login error: ${response.data.error}`);
       }
       
+      console.log('EROS login successful, received API token');
       this.apiKey = response.data.data.token;
       return this.apiKey;
     } catch (error) {
       console.error('EROS login failed:', error);
-      throw new Error('Failed to authenticate with EROS service');
+      
+      if (axios.isAxiosError(error)) {
+        console.error('EROS login request details:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+        });
+      }
+      
+      throw new Error(`Failed to authenticate with EROS service: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
