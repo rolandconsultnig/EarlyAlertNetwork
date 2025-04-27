@@ -78,9 +78,14 @@ class EROSService {
     // Get EROS credentials from environment variables
     this.username = process.env.EROS_USERNAME || '';
     this.password = process.env.EROS_PASSWORD || '';
+    this.apiKey = process.env.EROS_API_KEY || null;
     
-    if (!this.username || !this.password) {
+    if (this.apiKey) {
+      console.log('Using provided EROS API key.');
+    } else if (!this.username || !this.password) {
       console.warn('EROS credentials not set. Satellite imagery features will be limited.');
+    } else {
+      console.log('EROS username/password found. Will attempt login for API key.');
     }
   }
   
@@ -144,40 +149,46 @@ class EROSService {
     maxCloudCover = 100,
     maxResults = 10
   ): Promise<any> {
-    const apiKey = await this.login();
-    
-    const filter: SceneFilter = {
-      datasetName,
-      spatialFilter: {
-        filterType: 'mbr',
-        lowerLeft: {
-          latitude: boundingBox.south,
-          longitude: boundingBox.west
-        },
-        upperRight: {
-          latitude: boundingBox.north,
-          longitude: boundingBox.east
-        }
-      },
-      maxResults
-    };
-    
-    // Add temporal filter if dates are provided
-    if (startDate && endDate) {
-      filter.temporalFilter = {
-        startDate,
-        endDate
-      };
-    }
-    
-    // Add cloud cover filter
-    filter.cloudCoverFilter = {
-      min: 0,
-      max: maxCloudCover
-    };
+    console.log(`Searching for scenes: ${datasetName} in bbox: ${JSON.stringify(boundingBox)}`);
+    console.log(`Date range: ${startDate} to ${endDate}, max cloud cover: ${maxCloudCover}`);
     
     try {
-      const response = await axios.post<SceneResponse>(`${EROS_API_URL}/search`, {
+      const apiKey = await this.login();
+      console.log('API key obtained for EROS search:', apiKey ? 'Valid key received' : 'No API key');
+      
+      const filter: SceneFilter = {
+        datasetName,
+        spatialFilter: {
+          filterType: 'mbr',
+          lowerLeft: {
+            latitude: boundingBox.south,
+            longitude: boundingBox.west
+          },
+          upperRight: {
+            latitude: boundingBox.north,
+            longitude: boundingBox.east
+          }
+        },
+        maxResults
+      };
+      
+      // Add temporal filter if dates are provided
+      if (startDate && endDate) {
+        filter.temporalFilter = {
+          startDate,
+          endDate
+        };
+      }
+      
+      // Add cloud cover filter
+      filter.cloudCoverFilter = {
+        min: 0,
+        max: maxCloudCover
+      };
+      
+      console.log('EROS search request filter:', JSON.stringify(filter));
+      
+      const requestData = {
         apiKey,
         datasetName,
         maxResults,
@@ -185,13 +196,28 @@ class EROSService {
         sortOrder: 'DESC',
         sortBy: 'acquisitionDate',
         filterOptions: filter
-      });
+      };
+      
+      console.log('Sending EROS search request to:', `${EROS_API_URL}/search`);
+      const response = await axios.post<SceneResponse>(`${EROS_API_URL}/search`, requestData);
+      
+      console.log('EROS search response received, status:', response.status);
       
       if (response.data.errorCode) {
+        console.error(`EROS API error: ${response.data.errorCode} - ${response.data.error}`);
         throw new Error(`EROS scene search error: ${response.data.error}`);
       }
       
-      return response.data.data.results.map(scene => ({
+      const results = response.data.data.results || [];
+      console.log(`Found ${results.length} scenes`);
+      
+      if (results.length === 0) {
+        console.log('No scenes found for the current criteria');
+      } else {
+        console.log('First scene:', JSON.stringify(results[0]));
+      }
+      
+      return results.map(scene => ({
         id: scene.entityId,
         displayId: scene.displayId,
         acquisitionDate: scene.acquisitionDate,
@@ -201,7 +227,16 @@ class EROSService {
       }));
     } catch (error) {
       console.error('EROS scene search failed:', error);
-      throw new Error('Failed to search for satellite imagery');
+      
+      if (axios.isAxiosError(error)) {
+        console.error('EROS API error details:', {
+          status: error.response?.status,
+          statusText: error.response?.statusText,
+          data: error.response?.data,
+        });
+      }
+      
+      throw new Error(`Failed to search for satellite imagery: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   

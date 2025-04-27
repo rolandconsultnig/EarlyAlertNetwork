@@ -54,11 +54,15 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
     setIsLoading(true);
     
     try {
+      console.log('Fetching satellite imagery for sourceId:', sourceId);
       const source = satelliteSources?.find((s: SatelliteSource) => s.id.toString() === sourceId);
       
       if (!source) {
+        console.error('Invalid satellite source, available sources:', satelliteSources);
         throw new Error('Invalid satellite source');
       }
+      
+      console.log('Selected source:', source);
       
       // Determine dataset name based on source
       let datasetName = '';
@@ -72,21 +76,33 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
         datasetName = 'landsat_ot_c2_l2'; // Default to Landsat
       }
       
+      console.log('Using dataset:', datasetName);
+      
       // If no location provided, use a default location in Nigeria (Abuja)
       const defaultLocation = { lat: 9.0765, lng: 7.3986 };
       const locationToUse = location || defaultLocation;
       
+      console.log('Using location:', locationToUse);
+      
       // Call satellite imagery API
-      const response = await fetch(`/api/satellite/imagery?lat=${locationToUse.lat}&lng=${locationToUse.lng}&dataset=${datasetName}&radius=50&maxResults=1`);
+      const apiUrl = `/api/satellite/imagery?lat=${locationToUse.lat}&lng=${locationToUse.lng}&dataset=${datasetName}&radius=50&maxResults=1`;
+      console.log('Fetching from API URL:', apiUrl);
+      
+      const response = await fetch(apiUrl);
+      console.log('API Response status:', response.status);
       
       if (!response.ok) {
-        throw new Error('Failed to fetch satellite imagery');
+        const errorText = await response.text();
+        console.error('API error response:', errorText);
+        throw new Error(`Failed to fetch satellite imagery: ${response.status} ${errorText}`);
       }
       
       const data = await response.json();
+      console.log('API Response data:', data);
       
       if (data && data.length > 0 && data[0].thumbnailUrl) {
         // We have a real satellite image from the API
+        console.log('Using real satellite image:', data[0].thumbnailUrl);
         setCurrentImage(data[0].thumbnailUrl);
         if (onImageLoad) onImageLoad(data[0].thumbnailUrl);
         
@@ -95,8 +111,10 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
           description: `Successfully loaded ${data[0].displayId || source.name} from ${new Date(data[0].acquisitionDate).toLocaleDateString() || 'unknown date'}`,
         });
       } else {
+        console.log('No imagery data available, using fallback');
         // Fall back to sample images if no real data is available
         const fallbackUrl = fallbackImages[source.name as keyof typeof fallbackImages] || fallbackImages['Satellite Imagery'];
+        console.log('Using fallback image:', fallbackUrl);
         setCurrentImage(fallbackUrl);
         if (onImageLoad) onImageLoad(fallbackUrl);
         
@@ -112,13 +130,14 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
       const source = satelliteSources?.find((s: SatelliteSource) => s.id.toString() === sourceId);
       if (source) {
         const fallbackUrl = fallbackImages[source.name as keyof typeof fallbackImages] || fallbackImages['Satellite Imagery'];
+        console.log('Error occurred, using fallback image:', fallbackUrl);
         setCurrentImage(fallbackUrl);
         if (onImageLoad) onImageLoad(fallbackUrl);
       }
       
       toast({
-        title: 'API Error',
-        description: 'Failed to load satellite imagery from EROS service. Using sample image instead.',
+        title: 'Satellite API Error',
+        description: `${error instanceof Error ? error.message : 'Failed to load satellite imagery'}. Check console for details.`,
         variant: 'destructive',
       });
     } finally {
