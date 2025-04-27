@@ -2,6 +2,7 @@ import { twilioService } from './twilio-service';
 import { twitterService } from './twitter-service';
 import { facebookService } from './facebook-service';
 import { instagramService } from './instagram-service';
+import { amadeusService } from './amadeus-service';
 
 /**
  * Social Media and Communication Integration Services
@@ -16,6 +17,9 @@ export const integrationServices = {
   twitter: twitterService,  // X/Twitter integration
   facebook: facebookService,
   instagram: instagramService,
+  
+  // Travel & Transportation Integration
+  amadeus: amadeusService,  // Flight and airport information (replaces Dana Air)
 
   /**
    * Check status of all integration services
@@ -26,7 +30,8 @@ export const integrationServices = {
       twilio: twilioService.verifyConfiguration(),
       twitter: twitterService.verifyConfiguration(),
       facebook: facebookService.verifyConfiguration(), 
-      instagram: instagramService.verifyConfiguration()
+      instagram: instagramService.verifyConfiguration(),
+      amadeus: amadeusService.verifyConfiguration()
     };
   }
 };

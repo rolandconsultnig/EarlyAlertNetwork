@@ -3,6 +3,16 @@ import { integrationServices } from './index';
 import { z } from 'zod';
 import { insertUserSchema } from '@shared/schema';
 
+// Flight search parameter validation schema 
+const flightSearchSchema = z.object({
+  originCode: z.string().length(3, "Origin airport code must be exactly 3 characters"),
+  destinationCode: z.string().length(3, "Destination airport code must be exactly 3 characters"),
+  departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Departure date must be in YYYY-MM-DD format"),
+  returnDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Return date must be in YYYY-MM-DD format").optional(),
+  adults: z.number().int().min(1).max(9).default(1),
+  travelClass: z.enum(['ECONOMY', 'PREMIUM_ECONOMY', 'BUSINESS', 'FIRST']).optional()
+});
+
 /**
  * Register integration-related API routes
  * @param app - Express application
@@ -279,6 +289,132 @@ export function registerIntegrationRoutes(app: Express): void {
       res.status(result.success ? 200 : 400).json(result);
     } catch (error: any) {
       res.status(500).json({ error: error.message || 'Failed to search Instagram locations' });
+    }
+  });
+
+  // AMADEUS FLIGHT API ROUTES
+  
+  // Search flights
+  app.post('/api/integration/flights/search', requireAuth, async (req, res) => {
+    try {
+      const validation = flightSearchSchema.safeParse(req.body);
+      if (!validation.success) {
+        return res.status(400).json({ 
+          error: validation.error.errors.map(e => e.message).join(', ') 
+        });
+      }
+      
+      const result = await integrationServices.amadeus.searchFlights(
+        validation.data.originCode,
+        validation.data.destinationCode,
+        validation.data.departureDate,
+        validation.data.returnDate,
+        validation.data.adults,
+        validation.data.travelClass
+      );
+      
+      res.status(result.success ? 200 : 400).json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to search flights' });
+    }
+  });
+  
+  // Search airports
+  app.get('/api/integration/airports/search', requireAuth, async (req, res) => {
+    const keyword = req.query.keyword as string;
+    const subType = req.query.subType as 'AIRPORT' | 'CITY' | 'METROPOLITAN_AREA' | undefined;
+    
+    if (!keyword || keyword.length < 2) {
+      return res.status(400).json({ error: 'Search keyword must be at least 2 characters' });
+    }
+    
+    try {
+      const result = await integrationServices.amadeus.searchAirports(keyword, subType);
+      res.status(result.success ? 200 : 400).json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to search airports' });
+    }
+  });
+  
+  // Confirm flight price
+  app.post('/api/integration/flights/price', requireAuth, async (req, res) => {
+    const flightOffer = req.body.flightOffer;
+    
+    if (!flightOffer) {
+      return res.status(400).json({ error: 'Flight offer data is required' });
+    }
+    
+    try {
+      const result = await integrationServices.amadeus.confirmFlightPrice(flightOffer);
+      res.status(result.success ? 200 : 400).json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to confirm flight price' });
+    }
+  });
+  
+  // Get city information
+  app.get('/api/integration/city/:cityCode', requireAuth, async (req, res) => {
+    const cityCode = req.params.cityCode;
+    
+    if (!cityCode || cityCode.length !== 3) {
+      return res.status(400).json({ error: 'Valid 3-letter city code is required' });
+    }
+    
+    try {
+      const result = await integrationServices.amadeus.getCityInfo(cityCode);
+      res.status(result.success ? 200 : 400).json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to get city information' });
+    }
+  });
+  
+  // Get flight schedules
+  app.get('/api/integration/flights/schedules', requireAuth, async (req, res) => {
+    const originCode = req.query.origin as string;
+    const destinationCode = req.query.destination as string;
+    const departureDate = req.query.date as string;
+    
+    if (!originCode || !destinationCode || !departureDate) {
+      return res.status(400).json({ 
+        error: 'Origin, destination, and departure date are required' 
+      });
+    }
+    
+    try {
+      const result = await integrationServices.amadeus.getFlightSchedules(
+        originCode,
+        destinationCode,
+        departureDate
+      );
+      res.status(result.success ? 200 : 400).json(result);
+    } catch (error: any) {
+      res.status(500).json({ error: error.message || 'Failed to get flight schedules' });
+    }
+  });
+  
+  // Get Nigerian airlines
+  app.get('/api/integration/nigerian-airlines', async (req, res) => {
+    try {
+      const airlines = integrationServices.amadeus.getNigerianAirlines();
+      res.json({ success: true, data: airlines });
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to get Nigerian airlines' 
+      });
+    }
+  });
+  
+  // Get Nigerian airports
+  app.get('/api/integration/nigerian-airports', async (req, res) => {
+    try {
+      const airports = integrationServices.amadeus.getNigerianAirports();
+      res.json({ success: true, data: airports });
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        error: error.message || 'Failed to get Nigerian airports' 
+      });
     }
   });
 }
