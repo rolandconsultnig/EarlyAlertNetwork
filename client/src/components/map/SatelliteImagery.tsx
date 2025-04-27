@@ -50,6 +50,62 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
   };
 
   // Function to fetch satellite imagery from EROS API
+  // First check if EROS API is working
+  const checkErosApiStatus = async () => {
+    try {
+      const response = await fetch('/api/satellite/test');
+      if (!response.ok) {
+        throw new Error(`EROS API test failed with status ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('EROS API status check result:', data);
+      
+      if (data.status === 'Success') {
+        return true;
+      } else {
+        console.error('EROS API test failed:', data.message);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error checking EROS API status:', error);
+      return false;
+    }
+  };
+  
+  // Function to get NASA Earth imagery directly
+  const getNasaEarthImagery = async (lat: number, lng: number): Promise<string | null> => {
+    try {
+      // NASA's Earth API doesn't require authentication for this endpoint
+      const date = new Date();
+      date.setMonth(date.getMonth() - 3); // Get imagery from 3 months ago to increase chances of clear imagery
+      
+      const formattedDate = date.toISOString().split('T')[0];
+      
+      // Use NASA's EPIC API to get Earth imagery
+      const nasaUrl = `https://api.nasa.gov/planetary/earth/imagery?lon=${lng}&lat=${lat}&date=${formattedDate}&dim=0.15&api_key=DEMO_KEY`;
+      console.log('Fetching NASA Earth imagery from:', nasaUrl);
+      
+      const response = await fetch(nasaUrl);
+      if (!response.ok) {
+        console.log('NASA API response not OK:', response.status);
+        return null;
+      }
+      
+      const data = await response.json();
+      console.log('NASA Earth imagery response:', data);
+      
+      if (data && data.url) {
+        return data.url;
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error fetching NASA Earth imagery:', error);
+      return null;
+    }
+  };
+
   const fetchSatelliteImage = async (sourceId: string) => {
     setIsLoading(true);
     
@@ -64,6 +120,50 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
       
       console.log('Selected source:', source);
       
+      // If no location provided, use a default location in Nigeria (Abuja)
+      const defaultLocation = { lat: 9.0765, lng: 7.3986 };
+      const locationToUse = location || defaultLocation;
+      
+      console.log('Using location:', locationToUse);
+
+      // First, check if EROS API is working
+      const erosApiWorking = await checkErosApiStatus();
+      
+      if (!erosApiWorking) {
+        console.log('EROS API not working, trying alternative NASA Earth imagery');
+        
+        // Try to get imagery from NASA's Earth API
+        const nasaImageUrl = await getNasaEarthImagery(locationToUse.lat, locationToUse.lng);
+        
+        if (nasaImageUrl) {
+          console.log('Successfully retrieved NASA Earth imagery:', nasaImageUrl);
+          setCurrentImage(nasaImageUrl);
+          if (onImageLoad) onImageLoad(nasaImageUrl);
+          
+          toast({
+            title: 'NASA Earth Imagery Loaded',
+            description: 'Using NASA Earth imagery (public API) as an alternative to USGS Earth Explorer',
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        // If NASA API fails too, use fallback
+        console.log('NASA Earth imagery not available either, using fallback');
+        const fallbackUrl = fallbackImages[source.name as keyof typeof fallbackImages] || fallbackImages['Satellite Imagery'];
+        console.log('Using fallback image:', fallbackUrl);
+        setCurrentImage(fallbackUrl);
+        if (onImageLoad) onImageLoad(fallbackUrl);
+        
+        toast({
+          title: 'Using Sample Imagery',
+          description: 'Satellite API connection issues. Using sample imagery as a fallback.',
+          variant: 'destructive',
+        });
+        setIsLoading(false);
+        return;
+      }
+      
       // Determine dataset name based on source
       let datasetName = '';
       if (source.name.includes('Sentinel')) {
@@ -77,12 +177,6 @@ const SatelliteImagery: React.FC<SatelliteImageryProps> = ({
       }
       
       console.log('Using dataset:', datasetName);
-      
-      // If no location provided, use a default location in Nigeria (Abuja)
-      const defaultLocation = { lat: 9.0765, lng: 7.3986 };
-      const locationToUse = location || defaultLocation;
-      
-      console.log('Using location:', locationToUse);
       
       // Call satellite imagery API
       const apiUrl = `/api/satellite/imagery?lat=${locationToUse.lat}&lng=${locationToUse.lng}&dataset=${datasetName}&radius=50&maxResults=1`;

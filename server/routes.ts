@@ -1281,6 +1281,47 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Satellite Imagery API Endpoints
+  // Test endpoint to verify EROS API connection
+  app.get("/api/satellite/test", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      // Check environment variables first
+      const envStatus = {
+        EROS_API_KEY: process.env.EROS_API_KEY ? "Set" : "Missing",
+        EROS_USERNAME: process.env.EROS_USERNAME ? "Set" : "Missing",
+        EROS_PASSWORD: process.env.EROS_PASSWORD ? "Set" : "Missing"
+      };
+      
+      // Try to get API key (either directly or via login)
+      let apiKey;
+      try {
+        apiKey = await erosService.login();
+      } catch (loginError) {
+        return res.status(500).json({ 
+          status: "Error", 
+          message: "Failed to get EROS API key",
+          envStatus,
+          error: loginError instanceof Error ? loginError.message : String(loginError)
+        });
+      }
+      
+      res.json({ 
+        status: "Success", 
+        message: "EROS API connection test successful",
+        envStatus,
+        apiKey: apiKey ? "Valid API key received" : "No API key received"
+      });
+    } catch (error) {
+      console.error("EROS API test failed:", error);
+      res.status(500).json({ 
+        status: "Error", 
+        message: "EROS API test failed",
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
+  });
+  
   app.get("/api/satellite/datasets", async (req, res) => {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     
