@@ -29,6 +29,7 @@ import ReportIncidentPage from "@/pages/report-incident-page";
 import MapPage from "@/pages/map-page";
 import SurveyManagementPage from "@/pages/survey-management-page";
 import AccessibilityPage from "@/pages/accessibility-page";
+import TransportationPage from "@/pages/transportation-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -87,6 +88,9 @@ function Router() {
       
       {/* Accessibility */}
       <ProtectedRoute path="/accessibility" component={AccessibilityPage} />
+      
+      {/* Transportation */}
+      <ProtectedRoute path="/transportation" component={TransportationPage} />
       
       <Route component={NotFound} />
     </Switch>

@@ -31,7 +31,8 @@ import {
   Sparkles,
   Bot,
   Globe,
-  Accessibility
+  Accessibility,
+  Car
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";

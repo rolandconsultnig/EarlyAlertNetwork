@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { AlertCircle, MapPin, Road, Train, Anchor, AlertTriangle } from 'lucide-react';
+import { AlertCircle, MapPin, Car, Train, Anchor, AlertTriangle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -145,7 +145,7 @@ export function TransportationInfo() {
   const getTransportIcon = (type: string) => {
     switch (type) {
       case 'road':
-        return <Road className="h-4 w-4 mr-1" />;
+        return <Car className="h-4 w-4 mr-1" />;
       case 'rail':
         return <Train className="h-4 w-4 mr-1" />;
       case 'water':
