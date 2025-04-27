@@ -2,7 +2,7 @@ import { twilioService } from './twilio-service';
 import { twitterService } from './twitter-service';
 import { facebookService } from './facebook-service';
 import { instagramService } from './instagram-service';
-import { amadeusService } from './amadeus-service';
+import { transportationService } from './transportation-service';
 
 /**
  * Social Media and Communication Integration Services
@@ -18,8 +18,8 @@ export const integrationServices = {
   facebook: facebookService,
   instagram: instagramService,
   
-  // Travel & Transportation Integration
-  amadeus: amadeusService,  // Flight and airport information (replaces Dana Air)
+  // Transportation & Logistics Integration
+  transportation: transportationService,  // Transportation data service for Nigeria
 
   /**
    * Check status of all integration services
@@ -31,7 +31,7 @@ export const integrationServices = {
       twitter: twitterService.verifyConfiguration(),
       facebook: facebookService.verifyConfiguration(), 
       instagram: instagramService.verifyConfiguration(),
-      amadeus: amadeusService.verifyConfiguration()
+      transportation: transportationService.verifyConfiguration()
     };
   }
 };
