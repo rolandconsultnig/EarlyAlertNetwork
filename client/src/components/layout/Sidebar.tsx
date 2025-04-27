@@ -81,6 +81,7 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
         { path: "/analysis", label: "Risk Assessment", icon: <LineChart className="mr-3 h-5 w-5" /> },
         { path: "/visualization", label: "Visualization", icon: <Map className="mr-3 h-5 w-5" /> },
         { path: "/incident-analysis", label: "Incident Analysis", icon: <BarChart3 className="mr-3 h-5 w-5" /> },
+        { path: "/transportation", label: "Transportation Data", icon: <Car className="mr-3 h-5 w-5" /> },
       ]
     },
     {
