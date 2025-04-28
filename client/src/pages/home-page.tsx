@@ -84,7 +84,7 @@ export default function HomePage() {
           </div>
           
           <div className="mt-8 flex flex-wrap gap-4 justify-center">
-            <Link href="/auth">
+            <Link href="/map">
               <Button className="flex items-center gap-2">
                 <Map size={16} />
                 View Full Crisis Map
@@ -183,8 +183,8 @@ export default function HomePage() {
                 and save lives.
               </p>
               <div className="space-y-2">
-                <Link href="/auth">
-                  <Button className="w-full">Login to Report</Button>
+                <Link href="/report-incident">
+                  <Button className="w-full">Report a Crisis</Button>
                 </Link>
                 <Button variant="outline" className="w-full">Call Hotline: 0800-PEACE-NG</Button>
                 <Button variant="outline" className="w-full">SMS Reporting</Button>
@@ -267,7 +267,7 @@ export default function HomePage() {
             <div>
               <h3 className="text-lg font-semibold mb-4">Resources</h3>
               <ul className="space-y-2 text-gray-300">
-                <li><Link href="/auth" className="hover:text-blue-300">Nigeria Crisis Map</Link></li>
+                <li><Link href="/map" className="hover:text-blue-300">Nigeria Crisis Map</Link></li>
                 <li><a href="#" className="hover:text-blue-300">Peace Building Toolkit</a></li>
                 <li><a href="#" className="hover:text-blue-300">Policy Briefs</a></li>
                 <li><a href="#" className="hover:text-blue-300">Media Gallery</a></li>

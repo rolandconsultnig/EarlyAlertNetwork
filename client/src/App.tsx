@@ -38,7 +38,7 @@ function Router() {
       <ProtectedRoute path="/" component={HomePage} allowPublicAccess={true} />
       <Route path="/auth" component={AuthPage} />
       <ProtectedRoute path="/report-incident" component={ReportIncidentPage} allowPublicAccess={true} />
-      <ProtectedRoute path="/map" component={MapPage} />
+      <ProtectedRoute path="/map" component={MapPage} allowPublicAccess={true} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
       
       {/* Data Collection & Processing */}
