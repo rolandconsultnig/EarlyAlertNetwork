@@ -90,7 +90,7 @@ export default function SettingsPage() {
   const profileForm = useForm<ProfileFormValues>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
-      fullName: user?.fullName || "",
+      fullName: user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username || "",
       email: "user@example.com", // This would come from the user record in a real app
       phoneNumber: "",
     },

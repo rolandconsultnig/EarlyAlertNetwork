@@ -237,11 +237,11 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
             <Avatar>
               <AvatarImage src="" />
               <AvatarFallback className="bg-blue-600 text-white">
-                {user?.fullName?.charAt(0) || user?.username?.charAt(0) || "U"}
+                {user?.firstName?.charAt(0) || user?.username?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
             <div className="ml-3">
-              <p className="text-sm font-medium text-gray-800">{user?.fullName || user?.username}</p>
+              <p className="text-sm font-medium text-gray-800">{user?.firstName && user?.lastName ? `${user.firstName} ${user.lastName}` : user?.username}</p>
               <p className="text-xs font-medium text-blue-600">{user?.role || "Official"}</p>
             </div>
             <div className="ml-auto">

@@ -15,6 +15,8 @@
     "db:setup-neon": "tsx scripts/setup-neon-db.js",
     "deploy:vercel": "vercel --prod",
     "deploy:railway": "railway up",
+    "deploy:netlify": "netlify deploy --prod",
+    "build:netlify": "npm run build && netlify build",
     "docker:build": "docker build -t early-alert-network .",
     "docker:run": "docker run -p 3000:3000 early-alert-network",
     "docker:compose": "docker-compose up --build",

@@ -69,7 +69,7 @@ export default function Topbar({ openMobileMenu, title }: TopbarProps) {
             <Avatar>
               <AvatarImage src="" />
               <AvatarFallback className="bg-primary text-white">
-                {user?.fullName?.charAt(0) || user?.username?.charAt(0) || "U"}
+                {user?.firstName?.charAt(0) || user?.username?.charAt(0) || "U"}
               </AvatarFallback>
             </Avatar>
           </div>
