@@ -23,11 +23,12 @@ exports.handler = async (event, context) => {
     statusCode: 200,
     headers,
     body: JSON.stringify({
-      message: 'Early Alert Network API',
+      message: 'Early Alert Network API - Serverless Function',
       status: 'running',
       timestamp: new Date().toISOString(),
       method: event.httpMethod,
       path: event.path,
+      environment: process.env.NODE_ENV || 'development',
     }),
   };
 };
