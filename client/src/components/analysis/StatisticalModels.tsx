@@ -358,12 +358,12 @@ const StatisticalModels: React.FC = () => {
                   
                   <div className="bg-white p-4 rounded-lg border">
                     <h4 className="font-medium text-sm mb-2">Eastern Region</h4>
-                    <p className="text-sm text-gray-600">Strong correlation (r = 0.88) with high confidence (p < 0.01). Regression coefficient: 1.25.</p>
+                    <p className="text-sm text-gray-600">Strong correlation (r = 0.88) with high confidence (p &lt; 0.01). Regression coefficient: 1.25.</p>
                   </div>
                   
                   <div className="bg-white p-4 rounded-lg border">
                     <h4 className="font-medium text-sm mb-2">Western Region</h4>
-                    <p className="text-sm text-gray-600">Moderate correlation (r = 0.71) with statistical significance (p < 0.05). Regression coefficient: 0.85.</p>
+                    <p className="text-sm text-gray-600">Moderate correlation (r = 0.71) with statistical significance (p &lt; 0.05). Regression coefficient: 0.85.</p>
                   </div>
                 </div>
                 

@@ -1,0 +1,241 @@
+ designing and building a dynamic web application for the Nigeria Institute of Town Planners (NITP), Abuja Chapter. The application should serve as a comprehensive member portal and management system, streamlining operations, enhancing member engagement, and facilitating communication.
+
+The application should be built with a modern, dynamic approach, leveraging a component-based architecture, custom hooks for reusable logic, and a state management solution (like React Query) for efficient data fetching.  Type safety with TypeScript is required, and the UI should be styled with Tailwind CSS, incorporating responsive design principles, toast notifications, and a tooltip system.
+
+The backend should be robust and scalable, built with a Node.js server and a PostgreSQL database, with appropriate API routes, middleware for authentication and security, and a well-defined database schema. Database migrations and a separate file storage system should be implemented.
+
+The application should encompass the following core modules and functionalities:
+
+1. Authentication & User Management
+
+Login/Register functionality for members and administrators.
+
+User profiles with customizable settings.
+
+Secure password management (hashing, salting).
+
+Account verification (email confirmation).
+
+Role-Based Access Control (RBAC) to manage permissions for different user types (members, administrators, financial officers, ethics officers).
+
+Admin dashboard for user management (viewing, adding, editing, deleting users, managing roles).
+
+2. Member Management
+
+Searchable member directory.
+
+Executive Committee (Exco) page with member profiles and information.
+
+Detailed member profiles, including:
+
+Personal information (name, contact details, address, date of birth, gender, nationality).
+
+Educational qualifications (secondary school, higher institution) with uploaded certificates.
+
+Professional qualifications (professional body, membership grade, membership number).
+
+Employment history.
+
+Research interests and publications (if applicable).
+
+Certificate verification system to verify the authenticity of member credentials.
+
+3. Ethics Module
+
+Ethics dashboard for administrators to manage complaints and disciplinary actions.
+
+Complaint submission system, allowing members and non-members to submit complaints against the organization, its members, or executives, ensuring confidentiality.  The complaint form should include:
+
+Complainant Name (optional for non-members, required for members)
+
+Complainant Contact Information (email, phone)
+
+Subject of Complaint (e.g., Organization, Member, Executive)
+
+Details of Complaint (a detailed description of the issue)
+
+Supporting Documents (optional file uploads)
+
+Complaint management system for Ethics Officers, including:
+
+Tracking the status of each complaint (e.g., received, under investigation, resolved, closed).
+
+Assigning complaints to Ethics Officers.
+
+Communication tools for interacting with complainants and respondents.
+
+Recording evidence and documentation.
+
+Generating reports on complaint trends and outcomes.
+
+Investigation and adjudication system for Ethics Officers.
+
+Sanctions management, allowing Ethics Officers to recommend and apply sanctions, including:
+
+Suspending a member's account.
+
+Imposing fines on a member.
+
+Issuing warnings or reprimands.
+
+Suggesting a levy for a project to address the issue that led to the complaint
+
+Appeals system for members to appeal sanctions.
+
+4. Financial Module
+
+Financial dashboard for administrators and financial officers, displaying key financial indicators and reports.
+
+Comprehensive accounting package, including:
+
+Chart of Accounts: Define and manage the organization's chart of accounts.
+
+Journal Entries: Create, edit, and manage journal entries.
+
+General Ledger: View and manage the general ledger.
+
+Accounts Payable: Manage vendor invoices, payments, and track outstanding payables.
+
+Accounts Receivable: Manage customer invoices, payments, and track outstanding receivables.
+
+Banking: Reconcile bank statements, manage bank accounts, and process bank transactions.
+
+Budgeting: Create, track, and manage budgets, including budget forecasting and variance analysis.
+
+Financial Reporting: Generate a variety of financial reports, including Balance Sheets, Income Statements, Cash Flow Statements, Trial Balance, and customizable reports.
+
+Tax Management: Manage tax calculations, reporting, and compliance.
+
+Audit Trail: Maintain a detailed audit trail of all financial transactions and changes.
+
+User Roles and Permissions: Assign roles and permissions to users within the Financial Management Module.
+
+Expense Approval: Implement a workflow for expense approvals.
+
+Initiating and approving financial audits
+
+5. E-Learning Platform
+
+System for delivering educational content to members.
+
+Learning management system (LMS) functionalities, including:
+
+Course creation and management by administrators.
+
+Enrollment and unenrollment of members in e-classes.
+
+Tracking user progress and completion.
+
+Support for various content formats (text, video, presentations, quizzes, assignments).
+
+Communication tools between instructors and students (forums, messaging, announcements).
+
+6. Elections System
+
+Platform for managing and conducting NITP elections.
+
+Functionalities include:
+
+Administrator-controlled election setup (start/end dates, eligible voters, positions).
+
+Candidate nomination process.
+
+Secure voter authentication.
+
+Online vote casting.
+
+Real-time vote counting and display (with appropriate security measures).
+
+Audit trail of votes.
+
+Results announcement and reporting.
+
+7. Application Processing
+
+System for processing applications, specifically for:
+
+SAR (Site Analysis Report)
+
+EIAR (Ecological Impact Assessment Report)
+
+The application process should handle:
+
+Online application forms with required fields (see SAR/EIAR application content details).
+
+Document uploads (title documents, certificates, etc.).
+
+Fee calculation and payment processing (integration with payment gateway).
+
+Application status tracking.
+
+Automated certificate generation (with QR codes) and delivery (via WhatsApp and email).
+
+Online verification of certificate authenticity using QR codes.
+
+8. Communication Features
+
+Real-time chat system for members, including:
+
+Direct messaging between members.
+
+Public and private chat rooms.
+
+Administrator-moderated rooms.
+
+User presence indicators (online/offline status).
+
+Message history and search.
+
+File Sharing
+
+Notification system for sending alerts and updates to members via:
+
+Email.
+
+WhatsApp.
+
+9. Member Tools Access
+
+Implement a system where members can access professional tools (e.g., a web version of ArcGIS or a CAD application) by purchasing credits.
+
+Define the credit system (e.g., 1 Naira = 6 Credits).
+
+Track members' credit balances and tool usage.
+
+Implement a secure payment system for purchasing credits.
+
+Control tool access based on credit balance.
+
+10. Technical Architecture
+
+Frontend:
+
+Modern, component-based architecture (React or Vue.js).
+
+State management (React Query).
+
+UI framework (Tailwind CSS).
+
+Custom hooks for reusable logic.
+
+Responsive design.
+
+Toast notifications and tooltip system.
+
+Backend:
+
+Node.js with Express.js framework.
+
+PostgreSQL database.
+
+ORM (Sequelize or TypeORM).
+
+RESTful API design.
+
+Websockets for real-time chat.
+
+Secure file storage.
+
+Background job processing for tasks like sending notifications.
+
+This application requires a robust and scalable architecture, a user-friendly interface, and secure implementation of all functionalities.

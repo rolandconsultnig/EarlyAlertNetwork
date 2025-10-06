@@ -17,7 +17,9 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-  Radar
+  Radar,
+  BarChart,
+  Bar
 } from 'recharts';
 import { 
   BarChart2, 
@@ -182,8 +184,8 @@ const MachineLearningModels: React.FC = () => {
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="date" />
-                      <YAxis domain={[0, 1]} tickFormatter={(value) => `${value * 100}%`} />
-                      <Tooltip formatter={(value) => [`${(value * 100).toFixed(1)}%`, 'Probability']} />
+                      <YAxis domain={[0, 1]} tickFormatter={(value: any) => `${Number(value) * 100}%`} />
+                      <Tooltip formatter={(value: any) => [`${(Number(value) * 100).toFixed(1)}%`, 'Probability']} />
                       <Legend />
                       <Area 
                         type="monotone" 
@@ -340,9 +342,9 @@ const MachineLearningModels: React.FC = () => {
                       margin={{ top: 5, right: 30, left: 150, bottom: 5 }}
                     >
                       <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis type="number" domain={[0, 0.3]} tickFormatter={(value) => `${(value * 100).toFixed(0)}%`} />
+                      <XAxis type="number" domain={[0, 0.3]} tickFormatter={(value: any) => `${(Number(value) * 100).toFixed(0)}%`} />
                       <YAxis type="category" dataKey="name" />
-                      <Tooltip formatter={(value) => [`${(value * 100).toFixed(1)}%`, 'Importance']} />
+                      <Tooltip formatter={(value: any) => [`${(Number(value) * 100).toFixed(1)}%`, 'Importance']} />
                       <Legend />
                       <Bar dataKey="value" name="Feature Importance" fill="#8884d8" />
                     </BarChart>

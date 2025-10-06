@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/dialog";
 import NigeriaMap from "@/components/maps/NigeriaMap";
 import { formatDate } from "@/lib/utils";
-import { Alert, Incident, RiskIndicator } from "@shared/schema";
+import { Alert, Incident, RiskIndicator } from "@shared/schema.ts";
 import { LocationSearch, LocationSearchResult } from "@/components/location/LocationSearch";
 import { RegionSelector } from "@/components/location/RegionSelector";
 import {

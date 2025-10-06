@@ -18,10 +18,14 @@ export default defineConfig({
         ]
       : []),
   ],
+  server: {
+    port: 4040,
+  },
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
       "@shared": path.resolve(import.meta.dirname, "shared"),
+      "@shared/schema": path.resolve(import.meta.dirname, "shared", "schema.ts"),
       "@assets": path.resolve(import.meta.dirname, "attached_assets"),
     },
   },

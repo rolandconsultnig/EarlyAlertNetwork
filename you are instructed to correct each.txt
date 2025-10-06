@@ -1,0 +1,13 @@
+you are instructed to correct each error has discovered one after the other then revert. you have permission to use powershell when needed
+
+
+early_alert_network
+
+ (admin/admin123
+examiner/examiner123
+student/student123) 
+
+
+
+Assuming Nigeria wants to block facebook or WhatsApp from citizens like you have censored internet in China, 
+do you have an idea how it can be handled?

@@ -6,7 +6,6 @@ import { WebSocketServer, WebSocket } from "ws";
 import { z } from "zod";
 import { fromZodError } from 'zod-validation-error';
 import crypto from 'crypto';
-import OpenAI from 'openai';
 import {
   insertDataSourceSchema,
   insertIncidentSchema,
@@ -33,11 +32,11 @@ import { integrationServices } from "./services/integrations";
 import { erosService } from "./services/eros-service";
 import { db } from "./db";
 import { desc, eq, count } from "drizzle-orm";
+import axios from 'axios';
 
-// Initialize OpenAI client 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize DeepSeek AI configuration
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Authentication middleware
@@ -869,21 +868,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
         
         try {
-          const response = await openai.chat.completions.create({
-            model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-            messages: [
-              { 
-                role: "system", 
-                content: "You are an AI analyst specializing in conflict analysis, early warning systems, and pattern detection for the Institute for Peace and Conflict Resolution in Nigeria. Provide detailed and accurate pattern analysis." 
-              },
-              { role: "user", content: prompt }
-            ],
-            temperature: 0.3,
-            response_format: { type: "json_object" }
-          });
+          const response = await axios.post(
+            DEEPSEEK_API_URL,
+            {
+              model: "deepseek-chat",
+              messages: [
+                { 
+                  role: "system", 
+                  content: "You are an AI analyst specializing in conflict analysis, early warning systems, and pattern detection for the Institute for Peace and Conflict Resolution in Nigeria. Provide detailed and accurate pattern analysis." 
+                },
+                { role: "user", content: prompt }
+              ],
+              temperature: 0.3,
+              response_format: { type: "json_object" }
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
           
           // Parse the AI response
-          const responseContent = response.choices[0].message.content || '{}';
+          const responseContent = response.data.choices[0].message.content || '{}';
           console.log("Raw AI response:", responseContent);
           
           let aiResponse;
@@ -924,7 +932,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             aiGenerated: true,
             message: "Patterns detected using AI analysis"
           });
-        } catch (aiError) {
+        } catch (aiError: any) {
           // Check for rate limit or quota errors
           if (aiError.code === 'insufficient_quota' || 
               (aiError.status === 429) || 
@@ -964,22 +972,65 @@ export async function registerRoutes(app: Express): Promise<Server> {
    * Generate rule-based patterns from incident data
    * This is used as a fallback when AI analysis fails
    */
-  function generateRuleBasedPatterns(incidents) {
-    // Default patterns structure
+  function generateRuleBasedPatterns(incidents: any[]): {
+    temporal: Array<{
+      name: string;
+      description: string;
+      significance: number;
+      relevance: string;
+      period: string;
+      incidents: number[];
+    }>;
+    spatial: Array<{
+      name: string;
+      description: string;
+      significance: number;
+      relevance: string;
+      region: string;
+      incidents: number[];
+    }>;
+    actor: Array<{
+      name: string;
+      description: string;
+      significance: number;
+      relevance: string;
+      actor: string;
+      incidents: number[];
+    }>;
+  } {
     const patterns = {
-      temporal: [],
-      spatial: [],
-      actor: []
+      temporal: [] as Array<{
+        name: string;
+        description: string;
+        significance: number;
+        relevance: string;
+        period: string;
+        incidents: number[];
+      }>,
+      spatial: [] as Array<{
+        name: string;
+        description: string;
+        significance: number;
+        relevance: string;
+        region: string;
+        incidents: number[];
+      }>,
+      actor: [] as Array<{
+        name: string;
+        description: string;
+        significance: number;
+        relevance: string;
+        actor: string;
+        incidents: number[];
+      }>
     };
-    
+
     try {
-      // Generate at least one pattern in each category to ensure we always have results
-      
       // 1. Temporal Patterns
       
       // Group incidents by temporal attributes (month)
-      const monthGroups = {};
-      incidents.forEach(incident => {
+      const monthGroups: Record<string, any[]> = {};
+      incidents.forEach((incident: any) => {
         if (!incident.reportedAt) return;
         
         const date = new Date(incident.reportedAt);
@@ -999,13 +1050,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       
       // Calculate average incidents per month
-      const avgCount = Math.max(1, monthCounts.reduce((sum, item) => sum + item.count, 0) / Math.max(1, monthCounts.length));
+      const avgCount = monthCounts.reduce((sum, { count }) => sum + count, 0) / monthCounts.length;
       
-      // Find months with significantly more incidents
+      // Add patterns for months with above-average activity
       monthCounts.forEach(({ month, count }) => {
-        // Lower the threshold to ensure we capture more patterns
-        if (count >= 1) {
-          const monthDate = new Date(parseInt(month.split('-')[0]), parseInt(month.split('-')[1]) - 1);
+        if (count > avgCount) {
+          const [year, monthNum] = month.split('-');
+          const monthDate = new Date(parseInt(year), parseInt(monthNum) - 1);
           const monthName = monthDate.toLocaleString('default', { month: 'long', year: 'numeric' });
           
           patterns.temporal.push({
@@ -1014,14 +1065,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             significance: Math.min(100, Math.round((count / avgCount) * 60)),
             relevance: count > avgCount ? "high" : "medium",
             period: monthName,
-            incidents: monthGroups[month].map(i => i.id)
+            incidents: monthGroups[month].map((i: any) => i.id)
           });
         }
       });
       
       // Group incidents by weekday
-      const weekdayGroups = {};
-      incidents.forEach(incident => {
+      const weekdayGroups: Record<number, any[]> = {};
+      incidents.forEach((incident: any) => {
         if (!incident.reportedAt) return;
         
         const date = new Date(incident.reportedAt);
@@ -1049,8 +1100,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // 2. Spatial Patterns
       
       // Group incidents by region
-      const regionGroups = {};
-      incidents.forEach(incident => {
+      const regionGroups: Record<string, any[]> = {};
+      incidents.forEach((incident: any) => {
         // Default to "Nigeria" if no region is specified
         const region = incident.region || "Nigeria";
         
@@ -1068,19 +1119,18 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }));
       
       // Calculate average incidents per region
-      const avgRegionCount = Math.max(1, regionCounts.reduce((sum, item) => sum + item.count, 0) / Math.max(1, regionCounts.length));
+      const avgRegionCount = regionCounts.reduce((sum, { count }) => sum + count, 0) / regionCounts.length;
       
-      // Create patterns for regions with incidents
+      // Add patterns for regions with above-average activity
       regionCounts.forEach(({ region, count }) => {
-        // Lower the threshold to ensure we capture more patterns
-        if (count >= 1) {
+        if (count > avgRegionCount) {
           patterns.spatial.push({
             name: `${region} Regional Activity`,
             description: `${count} incidents reported in ${region}${count > avgRegionCount ? `, which is above the regional average.` : '.'}`,
             significance: Math.min(100, Math.round((count / avgRegionCount) * 70)),
             relevance: count > avgRegionCount ? "high" : "medium",
             region,
-            incidents: regionGroups[region].map(i => i.id)
+            incidents: regionGroups[region].map((i: any) => i.id)
           });
         }
       });
@@ -1093,15 +1143,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
           significance: 60,
           relevance: "medium",
           region: "Nigeria",
-          incidents: incidents.map(i => i.id).slice(0, 5)
+          incidents: incidents.map((i: any) => i.id).slice(0, 5)
         });
       }
       
       // 3. Actor Patterns
       
       // Group by categories for actor patterns
-      const categoryGroups = {};
-      incidents.forEach(incident => {
+      const categoryGroups: Record<string, any[]> = {};
+      incidents.forEach((incident: any) => {
         // Default to "other" if no category is specified
         const category = incident.category || "other";
         
@@ -1124,14 +1174,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
             significance: Math.min(90, categoryIncidents.length * 10),
             relevance: categoryIncidents.length > 3 ? 'high' : 'medium',
             actor: `${categoryLabel} Related Actors`,
-            incidents: categoryIncidents.map(i => i.id)
+            incidents: categoryIncidents.map((i: any) => i.id)
           });
         }
       });
       
       // Group by severity
-      const severityGroups = {};
-      incidents.forEach(incident => {
+      const severityGroups: Record<string, any[]> = {};
+      incidents.forEach((incident: any) => {
         if (!incident.severity) return;
         
         if (!severityGroups[incident.severity]) {
@@ -1149,7 +1199,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           significance: 80,
           relevance: 'high',
           actor: 'Multiple Actors',
-          incidents: severityGroups['high'].map(i => i.id)
+          incidents: severityGroups['high'].map((i: any) => i.id)
         });
       }
       
@@ -1232,17 +1282,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         let aiResponse;
         try {
-          // Try to get response from OpenAI
-          const response = await openai.chat.completions.create({
-            model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024
-            messages: messages as any,
-            temperature: 0.7,
-            max_tokens: 1000
-          });
+          // Try to get response from DeepSeek
+          const response = await axios.post(
+            DEEPSEEK_API_URL,
+            {
+              model: "deepseek-chat",
+              messages: messages as any,
+              temperature: 0.7,
+              max_tokens: 1000
+            },
+            {
+              headers: {
+                'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+                'Content-Type': 'application/json'
+              }
+            }
+          );
           
-          aiResponse = response.choices[0].message.content;
+          aiResponse = response.data.choices[0].message.content;
         } catch (openaiError) {
-          console.error("OpenAI API error:", openaiError);
+          console.error("DeepSeek API error:", openaiError);
           
           // Fallback response logic based on message content
           const userMessageLower = message.toLowerCase();
@@ -1257,7 +1316,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             aiResponse = 'I\'m your AI assistant for conflict analysis and early warning. I can help you analyze risk patterns, detect emerging threats, and provide recommendations for conflict prevention. How can I assist with your peace and security initiatives today?';
           }
           
-          console.log("Using fallback response due to OpenAI API issue");
+          console.log("Using fallback response due to DeepSeek API issue");
         }
         
         res.json({
@@ -2248,18 +2307,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
           Sort the results by relevance (highest first) and limit to the 5 most relevant incidents.
         `;
         
-        const completion = await openai.chat.completions.create({
-          model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-          messages: [
-            { role: "system", content: "You are an AI search engine specializing in conflict analysis and peace research." },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.3,
-          response_format: { type: "json_object" }
-        });
+        const completion = await axios.post(
+          DEEPSEEK_API_URL,
+          {
+            model: "deepseek-chat",
+            messages: [
+              { role: "system", content: "You are an AI search engine specializing in conflict analysis and peace research." },
+              { role: "user", content: prompt }
+            ],
+            temperature: 0.3,
+            response_format: { type: "json_object" }
+          },
+          {
+            headers: {
+              'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+              'Content-Type': 'application/json'
+            }
+          }
+        );
         
         // Parse the AI response
-        const aiResponse = JSON.parse(completion.choices[0].message.content || '{}');
+        const aiResponse = JSON.parse(completion.data.choices[0].message.content || '{}');
         
         // Return the search results
         res.json(aiResponse);

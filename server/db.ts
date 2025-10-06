@@ -1,10 +1,6 @@
-import { Pool, neonConfig } from '@neondatabase/serverless';
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import ws from "ws";
+import { Pool } from 'pg';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import * as schema from "@shared/schema";
-
-// Configure neon to use WebSockets
-neonConfig.webSocketConstructor = ws;
 
 // Ensure we have a database URL
 if (!process.env.DATABASE_URL) {
@@ -16,5 +12,5 @@ if (!process.env.DATABASE_URL) {
 // Create a connection pool
 export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-// Create a Drizzle ORM instance
-export const db = drizzle({ client: pool, schema });
+// Create a Drizzle ORM instance with the connection pool
+export const db = drizzle(pool, { schema });

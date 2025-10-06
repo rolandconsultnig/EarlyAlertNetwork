@@ -1,1 +1,53 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Sensitive files with credentials
+database connection.txt
+ifGodbe4mewhoB123@123@.txt
+Usernam afrinictlimited@gmail.com.txt
+NEON.txt
+Member.txt
+develop a cutting-edge web applicat.txt
+Comprehensive Proposal National Lev.txt
+designing and building a dynamic we.txt
+this is  comprehensive overview of.txt
+you are instructed to correct each.txt
+sd.txt
+
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
+build/
+out/
+
+# Debug logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Database
+*.sqlite
+*.sqlite3
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
 .vercel

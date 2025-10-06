@@ -7,7 +7,7 @@ import {
   RiskAnalysis, 
   ResponseTeam, 
   insertResponsePlanSchema 
-} from "@shared/schema";
+} from "@shared/schema.ts";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 // import { ErrorMessage } from "@/components/ui/error-message";

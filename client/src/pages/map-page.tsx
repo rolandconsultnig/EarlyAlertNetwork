@@ -6,7 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { AlertTriangle, Loader2, Map, Satellite } from "lucide-react";
 import NigeriaMap from "@/components/maps/NigeriaMap";
 import SatelliteImagery from "@/components/map/SatelliteImagery";
-import type { Incident } from "@shared/schema";
+import type { Incident } from "@shared/schema.ts";
 
 // Create our own mock incidents with custom properties for the map display
 // Each mock incident needs to have the required fields to match the NigeriaMap component's expectations

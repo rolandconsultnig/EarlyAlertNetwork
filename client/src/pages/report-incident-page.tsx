@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { insertIncidentSchema } from "@shared/schema";
+import { insertIncidentSchema } from "@shared/schema.ts";
 import { Link } from "wouter";
 
 // Import components

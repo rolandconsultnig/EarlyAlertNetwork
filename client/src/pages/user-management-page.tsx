@@ -1,7 +1,7 @@
 import { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { User, insertUserSchema } from "@shared/schema";
+import { User, insertUserSchema } from "@shared/schema.ts";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { zodResolver } from "@hookform/resolvers/zod";

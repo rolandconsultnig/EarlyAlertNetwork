@@ -85,7 +85,7 @@ export function setupAuth(app: Express) {
     
     // Users with security clearance level 5 or higher can create new users
     const currentUser = req.user as SelectUser;
-    if (currentUser.securityLevel < 5 && currentUser.role !== 'admin') {
+    if (currentUser.accessLevel !== 'level_5' && currentUser.accessLevel !== 'level_6' && currentUser.accessLevel !== 'level_7' && currentUser.role !== 'admin') {
       return res.status(403).json({ error: "Creating users requires security clearance level 5 or higher" });
     }
     
@@ -128,7 +128,7 @@ export function setupAuth(app: Express) {
     
     // Users with security clearance level 5 or higher can access user management
     const user = req.user as SelectUser;
-    if (user.securityLevel < 5 && user.role !== 'admin') {
+    if (user.accessLevel !== 'level_5' && user.accessLevel !== 'level_6' && user.accessLevel !== 'level_7' && user.role !== 'admin') {
       return res.status(403).json({ error: "User management requires security clearance level 5 or higher" });
     }
     

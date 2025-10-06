@@ -101,6 +101,7 @@ export default function Sidebar({ isMobileMenuOpen, closeMobileMenu }: SidebarPr
     {
       title: "Communications",
       items: [
+            { path: "/chat", label: "Emergency Communications", icon: <MessageCircle className="mr-3 h-5 w-5" /> },
         { path: "/sms", label: "SMS Management", icon: <MessageSquare className="mr-3 h-5 w-5" /> },
         { path: "/sms/compose", label: "Compose SMS", icon: <MessageSquareDashed className="mr-3 h-5 w-5" /> },
         { path: "/sms/templates", label: "SMS Templates", icon: <MessageCircle className="mr-3 h-5 w-5" /> },

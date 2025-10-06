@@ -2,7 +2,7 @@ import React, { useState, Component, ReactNode } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import PatternDetection from "@/components/analysis/PatternDetection";
 import { useQuery } from "@tanstack/react-query";
-import { Incident } from "@shared/schema";
+import { Incident } from "@shared/schema.ts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, BarChart3, Calendar, Filter, Loader2, MapPin, PieChart, TrendingUp } from "lucide-react";

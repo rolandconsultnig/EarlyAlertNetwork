@@ -10,7 +10,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { insertIncidentSchema, DataSource, insertDataSourceSchema } from "@shared/schema";
+import { insertIncidentSchema, dataSources, insertDataSourceSchema, DataSource } from "../../../shared/schema.ts";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest, queryClient } from "@/lib/queryClient";

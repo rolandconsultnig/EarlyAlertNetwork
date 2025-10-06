@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Alert } from "@shared/schema";
+import { Alert } from "@shared/schema.ts";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,35 +19,55 @@ export default function AlertsList({ onTakeAction }: AlertsListProps) {
   const [wsConnected, setWsConnected] = useState(false);
   
   useEffect(() => {
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    const wsUrl = `${protocol}//${window.location.host}/ws`;
-    const ws = new WebSocket(wsUrl);
-    
-    ws.onopen = () => {
-      console.log("WebSocket connection established");
-      setWsConnected(true);
-    };
-    
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === 'alerts' || data.type === 'new-alert' || data.type === 'updated-alert') {
-        // Refetch alerts when we get a WebSocket notification
-        // queryClient.invalidateQueries(["/api/alerts/active"]); // Uncomment if needed
+    // Only try WebSocket connection in production or if explicitly enabled
+    if (process.env.NODE_ENV === 'production') {
+      const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+      const host = window.location.hostname || 'localhost';
+      const port = window.location.port || (window.location.protocol === 'https:' ? '443' : '3000');
+      const wsUrl = `${protocol}//${host}:${port}/ws`;
+      
+      try {
+        const ws = new WebSocket(wsUrl);
+        
+        ws.onopen = () => {
+          console.log("WebSocket connection established");
+          setWsConnected(true);
+        };
+        
+        ws.onmessage = (event) => {
+          try {
+            const data = JSON.parse(event.data);
+            if (data.type === 'alerts' || data.type === 'new-alert' || data.type === 'updated-alert') {
+              // Refetch alerts when we get a WebSocket notification
+              // queryClient.invalidateQueries(["/api/alerts/active"]); // Uncomment if needed
+            }
+          } catch (e) {
+            console.warn("Invalid WebSocket message:", e);
+          }
+        };
+        
+        ws.onerror = (error) => {
+          console.warn("WebSocket connection failed, continuing without real-time updates:", error);
+          setWsConnected(false);
+        };
+        
+        ws.onclose = () => {
+          console.log("WebSocket connection closed");
+          setWsConnected(false);
+        };
+        
+        return () => {
+          ws.close();
+        };
+      } catch (error) {
+        console.warn("WebSocket not available, continuing without real-time updates:", error);
+        setWsConnected(false);
       }
-    };
-    
-    ws.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-    
-    ws.onclose = () => {
-      console.log("WebSocket connection closed");
+    } else {
+      // In development, skip WebSocket to avoid connection errors
+      console.log("WebSocket disabled in development mode");
       setWsConnected(false);
-    };
-    
-    return () => {
-      ws.close();
-    };
+    }
   }, []);
 
   const getSeverityColor = (severity: string) => {

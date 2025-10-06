@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { useQuery } from "@tanstack/react-query";
-import { Alert, Incident, RiskIndicator } from "@shared/schema";
+import { Alert, Incident, RiskIndicator } from "@shared/schema.ts";
 import { useToast } from "@/hooks/use-toast";
 import {
   Card,

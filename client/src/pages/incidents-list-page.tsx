@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import MainLayout from "@/components/layout/MainLayout";
 import { useQuery } from "@tanstack/react-query";
-import { Incident } from "@shared/schema";
+import { Incident } from "@shared/schema.ts";
 import { 
   Card, 
   CardContent, 

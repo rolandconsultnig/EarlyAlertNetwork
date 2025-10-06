@@ -30,6 +30,8 @@ import MapPage from "@/pages/map-page";
 import SurveyManagementPage from "@/pages/survey-management-page";
 import AccessibilityPage from "@/pages/accessibility-page";
 import TransportationPage from "@/pages/transportation-page";
+import ChatPage from "@/pages/chat-page";
+import ChatDemoPage from "@/pages/chat-demo-page";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -91,6 +93,10 @@ function Router() {
       
       {/* Transportation */}
       <ProtectedRoute path="/transportation" component={TransportationPage} />
+      
+      {/* Chat/Messaging */}
+      <ProtectedRoute path="/chat" component={ChatPage} />
+      <ProtectedRoute path="/chat-demo" component={ChatDemoPage} />
       
       <Route component={NotFound} />
     </Switch>

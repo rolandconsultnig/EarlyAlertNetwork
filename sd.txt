@@ -1,0 +1,24 @@
+NITP Member Portal - User Credentials
+====================================
+
+1. Administrator Account
+   Email: admin@nitp.org
+   Password: admin123
+   Role: Administrator
+
+2. Instructor Account
+   Email: instructor@nitp.org
+   Password: instructor123
+   Role: Member
+
+3. Member Account
+   Email: member@nitp.org
+   Password: member123
+   Role: Member
+
+4. Financial Administrator Account
+   Email: finsec2@nitp.org
+   Password: pass123
+   Role: Financial Administrator
+
+Note: These are test credentials. In a production environment, please ensure to use strong passwords and implement proper security measures. 

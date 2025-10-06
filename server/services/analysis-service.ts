@@ -7,17 +7,24 @@ import {
   insertRiskAnalysisSchema
 } from "@shared/schema";
 import { and, eq, gte, lte, desc, ne } from "drizzle-orm";
-import OpenAI from 'openai';
+import axios from 'axios';
 
-// Initialize OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+// Initialize DeepSeek AI configuration
+const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
+const DEEPSEEK_API_URL = 'https://api.deepseek.com/v1/chat/completions';
+
+interface DeepSeekResponse {
+  choices: Array<{
+    message: {
+      content: string;
+    };
+  }>;
+}
 
 /**
  * Analysis Service
  * 
- * This service provides AI analysis capabilities using both OpenAI and rule-based methods
+ * This service provides AI analysis capabilities using both DeepSeek AI and rule-based methods
  * to analyze incidents, risk indicators, and other data to generate insights.
  */
 export class AnalysisService {
@@ -377,7 +384,7 @@ export class AnalysisService {
         .limit(5);
       
       // Try to use AI for enhanced analysis if API key is available
-      let aiAnalysis = null;
+      let aiAnalysis: string | null = null;
       try {
         aiAnalysis = await this.performAIIncidentAnalysis(incident, relatedIncidents, relevantIndicators);
       } catch (aiError) {
@@ -392,7 +399,7 @@ export class AnalysisService {
           incident: incident,
           relatedIncidents: relatedIncidents,
           relatedIndicators: relevantIndicators,
-          ...aiAnalysis
+          ...JSON.parse(aiAnalysis)
         };
       } else {
         // Fall back to rule-based analysis
@@ -415,95 +422,71 @@ export class AnalysisService {
   }
   
   /**
-   * Perform AI-powered analysis of an incident using OpenAI
+   * Perform AI-powered analysis of an incident using DeepSeek AI
    * @param incident The incident to analyze
    * @param relatedIncidents Related incidents in the same area
    * @param relevantIndicators Relevant risk indicators
    * @returns AI-generated analysis
    */
-  private async performAIIncidentAnalysis(incident: any, relatedIncidents: any[], relevantIndicators: any[]) {
-    // Prepare data for the AI
-    const incidentData = {
-      id: incident.id,
-      title: incident.title,
-      description: incident.description,
-      location: incident.location,
-      region: incident.region,
-      state: incident.state,
-      reportedAt: incident.reportedAt,
-      category: incident.category,
-      severity: incident.severity,
-      status: incident.status,
-      impactedPopulation: incident.impactedPopulation
-    };
-    
-    const relatedIncidentsData = relatedIncidents.map(ri => ({
-      id: ri.id,
-      title: ri.title,
-      location: ri.location,
-      reportedAt: ri.reportedAt,
-      category: ri.category,
-      severity: ri.severity
-    }));
-    
-    const relevantIndicatorsData = relevantIndicators.map(ind => ({
-      name: ind.name,
-      category: ind.category,
-      value: ind.value,
-      trend: ind.trend
-    }));
-    
-    // Construct prompt for OpenAI
-    const prompt = `
-      As a conflict analysis expert, analyze this incident and provide insights for the Institute for Peace and Conflict Resolution in Nigeria.
-      
-      Incident details:
-      ${JSON.stringify(incidentData, null, 2)}
-      
-      Related incidents in the same region:
-      ${JSON.stringify(relatedIncidentsData, null, 2)}
-      
-      Current risk indicators for the region:
-      ${JSON.stringify(relevantIndicatorsData, null, 2)}
-      
-      Based on this information, provide the following analysis in JSON format:
-      1. A detailed summary of the incident and its context
-      2. Identified patterns or trends based on related incidents
-      3. Assessment of potential for escalation
-      4. Recommended actions for response
-      5. Key stakeholders that should be involved
-    `;
-    
-    // Call OpenAI
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-      messages: [
-        { 
-          role: "system", 
-          content: "You are an AI analyst specializing in conflict analysis, early warning and early response for the Institute for Peace and Conflict Resolution in Nigeria. Provide detailed, balanced and actionable insights." 
-        },
-        { role: "user", content: prompt }
-      ],
-      temperature: 0.2,
-      response_format: { type: "json_object" }
-    });
-    
-    // Parse and return the response
+  private async performAIIncidentAnalysis(incident: any, relatedIncidents: any[], relevantIndicators: any[]): Promise<string> {
     try {
-      const aiResponse = JSON.parse(response.choices[0].message.content || '{}');
-      return {
-        summary: aiResponse.summary || this.generateIncidentSummary(incident),
-        patterns: aiResponse.patterns || this.identifyPatterns(incident, relatedIncidents),
-        potentialEscalation: aiResponse.potentialEscalation || this.assessEscalationPotential(incident, relevantIndicators),
-        recommendedActions: aiResponse.recommendedActions || this.recommendIncidentActions(incident),
-        keyStakeholders: aiResponse.keyStakeholders || "No stakeholder analysis available.",
-        aiGenerated: true
-      };
-    } catch (parseError) {
-      console.error("Error parsing AI response:", parseError);
-      // Return null to fall back to rule-based analysis
-      return null;
+      const prompt = this.generateIncidentAnalysisPrompt(incident, relatedIncidents, relevantIndicators);
+      
+      const response = await axios.post(
+        DEEPSEEK_API_URL,
+        {
+          model: "deepseek-chat",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert in risk analysis and early warning systems. Analyze the provided incident data and provide detailed insights."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 1000
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+
+      return response.data.choices[0].message.content;
+    } catch (error) {
+      console.error("Error performing AI analysis:", error);
+      return "AI analysis could not be performed at this time.";
     }
+  }
+  
+  private generateIncidentAnalysisPrompt(incident: any, relatedIncidents: any[], relevantIndicators: any[]): string {
+    return `
+      Analyze the following incident and provide insights:
+      
+      Main Incident:
+      - Category: ${incident.category}
+      - Severity: ${incident.severity}
+      - Description: ${incident.description}
+      - Location: ${incident.location}
+      - Region: ${incident.region}
+      
+      Related Incidents (${relatedIncidents.length}):
+      ${relatedIncidents.map(i => `- ${i.category} (${i.severity}) at ${i.location}`).join('\n')}
+      
+      Relevant Risk Indicators (${relevantIndicators.length}):
+      ${relevantIndicators.map(i => `- ${i.name}: ${i.value}`).join('\n')}
+      
+      Please provide:
+      1. A summary of the situation
+      2. Potential escalation factors
+      3. Recommended actions
+      4. Risk assessment
+    `;
   }
   
   /**
@@ -666,3 +649,37 @@ export class AnalysisService {
 }
 
 export const analysisService = new AnalysisService();
+
+async function analyzeText(text: string): Promise<string> {
+  try {
+    const response = await axios.post<DeepSeekResponse>(
+      DEEPSEEK_API_URL,
+      {
+        model: "deepseek-chat",
+        messages: [
+          {
+            role: "system",
+            content: "You are an AI assistant that analyzes text for sentiment, key topics, and potential risks. Provide a detailed analysis."
+          },
+          {
+            role: "user",
+            content: text
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 1000
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${DEEPSEEK_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+
+    return response.data.choices[0].message.content.trim();
+  } catch (error) {
+    console.error('Analysis error:', error);
+    throw new Error('Failed to analyze text');
+  }
+}
