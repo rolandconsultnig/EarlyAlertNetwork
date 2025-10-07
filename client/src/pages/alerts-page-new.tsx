@@ -103,7 +103,7 @@ export default function AlertsPage() {
   };
   
   // Filter alerts based on selected criteria
-  const filteredAlerts = alerts?.filter(alert => {
+  const filteredAlerts = Array.isArray(alerts) ? alerts.filter(alert => {
     // Apply status filter
     const statusMatch = 
       (selectedTab === 'active' && alert.status === 'active') ||

@@ -104,7 +104,7 @@ export default function InterAgencyPortalPage() {
   };
   
   // Filter plans based on selected tab and search query
-  const filteredPlans = plans?.filter(plan => {
+  const filteredPlans = Array.isArray(plans) ? plans.filter(plan => {
     // Apply status filter
     const statusMatch = 
       (selectedTab === "active" && plan.status === "active") ||

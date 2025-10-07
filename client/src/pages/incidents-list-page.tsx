@@ -53,7 +53,7 @@ export default function IncidentsListPage() {
   });
 
   // Filter incidents based on the selected filters
-  const filteredIncidents = incidents?.filter(incident => {
+  const filteredIncidents = Array.isArray(incidents) ? incidents.filter(incident => {
     // Apply status filter
     const statusMatch = incidentFilter === "all" || 
       (incidentFilter === "active" && incident.status === "active") ||

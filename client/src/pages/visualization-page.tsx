@@ -378,14 +378,14 @@ export default function VisualizationPage() {
     });
   }, []);
   
-  const filteredIncidents = incidents.filter(incident => 
+  const filteredIncidents = Array.isArray(incidents) ? incidents.filter(incident => 
     selectedIncidentTypes.includes(incident.type) && 
     new Date(incident.date) >= new Date(Date.now() - timeRange[0] * 24 * 60 * 60 * 1000)
-  );
+  ) : [];
   
-  const filteredRiskLevels = riskLevels.filter(risk => 
+  const filteredRiskLevels = Array.isArray(riskLevels) ? riskLevels.filter(risk => 
     selectedRiskLevels.includes(risk.level)
-  );
+  ) : [];
   
   const toolbar = (
     <Button variant="outline">
@@ -560,7 +560,7 @@ export default function VisualizationPage() {
               <CardContent>
                 <div className="flex items-center">
                   <div className="text-3xl font-bold text-red-600">
-                    {incidents.filter(i => i.severity === "Critical").length}
+                    {Array.isArray(incidents) ? incidents.filter(i => i.severity === "Critical").length : 0}
                   </div>
                   <div className="ml-auto h-10 w-10 rounded-full bg-red-100 flex items-center justify-center">
                     <AlertCircle className="h-5 w-5 text-red-600" />
@@ -576,7 +576,7 @@ export default function VisualizationPage() {
               <CardContent>
                 <div className="flex items-center">
                   <div className="text-3xl font-bold text-orange-600">
-                    {riskLevels.filter(r => r.level === "Critical" || r.level === "High").length}
+                    {Array.isArray(riskLevels) ? riskLevels.filter(r => r.level === "Critical" || r.level === "High").length : 0}
                   </div>
                   <div className="ml-auto h-10 w-10 rounded-full bg-orange-100 flex items-center justify-center">
                     <Activity className="h-5 w-5 text-orange-600" />
@@ -592,7 +592,7 @@ export default function VisualizationPage() {
               <CardContent>
                 <div className="flex items-center">
                   <div className="text-3xl font-bold text-yellow-600">
-                    {incidents.filter(i => i.title.includes("Farmer-Herder")).length}
+                    {Array.isArray(incidents) ? incidents.filter(i => i.title.includes("Farmer-Herder")).length : 0}
                   </div>
                   <div className="ml-auto h-10 w-10 rounded-full bg-yellow-100 flex items-center justify-center">
                     <Tractor className="h-5 w-5 text-yellow-600" />
@@ -608,7 +608,7 @@ export default function VisualizationPage() {
               <CardContent>
                 <div className="flex items-center">
                   <div className="text-3xl font-bold text-blue-600">
-                    {resources.filter(r => r.type === "Refugee Camp").length}
+                    {Array.isArray(resources) ? resources.filter(r => r.type === "Refugee Camp").length : 0}
                   </div>
                   <div className="ml-auto h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                     <Home className="h-5 w-5 text-blue-600" />
@@ -746,14 +746,14 @@ export default function VisualizationPage() {
               </CardHeader>
               <CardContent className="pt-0">
                 <ul className="divide-y">
-                  {riskLevels
+                  {Array.isArray(riskLevels) ? riskLevels
                     .filter(r => r.level === "Critical")
                     .map((risk, idx) => (
                       <li key={idx} className="py-2 first:pt-0 last:pb-0 flex justify-between items-center">
                         <span className="font-medium">{risk.state} State</span>
                         <Badge className="bg-red-100 text-red-800">{risk.level}</Badge>
                       </li>
-                    ))
+                    )) : []
                   }
                 </ul>
               </CardContent>
@@ -766,14 +766,14 @@ export default function VisualizationPage() {
               </CardHeader>
               <CardContent className="pt-0">
                 <ul className="divide-y">
-                  {riskLevels
+                  {Array.isArray(riskLevels) ? riskLevels
                     .filter(r => r.level === "High")
                     .map((risk, idx) => (
                       <li key={idx} className="py-2 first:pt-0 last:pb-0 flex justify-between items-center">
                         <span className="font-medium">{risk.state} State</span>
                         <Badge className="bg-orange-100 text-orange-800">{risk.level}</Badge>
                       </li>
-                    ))
+                    )) : []
                   }
                 </ul>
               </CardContent>
@@ -786,14 +786,14 @@ export default function VisualizationPage() {
               </CardHeader>
               <CardContent className="pt-0">
                 <ul className="divide-y">
-                  {riskLevels
+                  {Array.isArray(riskLevels) ? riskLevels
                     .filter(r => r.level === "Medium")
                     .map((risk, idx) => (
                       <li key={idx} className="py-2 first:pt-0 last:pb-0 flex justify-between items-center">
                         <span className="font-medium">{risk.state} State</span>
                         <Badge className="bg-yellow-100 text-yellow-800">{risk.level}</Badge>
                       </li>
-                    ))
+                    )) : []
                   }
                 </ul>
               </CardContent>

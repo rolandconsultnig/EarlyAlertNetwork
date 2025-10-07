@@ -246,7 +246,7 @@ export default function AlertsPage() {
   };
   
   // Filter alerts based on the selected filter
-  const filteredAlerts = alerts?.filter(alert => {
+  const filteredAlerts = Array.isArray(alerts) ? alerts.filter(alert => {
     // Apply status filter
     const statusMatch = alertFilter === "all" || 
       (alertFilter === "active" && alert.status === "active") ||

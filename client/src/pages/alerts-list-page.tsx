@@ -96,7 +96,7 @@ export default function AlertsListPage() {
   });
 
   // Filter alerts based on the selected filters
-  const filteredAlerts = alerts?.filter(alert => {
+  const filteredAlerts = Array.isArray(alerts) ? alerts.filter(alert => {
     // Apply status filter
     const statusMatch = alertFilter === "all" || 
       (alertFilter === "active" && alert.status === "active") ||
@@ -112,7 +112,7 @@ export default function AlertsListPage() {
       (alert.description && alert.description.toLowerCase().includes(searchQuery.toLowerCase()));
     
     return statusMatch && channelMatch && searchMatch;
-  });
+  }) : [];
 
   // Format date for display
   const formatDate = (dateString: Date | string | null) => {
