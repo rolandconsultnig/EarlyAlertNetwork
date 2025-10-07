@@ -1,6 +1,6 @@
 [build]
   command = "npx tsx scripts/netlify-build-simple.js"
-  publish = "dist"
+  publish = "dist/public"
 
 [build.environment]
   NODE_VERSION = "18"

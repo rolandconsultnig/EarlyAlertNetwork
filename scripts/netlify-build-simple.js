@@ -24,7 +24,7 @@ try {
 # SPA fallback
 /* /index.html 200
 `;
-  fs.writeFileSync('dist/_redirects', redirectsContent);
+  fs.writeFileSync('dist/public/_redirects', redirectsContent);
   console.log('✅ _redirects file created');
 
   // Create _headers file
@@ -39,11 +39,11 @@ try {
   Access-Control-Allow-Headers: Content-Type, Authorization
   Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
 `;
-  fs.writeFileSync('dist/_headers', headersContent);
+  fs.writeFileSync('dist/public/_headers', headersContent);
   console.log('✅ _headers file created');
 
   console.log('\n🎉 Build completed successfully!');
-  console.log('📁 Build output: dist/');
+  console.log('📁 Build output: dist/public/');
   console.log('🚀 Ready for Netlify deployment!');
 
 } catch (error) {
