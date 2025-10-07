@@ -253,7 +253,7 @@ export default function ResponsePlansPage() {
   };
   
   // Filter plans based on selected tab and search query
-  const filteredPlans = plans?.filter(plan => {
+  const filteredPlans = Array.isArray(plans) ? plans.filter(plan => {
     // Apply status filter
     const statusMatch = 
       (selectedTab === "active" && plan.status === "active") ||
@@ -269,7 +269,7 @@ export default function ResponsePlansPage() {
       (plan.location && plan.location.toLowerCase().includes(searchQuery.toLowerCase()));
     
     return statusMatch && searchMatch;
-  });
+  }) : [];
   
   // View plan details
   const handleViewPlan = (plan: ResponsePlan) => {
@@ -394,7 +394,7 @@ export default function ResponsePlansPage() {
               <div>
                 <p className="text-sm text-neutral-500">Draft</p>
                 <p className="text-2xl font-semibold mt-1">
-                  {plans?.filter(p => p.status === "draft").length || 0}
+                  {Array.isArray(plans) ? plans.filter(p => p.status === "draft").length : 0}
                 </p>
               </div>
               <div className="p-2 rounded-full bg-neutral-100">
@@ -410,7 +410,7 @@ export default function ResponsePlansPage() {
               <div>
                 <p className="text-sm text-neutral-500">Active</p>
                 <p className="text-2xl font-semibold mt-1">
-                  {plans?.filter(p => p.status === "active").length || 0}
+                  {Array.isArray(plans) ? plans.filter(p => p.status === "active").length : 0}
                 </p>
               </div>
               <div className="p-2 rounded-full bg-blue-100">
@@ -426,7 +426,7 @@ export default function ResponsePlansPage() {
               <div>
                 <p className="text-sm text-neutral-500">Completed</p>
                 <p className="text-2xl font-semibold mt-1">
-                  {plans?.filter(p => p.status === "completed").length || 0}
+                  {Array.isArray(plans) ? plans.filter(p => p.status === "completed").length : 0}
                 </p>
               </div>
               <div className="p-2 rounded-full bg-green-100">
@@ -537,7 +537,7 @@ export default function ResponsePlansPage() {
                       <span className="text-sm">Emergency</span>
                     </div>
                     <span className="text-sm font-medium">
-                      {plans?.filter(p => p.category === "emergency").length || 0}
+                      {Array.isArray(plans) ? plans.filter(p => p.category === "emergency").length : 0}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -546,7 +546,7 @@ export default function ResponsePlansPage() {
                       <span className="text-sm">Preventive</span>
                     </div>
                     <span className="text-sm font-medium">
-                      {plans?.filter(p => p.category === "preventive").length || 0}
+                      {Array.isArray(plans) ? plans.filter(p => p.category === "preventive").length : 0}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
@@ -555,7 +555,7 @@ export default function ResponsePlansPage() {
                       <span className="text-sm">Recovery</span>
                     </div>
                     <span className="text-sm font-medium">
-                      {plans?.filter(p => p.category === "recovery").length || 0}
+                      {Array.isArray(plans) ? plans.filter(p => p.category === "recovery").length : 0}
                     </span>
                   </div>
                 </div>
@@ -574,7 +574,7 @@ export default function ResponsePlansPage() {
                   <div key={region} className="flex items-center justify-between">
                     <span className="text-sm">{region}</span>
                     <span className="text-sm font-medium">
-                      {plans?.filter(p => p.region === region).length || 0}
+                      {Array.isArray(plans) ? plans.filter(p => p.region === region).length : 0}
                     </span>
                   </div>
                 ))}

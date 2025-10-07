@@ -101,10 +101,10 @@ export default function DashboardPage() {
   
   // Compute incident statistics
   const incidentCounts = {
-    high: incidents?.filter(i => i.severity === 'high').length || 0,
-    medium: incidents?.filter(i => i.severity === 'medium').length || 0,
-    low: incidents?.filter(i => i.severity === 'low').length || 0,
-    total: incidents?.length || 0,
+    high: Array.isArray(incidents) ? incidents.filter(i => i.severity === 'high').length : 0,
+    medium: Array.isArray(incidents) ? incidents.filter(i => i.severity === 'medium').length : 0,
+    low: Array.isArray(incidents) ? incidents.filter(i => i.severity === 'low').length : 0,
+    total: Array.isArray(incidents) ? incidents.length : 0,
   };
   
   // Handle adding a new incident
@@ -418,7 +418,7 @@ export default function DashboardPage() {
                       <div key={region} className="flex items-center justify-between text-sm">
                         <span>{region}</span>
                         <span className="font-medium">
-                          {incidents?.filter(i => i.region === region).length || 0}
+                          {Array.isArray(incidents) ? incidents.filter(i => i.region === region).length : 0}
                         </span>
                       </div>
                     ))}
@@ -473,7 +473,7 @@ export default function DashboardPage() {
               ) : (
                 <ScrollArea className="h-[300px]">
                   <div className="space-y-3">
-                    {alerts.filter(a => a.status === 'active').slice(0, 5).map((alert) => (
+                    {Array.isArray(alerts) ? alerts.filter(a => a.status === 'active').slice(0, 5).map((alert) => (
                       <div key={alert.id} className="flex items-start border-l-2 border-primary pl-3 py-1">
                         <div>
                           <p className="text-sm font-medium">{alert.title}</p>
@@ -483,7 +483,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                    )) : []}
                   </div>
                 </ScrollArea>
               )}

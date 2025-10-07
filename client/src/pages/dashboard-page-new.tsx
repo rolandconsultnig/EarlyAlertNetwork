@@ -105,10 +105,10 @@ export default function DashboardPage() {
     if (!incidents) return { high: 0, medium: 0, low: 0, total: 0 };
     
     const counts = {
-      high: incidents.filter(i => i.severity === 'high').length,
-      medium: incidents.filter(i => i.severity === 'medium').length,
-      low: incidents.filter(i => i.severity === 'low').length,
-      total: incidents.length
+      high: Array.isArray(incidents) ? incidents.filter(i => i.severity === 'high').length : 0,
+      medium: Array.isArray(incidents) ? incidents.filter(i => i.severity === 'medium').length : 0,
+      low: Array.isArray(incidents) ? incidents.filter(i => i.severity === 'low').length : 0,
+      total: Array.isArray(incidents) ? incidents.length : 0
     };
     
     return counts;
@@ -116,7 +116,7 @@ export default function DashboardPage() {
   
   // Get active alerts count
   const getActiveAlertsCount = () => {
-    return alerts?.filter(a => a.status === 'active').length || 0;
+    return Array.isArray(alerts) ? alerts.filter(a => a.status === 'active').length : 0;
   };
   
   const incidentCounts = getIncidentSeverityCounts();
@@ -132,7 +132,7 @@ export default function DashboardPage() {
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Active Incidents</p>
-                  <p className="text-3xl font-bold">{incidents?.filter(i => i.status === 'active').length || 0}</p>
+                  <p className="text-3xl font-bold">{Array.isArray(incidents) ? incidents.filter(i => i.status === 'active').length : 0}</p>
                   <p className="text-sm text-gray-500 mt-1">
                     {incidentCounts.high} high severity
                   </p>
@@ -151,7 +151,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-gray-500 mb-1">Active Alerts</p>
                   <p className="text-3xl font-bold">{activeAlertsCount}</p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {alerts?.filter(a => a.severity === 'high' && a.status === 'active').length || 0} high priority
+                    {Array.isArray(alerts) ? alerts.filter(a => a.severity === 'high' && a.status === 'active').length : 0} high priority
                   </p>
                 </div>
                 <div className="bg-amber-100 p-3 rounded-full">
@@ -168,7 +168,7 @@ export default function DashboardPage() {
                   <p className="text-sm text-gray-500 mb-1">Risk Indicators</p>
                   <p className="text-3xl font-bold">{indicators?.length || 0}</p>
                   <p className="text-sm text-gray-500 mt-1">
-                    {indicators?.filter(i => i.threshold > 80).length || 0} high impact
+                    {Array.isArray(indicators) ? indicators.filter(i => i.threshold > 80).length : 0} high impact
                   </p>
                 </div>
                 <div className="bg-blue-100 p-3 rounded-full">
@@ -184,7 +184,7 @@ export default function DashboardPage() {
                 <div>
                   <p className="text-sm text-gray-500 mb-1">Response Plans</p>
                   <p className="text-3xl font-bold">
-                    {incidents?.filter(i => i.status === 'active').length || 0}
+                    {Array.isArray(incidents) ? incidents.filter(i => i.status === 'active').length : 0}
                   </p>
                   <p className="text-sm text-gray-500 mt-1">
                     Active response plans
@@ -385,7 +385,7 @@ export default function DashboardPage() {
                       <div key={region} className="flex items-center justify-between text-sm">
                         <span>{region}</span>
                         <span className="font-medium">
-                          {incidents?.filter(i => i.region === region).length || 0}
+                          {Array.isArray(incidents) ? incidents.filter(i => i.region === region).length : 0}
                         </span>
                       </div>
                     ))}
@@ -440,7 +440,7 @@ export default function DashboardPage() {
               ) : (
                 <ScrollArea className="h-[300px]">
                   <div className="space-y-3">
-                    {alerts.filter(a => a.status === 'active').slice(0, 5).map((alert) => (
+                    {Array.isArray(alerts) ? alerts.filter(a => a.status === 'active').slice(0, 5).map((alert) => (
                       <div key={alert.id} className="flex items-start border-l-2 border-primary pl-3 py-1">
                         <div>
                           <p className="text-sm font-medium">{alert.title}</p>
@@ -450,7 +450,7 @@ export default function DashboardPage() {
                           </div>
                         </div>
                       </div>
-                    ))}
+                    )) : []}
                   </div>
                 </ScrollArea>
               )}
