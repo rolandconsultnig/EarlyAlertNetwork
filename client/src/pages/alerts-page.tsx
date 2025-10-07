@@ -270,7 +270,7 @@ export default function AlertsPage() {
       alert.description.toLowerCase().includes(searchQuery.toLowerCase());
     
     return statusMatch && sourceMatch && searchMatch;
-  });
+  }) : [];
   
   // Handle resolve alert
   const handleResolveAlert = (id: number) => {

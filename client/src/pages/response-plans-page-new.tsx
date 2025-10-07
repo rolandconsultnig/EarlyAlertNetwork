@@ -120,7 +120,7 @@ export default function InterAgencyPortalPage() {
       (plan.location && plan.location.toLowerCase().includes(searchQuery.toLowerCase()));
     
     return statusMatch && searchMatch;
-  });
+  }) : [];
   
   // Mock data for partner agencies
   const agenciesData = [

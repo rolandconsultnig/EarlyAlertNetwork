@@ -71,7 +71,7 @@ export default function IncidentsListPage() {
       (incident.location && incident.location.toLowerCase().includes(searchQuery.toLowerCase()));
     
     return statusMatch && regionMatch && searchMatch;
-  });
+  }) : [];
 
   // Format date for display
   const formatDate = (dateString: Date | string | null) => {

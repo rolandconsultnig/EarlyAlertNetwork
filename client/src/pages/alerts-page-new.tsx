@@ -123,7 +123,7 @@ export default function AlertsPage() {
     const severityMatch = !severityFilter || alert.severity === severityFilter;
     
     return statusMatch && searchMatch && sourceMatch && severityMatch;
-  });
+  }) : [];
   
   // Get alert badge color based on severity
   const getAlertBadge = (severity: string) => {
