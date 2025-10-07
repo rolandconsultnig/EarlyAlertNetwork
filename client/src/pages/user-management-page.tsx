@@ -158,17 +158,17 @@ export default function UserManagementPage() {
   }
   
   // Filter users based on search query and role filter
-  const filteredUsers = users?.filter(user => {
+  const filteredUsers = Array.isArray(users) ? users.filter(user => {
     // Apply role filter
     const roleMatch = roleFilter === "all" || user.role === roleFilter;
     
     // Apply search filter if search query exists
     const searchMatch = !searchQuery || 
       user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.fullName.toLowerCase().includes(searchQuery.toLowerCase());
+      (user.firstName && user.lastName ? `${user.firstName} ${user.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) : false);
     
     return roleMatch && searchMatch;
-  });
+  }) : [];
   
   // Get role badge
   const getRoleBadge = (role: string) => {
@@ -334,7 +334,7 @@ export default function UserManagementPage() {
                   </div>
                 </div>
                 <p className="text-sm font-medium">
-                  {users?.filter(u => u.role === "admin").length || 0} users
+                  {Array.isArray(users) ? users.filter(u => u.role === "admin").length : 0} users
                 </p>
               </div>
               
@@ -347,7 +347,7 @@ export default function UserManagementPage() {
                   </div>
                 </div>
                 <p className="text-sm font-medium">
-                  {users?.filter(u => u.role === "coordinator").length || 0} users
+                  {Array.isArray(users) ? users.filter(u => u.role === "coordinator").length : 0} users
                 </p>
               </div>
               
@@ -360,7 +360,7 @@ export default function UserManagementPage() {
                   </div>
                 </div>
                 <p className="text-sm font-medium">
-                  {users?.filter(u => u.role === "analyst").length || 0} users
+                  {Array.isArray(users) ? users.filter(u => u.role === "analyst").length : 0} users
                 </p>
               </div>
               
@@ -373,7 +373,7 @@ export default function UserManagementPage() {
                   </div>
                 </div>
                 <p className="text-sm font-medium">
-                  {users?.filter(u => u.role === "field_agent").length || 0} users
+                  {Array.isArray(users) ? users.filter(u => u.role === "field_agent").length : 0} users
                 </p>
               </div>
             </div>

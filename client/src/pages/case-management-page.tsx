@@ -195,10 +195,10 @@ export default function CaseManagementPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-blue-600">
-                  {cases.filter(c => c.status === "Open").length}
+                  {Array.isArray(cases) ? cases.filter(c => c.status === "Open").length : 0}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {cases.filter(c => c.status === "Open" && c.priority === "High").length} high priority
+                  {Array.isArray(cases) ? cases.filter(c => c.status === "Open" && c.priority === "High").length : 0} high priority
                 </p>
               </CardContent>
             </Card>
@@ -210,10 +210,10 @@ export default function CaseManagementPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-amber-600">
-                  {cases.filter(c => c.status === "In Progress").length}
+                  {Array.isArray(cases) ? cases.filter(c => c.status === "In Progress").length : 0}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {cases.filter(c => c.status === "In Progress" && c.priority === "Critical").length} critical priority
+                  {Array.isArray(cases) ? cases.filter(c => c.status === "In Progress" && c.priority === "Critical").length : 0} critical priority
                 </p>
               </CardContent>
             </Card>
@@ -225,7 +225,7 @@ export default function CaseManagementPage() {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-green-600">
-                  {cases.filter(c => c.status === "Resolved" || c.status === "Closed").length}
+                  {Array.isArray(cases) ? cases.filter(c => c.status === "Resolved" || c.status === "Closed").length : 0}
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   In the past 30 days
