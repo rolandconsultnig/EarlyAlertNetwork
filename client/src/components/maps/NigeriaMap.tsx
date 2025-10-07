@@ -25,8 +25,8 @@ L.Marker.prototype.options.icon = defaultIcon;
 
 // Custom icons for different incident types with increased size
 const highSeverityIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-red.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [35, 57],  // Larger size for higher visibility
   iconAnchor: [17, 57],
   popupAnchor: [1, -50],
@@ -35,8 +35,8 @@ const highSeverityIcon = new L.Icon({
 });
 
 const mediumSeverityIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-orange.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-orange.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [32, 52],  // Medium-large size
   iconAnchor: [16, 52],
   popupAnchor: [1, -45],
@@ -45,8 +45,8 @@ const mediumSeverityIcon = new L.Icon({
 });
 
 const lowSeverityIcon = new L.Icon({
-  iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-blue.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
   iconSize: [30, 45],  // Standard size
   iconAnchor: [15, 45],
   popupAnchor: [1, -40],
@@ -330,7 +330,7 @@ export default function NigeriaMap({
   }, []);
   
   // Fetch incidents from API if none provided as props
-  const { data: fetchedIncidents } = useQuery<Incident[]>({
+  const { data: fetchedIncidents } = useQuery({
     queryKey: ["/api/incidents"],
     enabled: showIncidents && !propIncidents && mapReady,
   });
@@ -339,8 +339,15 @@ export default function NigeriaMap({
   // Only use mock incidents after map is ready to ensure they don't disappear
   const incidents = mapReady ? (propIncidents || fetchedIncidents || mockIncidents) : [];
   
+  // Ensure incidents is always an array to prevent filter errors
+  const safeIncidents = Array.isArray(incidents) ? incidents : [];
+  
   // Get icon based on severity
   const getIncidentIcon = (severity: string) => {
+    if (!severity || typeof severity !== 'string') {
+      return defaultIcon;
+    }
+    
     switch (severity.toLowerCase()) {
       case 'high':
         return highSeverityIcon;
@@ -504,14 +511,16 @@ export default function NigeriaMap({
         )}
         
         {/* Display incidents on the map */}
-        {showIncidents && incidents?.map((incident) => {
+        {showIncidents && safeIncidents.map((incident) => {
+          if (!incident || !incident.id) return null;
+          
           const [lat, lng] = getCoordinates(incident);
           
           return (
             <Marker 
               key={incident.id}
               position={[lat, lng]}
-              icon={getIncidentIcon(incident.severity)}
+              icon={getIncidentIcon(incident.severity || 'low')}
             >
               <Popup className="custom-popup" maxWidth={300}>
                 <div className="p-2">
@@ -627,7 +636,7 @@ export default function NigeriaMap({
         )}
         
         {/* Show risk heatmap for Nigeria */}
-        {showIncidents && incidents?.filter(i => i.severity === 'high').map((incident, idx) => {
+        {showIncidents && safeIncidents.filter((i: any) => i.severity === 'high').map((incident: any, idx: number) => {
           const [lat, lng] = getCoordinates(incident);
           
           return (
