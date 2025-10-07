@@ -208,7 +208,7 @@ const MachineLearningModels: React.FC = () => {
                 </div>
 
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {predictiveModelData
+                  {Array.isArray(predictiveModelData) ? predictiveModelData
                     .filter(item => item.alert)
                     .map((item, index) => (
                       <div key={index} className="bg-red-50 border border-red-200 rounded-md p-3">
@@ -217,7 +217,7 @@ const MachineLearningModels: React.FC = () => {
                           {(item.prob * 100).toFixed(1)}% probability
                         </div>
                       </div>
-                    ))}
+                    )) : []}
                 </div>
               </div>
 

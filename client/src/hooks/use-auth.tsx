@@ -29,6 +29,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   } = useQuery<SelectUser | undefined, Error>({
     queryKey: ["/api/user"],
     queryFn: getQueryFn({ on401: "returnNull" }),
+    retry: false, // Don't retry on Netlify where API might not be available
+    refetchOnWindowFocus: false,
   });
 
   const loginMutation = useMutation({

@@ -162,16 +162,16 @@ const IncidentTrendPrediction: React.FC<IncidentTrendPredictionProps> = ({
 
   // Calculate anomaly months (prediction points with anomaly flag)
   const anomalyMonths = useMemo(() => {
-    return predictionData
+    return Array.isArray(predictionData) ? predictionData
       .filter(point => point.anomaly)
-      .map(point => point.date);
+      .map(point => point.date) : [];
   }, [predictionData]);
 
   // Get largest increases in next 3 months (hotspots)
   const hotspots = useMemo(() => {
-    return sampleRegionalData
+    return Array.isArray(sampleRegionalData) ? sampleRegionalData
       .filter(region => region.percentChange > 15)
-      .sort((a, b) => b.percentChange - a.percentChange);
+      .sort((a, b) => b.percentChange - a.percentChange) : [];
   }, []);
 
   // Simulated API call to refresh predictions
